@@ -441,9 +441,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bitdex-primitives"
+version = "0.0.1"
+dependencies = [
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "bitdex-runtime"
 version = "2.0.0-rc6"
 dependencies = [
+ "bitdex-primitives",
  "frame-executive",
  "frame-support",
  "frame-system",
