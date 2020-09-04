@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
 use bitdex_runtime::{self, opaque::Block, RuntimeApi};
-use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
+use sc_service::{error::Error as ServiceError, Configuration, RpcHandlers, TaskManager};
 use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
 use sc_executor::native_executor_instance;
@@ -23,6 +23,7 @@ type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport =
 	sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
+type LightClient = sc_service::TLightClient<Block, RuntimeApi, Executor>;
 
 pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponents<
 	FullClient, FullBackend, FullSelectChain,
@@ -286,12 +287,15 @@ pub fn new_full(config: Configuration)
 	})
 }
 
-/// Builds a new service for a light client.
-pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
+pub fn new_light_base(config: Configuration) -> Result<(
+	TaskManager, RpcHandlers, Arc<LightClient>,
+	Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>,
+	Arc<sc_transaction_pool::LightPool<Block, LightClient, sc_network::config::OnDemand<Block>>>
+), ServiceError> {
 	let (client, backend, keystore, mut task_manager, on_demand) =
 		sc_service::new_light_parts::<Block, RuntimeApi, Executor>(&config)?;
 
-  let select_chain = sc_consensus::LongestChain::new(backend.clone());
+	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
 	let transaction_pool = Arc::new(sc_transaction_pool::BasicPool::new_light(
 		config.transaction_pool.clone(),
@@ -303,8 +307,9 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 
 	let grandpa_block_import = sc_finality_grandpa::light_block_import(
 		client.clone(), backend.clone(), &(client.clone() as Arc<_>),
-		Arc::new(on_demand.checker().clone()) as Arc<_>,
+		Arc::new(on_demand.checker().clone()),
 	)?;
+
 	let finality_proof_import = grandpa_block_import.clone();
 	let finality_proof_request_builder =
 		finality_proof_import.create_finality_proof_request_builder();
@@ -323,8 +328,8 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		None,
 		Some(Box::new(finality_proof_import)),
 		client.clone(),
-		select_chain,
-		inherent_data_providers,
+		select_chain.clone(),
+		inherent_data_providers.clone(),
 		&task_manager.spawn_handle(),
 		config.prometheus_registry(),
 		sp_consensus::NeverCanAuthor,
@@ -345,6 +350,7 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 			finality_proof_request_builder: Some(finality_proof_request_builder),
 			finality_proof_provider: Some(finality_proof_provider),
 		})?;
+	network_starter.start_network();
 
 	if config.offchain_worker.enabled {
 		sc_service::build_offchain_workers(
@@ -352,23 +358,34 @@ pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
 		);
 	}
 
-	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-		remote_blockchain: Some(backend.remote_blockchain()),
-		transaction_pool,
-		task_manager: &mut task_manager,
-		on_demand: Some(on_demand),
-		rpc_extensions_builder: Box::new(|_, _| ()),
-		telemetry_connection_sinks: sc_service::TelemetryConnectionSinks::default(),
-		config,
-		client,
-		keystore,
-		backend,
-		network,
-		network_status_sinks,
-		system_rpc_tx,
-	 })?;
+	let light_deps = crate::rpc::LightDeps {
+		remote_blockchain: backend.remote_blockchain(),
+		fetcher: on_demand.clone(),
+		client: client.clone(),
+		pool: transaction_pool.clone(),
+	};
 
-	 network_starter.start_network();
+	let rpc_extensions = crate::rpc::create_light(light_deps);
 
-	 Ok(task_manager)
+	let rpc_handlers =
+		sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+			on_demand: Some(on_demand),
+			remote_blockchain: Some(backend.remote_blockchain()),
+			rpc_extensions_builder: Box::new(sc_service::NoopRpcExtensionBuilder(rpc_extensions)),
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			config, keystore, backend, network_status_sinks, system_rpc_tx,
+			network: network.clone(),
+			telemetry_connection_sinks: sc_service::TelemetryConnectionSinks::default(),
+			task_manager: &mut task_manager,
+		})?;
+
+	Ok((task_manager, rpc_handlers, client, network, transaction_pool))
+}
+
+/// Builds a new service for a light client.
+pub fn new_light(config: Configuration) -> Result<TaskManager, ServiceError> {
+	new_light_base(config).map(|(task_manager, _, _, _, _)| {
+		task_manager
+	})
 }
