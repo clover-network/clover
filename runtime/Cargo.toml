@@ -32,6 +32,21 @@ version = '2.0.0-rc6'
 default-features = false
 version = '2.0.0-rc6'
 
+[dependencies.orml-currencies]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-tokens]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-traits]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
 [dependencies.pallet-authorship]
 default-features = false
 version = '2.0.0-rc6'
@@ -156,6 +171,9 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'frame-system-rpc-runtime-api/std',
+    'orml-currencies/std',
+    'orml-tokens/std',
+    'orml-traits/std',
     'pallet-authorship/std',
     'pallet-babe/std',
     'pallet-balances/std',

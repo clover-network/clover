@@ -1,12 +1,17 @@
 use sp_core::{Pair, Public, sr25519};
 use bitdex_runtime::{
-	AccountId, BabeConfig, Balance, BalancesConfig, IndicesConfig, GenesisConfig, GrandpaConfig,
+  AccountId,
+	BabeConfig, Balance, BalancesConfig,
+  CurrencyId,
+  IndicesConfig, GenesisConfig, GrandpaConfig,
 	SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY, Signature, StakerStatus,
+  TokensConfig,
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::{traits::{IdentifyAccount, Verify}, Perbill};
 use sc_service::ChainType;
+
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -71,8 +76,8 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 			],
-			true,
-		),
+      true,
+    ),
 		// Bootnodes
 		vec![],
 		// Telemetry
@@ -190,6 +195,17 @@ fn testnet_genesis(
 		pallet_sudo: Some(SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
+		}),
+    orml_tokens: Some(TokensConfig {
+			endowed_accounts: endowed_accounts
+				.iter()
+				.flat_map(|x| {
+					vec![
+						(x.clone(), CurrencyId::BETH, 1000 * DOLLARS),
+						(x.clone(), CurrencyId::BUSD, 1000 * DOLLARS),
+					]
+				})
+				.collect(),
 		}),
 	}
 }

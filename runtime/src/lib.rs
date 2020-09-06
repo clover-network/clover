@@ -16,7 +16,7 @@ use sp_runtime::{
 	transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
 };
 use sp_runtime::traits::{
-	BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion, Saturating, 
+	BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion, Saturating,
 	StaticLookup,
 };
 use sp_runtime::curve::PiecewiseLinear;
@@ -32,6 +32,8 @@ use sp_version::NativeVersion;
 // A few exports that help ease life for downstream crates.
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+
+use orml_currencies::{BasicCurrencyAdapter};
 
 pub use pallet_staking::StakerStatus;
 
@@ -50,7 +52,8 @@ pub use frame_support::{
 use codec::{Encode};
 
 pub use primitives::{
-	AccountId, AccountIndex, Balance, BlockNumber,
+	AccountId, AccountIndex, Amount, Balance, BlockNumber,
+  CurrencyId,
 	EraIndex, Hash, Index, Moment, Signature,
 };
 
@@ -76,10 +79,10 @@ pub mod opaque {
 }
 
 impl_opaque_keys! {
-	pub struct SessionKeys {
-		pub grandpa: Grandpa,
-  pub babe: Babe,
-	}
+  pub struct SessionKeys {
+    pub grandpa: Grandpa,
+    pub babe: Babe,
+  }
 }
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
@@ -440,6 +443,27 @@ where
 	type Extrinsic = UncheckedExtrinsic;
 }
 
+impl orml_tokens::Trait for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type Amount = Amount;
+	type CurrencyId = CurrencyId;
+	type OnReceived = (); // todo: do we need it?
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::BXB;
+}
+
+impl orml_currencies::Trait for Runtime {
+	type Event = Event;
+	type MultiCurrency = Tokens;
+	type NativeCurrency = BasicCurrencyAdapter<Balances, Balance, Balance, Amount, BlockNumber>;
+	type GetNativeCurrencyId = GetNativeCurrencyId;
+	type WeightInfo = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -461,10 +485,12 @@ construct_runtime!(
 
 		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
-
 		Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
 		Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
 		Historical: pallet_session_historical::{Module},
+
+		Currencies: orml_currencies::{Module, Call, Event<T>},
+		Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
 	}
 );
 

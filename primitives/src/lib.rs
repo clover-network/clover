@@ -1,9 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
 use sp_runtime::{
-	generic,
-	traits::{BlakeTwo256, IdentifyAccount, Verify},
-	MultiSignature,
+  generic,
+  traits::{BlakeTwo256, IdentifyAccount, Verify},
+  MultiSignature, RuntimeDebug
 };
 
 /// An index to a block.
@@ -41,6 +46,9 @@ pub type EraIndex = u32;
 /// Balance of an account.
 pub type Balance = u128;
 
+/// Signed version of Balance
+pub type Amount = i128;
+
 /// Header type.
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 
@@ -52,3 +60,12 @@ pub type BlockId = generic::BlockId<Block>;
 
 /// Opaque, encoded, unchecked extrinsic.
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
+
+#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum CurrencyId {
+	  BXB = 0,
+	  BUSD = 1,
+	  DOT = 2,
+	  BETH = 3,
+}
