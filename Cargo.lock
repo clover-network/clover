@@ -458,6 +458,7 @@ name = "bitdex"
 version = "2.0.0-rc6"
 dependencies = [
  "bitdex-primitives",
+ "bitdex-rpc",
  "bitdex-runtime",
  "jsonrpc-core",
  "jsonrpc-pubsub",
@@ -504,10 +505,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "bitdex-rpc"
+version = "2.0.0-rc6"
+dependencies = [
+ "bitdex-rpc-runtime-api",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "bitdex-rpc-runtime-api"
+version = "2.0.0-rc6"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+]
+
+[[package]]
 name = "bitdex-runtime"
 version = "2.0.0-rc6"
 dependencies = [
  "bitdex-primitives",
+ "bitdex-rpc-runtime-api",
  "frame-executive",
  "frame-support",
  "frame-system",

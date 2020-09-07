@@ -303,8 +303,8 @@ pallet_staking_reward_curve::build! {
 }
 
 parameter_types! {
-	pub const SessionsPerEra: sp_staking::SessionIndex = 3;  // 3 sessions in an era, (30 minutes)
-	pub const BondingDuration: pallet_staking::EraIndex = 28; // 28 era for unbouding (14 hours)
+	pub const SessionsPerEra: sp_staking::SessionIndex = 3;  // 3 sessions in an era, (3 hours)
+	pub const BondingDuration: pallet_staking::EraIndex = 28; // 28 era for unbouding (28 * 3 hours)
 	pub const SlashDeferDuration: pallet_staking::EraIndex = 14; // 1/2 bonding duration
 	pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
 	pub const MaxNominatorRewardedPerValidator: u32 = 64;
@@ -680,6 +680,12 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
 			TransactionPayment::query_info(uxt, len)
+		}
+	}
+
+	impl bitdex_rpc_runtime_api::CurrencyBalanceApi<Block, AccountId, CurrencyId, Balance> for Runtime {
+		fn account_balance(account: AccountId, currency_id: CurrencyId) -> Balance {
+			100
 		}
 	}
 }

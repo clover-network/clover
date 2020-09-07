@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 use jsonrpc_pubsub::manager::SubscriptionManager;
-use primitives::{Block, BlockNumber, AccountId, Index, Balance, Hash};
+use primitives::{Block, BlockNumber, AccountId, CurrencyId, Index, Balance, Hash};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -84,6 +84,7 @@ pub fn create_full<C, P, SC>(
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+	C::Api: bitdex_rpc::CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
@@ -123,7 +124,7 @@ pub fn create_full<C, P, SC>(
 	io.extend_with(
 		sc_consensus_babe_rpc::BabeApi::to_delegate(
 			BabeRpcHandler::new(
-				client,
+				client.clone(),
 				shared_epoch_changes,
 				keystore,
 				babe_config,
@@ -142,6 +143,10 @@ pub fn create_full<C, P, SC>(
 			)
 		)
 	);
+
+	io.extend_with(bitdex_rpc::CurrencyBalanceApi::to_delegate(
+    bitdex_rpc::CurrencyBalance::new(client.clone()),
+  ));
 
 	io
 }

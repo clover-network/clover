@@ -10,6 +10,12 @@ version = '2.0.0-rc6'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
+[dependencies.bitdex-rpc-runtime-api]
+default-features = false
+version = '2.0.0-rc6'
+package = 'bitdex-rpc-runtime-api'
+path = '../rpc/runtime-api'
+
 [dependencies.codec]
 default-features = false
 features = ['derive']
@@ -166,6 +172,7 @@ version = '2.0.0-rc6'
 [features]
 default = ['std']
 std = [
+    'bitdex-rpc-runtime-api/std',
     'codec/std',
     'frame-executive/std',
     'frame-support/std',
