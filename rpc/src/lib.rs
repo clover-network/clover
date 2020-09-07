@@ -1,4 +1,6 @@
 use std::sync::Arc;
+use std::fmt;
+use std::fmt::Display;
 
 use codec::Codec;
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
@@ -13,7 +15,7 @@ pub use bitdex_rpc_runtime_api::CurrencyBalanceApi as CurrencyBalanceRuntimeApi;
 #[rpc]
 pub trait CurrencyBalanceApi<BlockHash, AccountId, CurrencyId, Balance> {
   #[rpc(name = "currencyBalance_balance")]
-  fn account_balance(&self, account: AccountId, currency_id: CurrencyId, at: Option<BlockHash>) -> Result<Balance>;
+  fn account_balance(&self, account: AccountId, currency_id: CurrencyId, at: Option<BlockHash>) -> Result<String>;
 }
 
 /// A struct that implements the [`CurrencyBalanceApi`].
@@ -50,14 +52,14 @@ where
 	C::Api: CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
 	AccountId: Codec,
 	CurrencyId: Codec,
-	Balance: Codec,
+	Balance: Codec + Display,
 {
 
   fn account_balance(&self, 
     account: AccountId, 
     currency_id: CurrencyId, 
     at: Option<<Block as BlockT>::Hash>
-  ) -> Result<Balance> {
+  ) -> Result<String> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(||
 			// If the block hash is not supplied assume the best block.
@@ -66,6 +68,8 @@ where
 			code: ErrorCode::ServerError(Error::RuntimeError.into()),
 			message: "Unable to get value.".into(),
 			data: Some(format!("{:?}", e).into()),
+		}).map(|v| {
+			format!("{}", v)
 		})
 	}
 }
