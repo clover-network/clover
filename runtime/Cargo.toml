@@ -169,26 +169,6 @@ version = '2.0.0-rc6'
   path = '../primitives'
   version = '2.0.0-rc6'
 
-[dependencies.pallet-democracy]
-default-features = false
-version = '2.0.0-rc6'
-
-[dependencies.pallet-elections-phragmen]
-default-features = false
-version = '2.0.0-rc6'
-
-[dependencies.pallet-treasury]
-default-features = false
-version = '2.0.0-rc6'
-
-[dependencies.pallet-membership]
-default-features = false
-version = '2.0.0-rc6'
-
-[dependencies.pallet-scheduler]
-default-features = false
-version = '2.0.0-rc6'
-
 [features]
 default = ['std']
 std = [
@@ -228,12 +208,8 @@ std = [
     'sp-transaction-pool/std',
     'sp-version/std',
     'primitives/std',
-    "pallet-democracy/std",
-    "pallet-elections-phragmen/std",
-    "pallet-treasury/std",
-    "pallet-membership/std",
-    "pallet-scheduler/std",
 ]
+
 
 [build-dependencies.wasm-builder-runner]
 package = 'substrate-wasm-builder-runner'

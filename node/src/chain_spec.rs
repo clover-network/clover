@@ -196,7 +196,7 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		}),
-    	orml_tokens: Some(TokensConfig {
+    orml_tokens: Some(TokensConfig {
 			endowed_accounts: endowed_accounts
 				.iter()
 				.flat_map(|x| {
@@ -207,11 +207,5 @@ fn testnet_genesis(
 				})
 				.collect(),
 		}),
-		pallet_collective_Instance1: Some(Default::default()),
-		pallet_collective_Instance2: Some(Default::default()),
-		pallet_democracy: Some(Default::default()),
-		pallet_treasury: Some(Default::default()),
-		pallet_elections_phragmen: Some(Default::default()),
-		pallet_membership_Instance1: Some(Default::default()),
 	}
 }
