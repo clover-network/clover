@@ -33,6 +33,7 @@ use sp_version::NativeVersion;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+use orml_traits::MultiCurrency;
 use orml_currencies::{BasicCurrencyAdapter};
 
 pub use pallet_staking::StakerStatus;
@@ -685,7 +686,7 @@ impl_runtime_apis! {
 
 	impl bitdex_rpc_runtime_api::CurrencyBalanceApi<Block, AccountId, CurrencyId, Balance> for Runtime {
 		fn account_balance(account: AccountId, currency_id: CurrencyId) -> Balance {
-			100
+			<Tokens as MultiCurrency<_>>::total_balance(currency_id, &account)
 		}
 	}
 }

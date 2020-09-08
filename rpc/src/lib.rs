@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::fmt;
 use std::fmt::Display;
 
 use codec::Codec;
