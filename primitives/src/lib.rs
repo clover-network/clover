@@ -6,9 +6,10 @@ use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 use sp_runtime::{
+	FixedU128,
   generic,
   traits::{BlakeTwo256, IdentifyAccount, Verify},
-  MultiSignature, RuntimeDebug
+  MultiSignature, RuntimeDebug,
 };
 
 /// An index to a block.
@@ -63,9 +64,16 @@ pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 #[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[repr(u32)]
 pub enum CurrencyId {
 	  BXB = 0,
 	  BUSD = 1,
 	  DOT = 2,
 	  BETH = 3,
 }
+
+
+/// dex related types
+pub type Rate = FixedU128;
+pub type Ratio = FixedU128;
+pub type Price = FixedU128;
