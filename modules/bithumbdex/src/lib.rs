@@ -19,12 +19,11 @@ use primitives::{Balance, CurrencyId, Price, Rate, Ratio};
 
 use sp_runtime::{
 	traits::{
-		AccountIdConversion, AtLeast32Bit, CheckedAdd, CheckedMul, CheckedSub, MaybeSerializeDeserialize, Member, One,
+		AccountIdConversion, AtLeast32Bit, CheckedAdd, CheckedSub, MaybeSerializeDeserialize, Member,
 		Saturating, UniqueSaturatedInto, Zero,
 	},
 	DispatchError, DispatchResult, FixedPointNumber, FixedPointOperand, ModuleId,
 };
-use sp_std::prelude::Vec;
 
 pub trait Trait: system::Trait {
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -266,6 +265,21 @@ decl_module! {
           remove_share,
         ));
         Ok(())
+			})?;
+		}
+
+	  #[weight = 200 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(9, 6)]
+		pub fn basic_swap_currency(
+			origin,
+			supply_currency_id: CurrencyId,
+			#[compact] supply_amount: Balance,
+			target_currency_id: CurrencyId,
+			#[compact] acceptable_target_amount: Balance,
+		) {
+			with_transaction_result(|| {
+				let who = ensure_signed(origin)?;
+				Self::basic_swap(&who, supply_currency_id, supply_amount, target_currency_id, acceptable_target_amount)?;
+				Ok(())
 			})?;
 		}
   }
