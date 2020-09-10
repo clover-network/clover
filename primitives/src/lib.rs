@@ -77,3 +77,5 @@ pub enum CurrencyId {
 pub type Rate = FixedU128;
 pub type Ratio = FixedU128;
 pub type Price = FixedU128;
+/// Share type
+pub type Share = u128;

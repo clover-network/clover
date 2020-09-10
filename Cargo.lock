@@ -532,6 +532,7 @@ version = "2.0.0-rc6"
 dependencies = [
  "bitdex-primitives",
  "bitdex-rpc-runtime-api",
+ "bithumbdex",
  "frame-executive",
  "frame-support",
  "frame-system",
