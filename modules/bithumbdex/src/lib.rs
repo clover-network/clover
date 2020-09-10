@@ -1,7 +1,7 @@
 //! Bithumb Dex moudule
-//! 
+//!
 //! ##Overview
-//! Decentralized exchange module in bitdex network, supports 
+//! Decentralized exchange module in bitdex network, supports
 //! create trading pairs in any supported currencies.
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -209,6 +209,65 @@ decl_module! {
 				Ok(())
 			})?;
 		}
+
+    #[weight = 248 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(11, 9)]
+    pub fn withdraw_liquidity(origin,
+                              currency_id_first: CurrencyId,
+                              currency_id_second: CurrencyId,
+                              #[compact] remove_share: T::Share) {
+			ensure!(currency_id_first != currency_id_second, Error::<T>::InvalidCurrencyPair);
+      with_transaction_result(|| {
+        let who = ensure_signed(origin)?;
+        if remove_share.is_zero() { return Ok(()); }
+
+        let pair_id = Self::get_pair_key(&currency_id_first, &currency_id_second);
+				ensure!(
+					LiquidityPool::contains_key(pair_id),
+					Error::<T>::InvalidCurrencyPair,
+				);
+
+        //
+        // normalize currency pair, smaller at the left side
+        let (currency_id_left, currency_id_right) = if currency_id_first < currency_id_second {
+          (currency_id_first, currency_id_second)
+        } else {
+          (currency_id_second, currency_id_first)
+        };
+
+        let (other_currency_pool, base_currency_pool): (Balance, Balance) = Self::liquidity_pool(pair_id);
+
+        let proportion = Ratio::checked_from_rational(remove_share, Self::total_shares(pair_id)).unwrap_or_default();
+        let withdraw_other_currency_amount = proportion.saturating_mul_int(other_currency_pool);
+        let withdraw_base_currency_amount = proportion.saturating_mul_int(base_currency_pool);
+
+        let sub_account = Self::sub_account_id(currency_id_left, currency_id_right);
+        T::Currency::transfer(currency_id_left, &sub_account, &who, withdraw_other_currency_amount)?;
+        T::Currency::transfer(currency_id_right, &sub_account, &who, withdraw_base_currency_amount)?;
+
+        <Shares<T>>::try_mutate(pair_id, &who, |share| -> DispatchResult {
+          *share = share.checked_sub(&remove_share).ok_or(Error::<T>::ShareNotEnough)?;
+          Ok(())
+        })?;
+        <TotalShares<T>>::mutate(pair_id, |share|
+                                 *share = share.checked_sub(&remove_share).expect("total share cannot underflow if share doesn't; qed")
+        );
+        LiquidityPool::mutate(pair_id, |(other, base)| {
+          *other = other.saturating_sub(withdraw_other_currency_amount);
+          *base = base.saturating_sub(withdraw_base_currency_amount);
+        });
+        T::OnRemoveLiquidity::happened(&(who.clone(), currency_id_left, currency_id_right, remove_share));
+
+        Self::deposit_event(RawEvent::WithdrawLiquidity(
+          who,
+          currency_id_left,
+          currency_id_right,
+          withdraw_other_currency_amount,
+          withdraw_base_currency_amount,
+          remove_share,
+        ));
+        Ok(())
+			})?;
+		}
   }
 }
 
@@ -308,7 +367,7 @@ impl<T: Trait> Module<T> {
 
 		 LiquidityPool::mutate(pair_id, |(mut left, mut right)| {
        // update pool info
-       // note: pool info are ordered, so we need to check the 
+       // note: pool info are ordered, so we need to check the
        // order of the from currency and target currency
        let (from, target)= if from_currency_id < target_currency_id {
          (&mut left, &mut right)
