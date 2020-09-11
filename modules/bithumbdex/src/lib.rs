@@ -20,10 +20,12 @@ use primitives::{Balance, CurrencyId, Price, Rate, Ratio};
 use sp_runtime::{
 	traits::{
 		AccountIdConversion, AtLeast32Bit, CheckedAdd, CheckedSub, MaybeSerializeDeserialize, Member,
-		Saturating, UniqueSaturatedInto, Zero,
+		Saturating, UniqueSaturatedInto, Zero, One,
 	},
 	DispatchError, DispatchResult, FixedPointNumber, FixedPointOperand, ModuleId,
 };
+
+use sp_std::vec;
 
 pub trait Trait: system::Trait {
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -350,7 +352,46 @@ impl<T: Trait> Module<T> {
 			}
 		}
 	}
-  
+
+  /// Calculate how much supply token needed for swap specific target amount.
+	fn calculate_swap_supply_amount(
+		supply_pool: Balance,
+		target_pool: Balance,
+		target_amount: Balance,
+		fee_rate: Rate,
+	) -> Balance {
+		if target_amount.is_zero() {
+			Zero::zero()
+		} else {
+			// new_target_pool = target_pool - target_amount / (1 - fee_rate)
+			let new_target_pool = Rate::one()
+				.saturating_sub(fee_rate)
+				.reciprocal()
+				.and_then(|n| n.checked_add(&Ratio::from_inner(1))) // add 1 to result in order to correct the possible losses caused by remainder discarding in internal
+				// division calculation
+				.and_then(|n| n.checked_mul_int(target_amount))
+				// add 1 to result in order to correct the possible losses caused by remainder discarding in internal
+				// division calculation
+				.and_then(|n| n.checked_add(Balance::one()))
+				.and_then(|n| target_pool.checked_sub(n))
+				.unwrap_or_default();
+
+			if new_target_pool.is_zero() {
+				Zero::zero()
+			} else {
+				// supply_amount = target_pool * supply_pool / new_target_pool - supply_pool
+				Ratio::checked_from_rational(target_pool, new_target_pool)
+					.and_then(|n| n.checked_add(&Ratio::from_inner(1))) // add 1 to result in order to correct the possible losses caused by remainder discarding in
+					// internal division calculation
+					.and_then(|n| n.checked_mul_int(supply_pool))
+					.and_then(|n| n.checked_add(Balance::one())) // add 1 to result in order to correct the possible losses caused by remainder discarding in
+					// internal division calculation
+					.and_then(|n| n.checked_sub(supply_pool))
+					.unwrap_or_default()
+			}
+		}
+	}
+
   // direct swap two currencies
 	fn basic_swap(
 		who: &T::AccountId,
@@ -394,5 +435,43 @@ impl<T: Trait> Module<T> {
      });
 
 		 Ok(target_currency_amount)
+	}
+
+  // TODO: implement it
+  pub fn get_existing_currency_pairs() -> sp_std::vec::Vec<(CurrencyId, CurrencyId)> {
+    vec![]
+  }
+
+  // get the minimum amount of supply currency needed for the target currency
+	// amount return 0 means cannot exchange
+  // and the route info for the exchange
+	pub fn get_supply_amount_needed(
+		supply_currency_id: CurrencyId,
+		target_currency_id: CurrencyId,
+		target_currency_amount: Balance,
+	) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
+		if supply_currency_id == target_currency_id {
+      // it doesn't make sense to exchange the same currency
+			return (Zero::zero(), vec![]);
+		}
+
+    let pair_id = Self::get_pair_key(&supply_currency_id, &target_currency_id);
+
+    let fee_rate = T::GetExchangeFee::get();
+
+    if LiquidityPool::contains_key(pair_id) {
+      // pool exists for the two currencies, use the pool directly
+      let (other_currency_pool, base_currency_pool) = Self::liquidity_pool(pair_id);
+      let amount = Self::calculate_swap_supply_amount(
+        other_currency_pool,
+        base_currency_pool,
+        target_currency_amount,
+        fee_rate,
+      );
+      return (amount, vec![target_currency_id]);
+    }
+
+    // TODO: find a best route to do the exchange
+    panic!("not implemented")
 	}
 }
