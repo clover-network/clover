@@ -25,6 +25,6 @@ bitdex-rpc-runtime-api = { path = "runtime-api" }
 default = ["std"]
 std = [
   "bitdex-rpc-runtime-api/std",
-	"sp-api/std",
-	"codec/std",
+  "sp-api/std",
+  "codec/std",
 ]

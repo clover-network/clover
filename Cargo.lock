@@ -479,6 +479,7 @@ dependencies = [
  "sc-rpc-api",
  "sc-service",
  "sc-transaction-pool",
+ "serde_json",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -532,6 +533,7 @@ version = "2.0.0-rc6"
 dependencies = [
  "bitdex-primitives",
  "bitdex-rpc-runtime-api",
+ "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -565,6 +567,7 @@ dependencies = [
  "sp-consensus-babe",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
