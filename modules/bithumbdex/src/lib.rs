@@ -27,6 +27,8 @@ use sp_runtime::{
 
 use sp_std::vec;
 
+mod simple_graph;
+
 pub trait Trait: system::Trait {
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 
