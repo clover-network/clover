@@ -6,13 +6,21 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use byteorder::{ByteOrder, LittleEndian};
+
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
+  debug,
 	traits::{Get, Happened},
 	weights::constants::WEIGHT_PER_MICROS,
 	Parameter,
 };
+use frame_support::storage::IterableStorageMap;
+
 use frame_system::{self as system, ensure_signed};
+
+use num_traits::FromPrimitive;
+
 use orml_traits::{MultiCurrency, MultiCurrencyExtended};
 use orml_utilities::with_transaction_result;
 use primitives::{Balance, CurrencyId, Price, Rate, Ratio};
@@ -26,6 +34,7 @@ use sp_runtime::{
 };
 
 use sp_std::vec;
+use sp_std::collections::btree_map;
 
 mod simple_graph;
 
@@ -53,6 +62,7 @@ pub trait Trait: system::Trait {
 }
 
 pub type PairKey = u64;
+pub type PoolInfo = (Balance, Balance);
 
 decl_event!(
 	pub enum Event<T> where
@@ -300,8 +310,27 @@ impl<T: Trait> Module<T> {
     } else {
        (*second as u32, *first as u32)
     };
-    let (l64, r64) = (left as u64, right as u64);
-    (l64 << 32) | r64
+    let mut bytes = [0; 8];
+    let numbers = [left, right];
+    // ensure use little endian encoding
+    LittleEndian::write_u32_into(&numbers, &mut bytes);
+    LittleEndian::read_u64(&bytes)
+  }
+
+  pub fn pair_key_to_ids(pair_key: PairKey) -> Option<(CurrencyId, CurrencyId)> {
+    let mut bytes = [0; 8];
+    let numbers = [pair_key];
+    // ensure use little endian encoding
+    LittleEndian::write_u64_into(&numbers, &mut bytes);
+    let left_id = LittleEndian::read_u32(&bytes[0 .. 4]);
+    let right_id = LittleEndian::read_u32(&bytes[4 .. 8]);
+    match (FromPrimitive::from_u32(left_id), FromPrimitive::from_u32(right_id)) {
+      (Some(left), Some(right)) => Some((left, right)),
+       _ => {
+         debug::warn!("invalid pair ids: {:?}", pair_key);
+         None
+       },
+    }
   }
 
   /// generate the sub account id from two currencies pair.
@@ -439,23 +468,52 @@ impl<T: Trait> Module<T> {
 		 Ok(target_currency_amount)
 	}
 
-  // TODO: implement it
-  pub fn get_existing_currency_pairs() -> sp_std::vec::Vec<(CurrencyId, CurrencyId)> {
-    vec![]
+  pub fn get_existing_currency_pairs() ->
+    (vec::Vec<(CurrencyId, CurrencyId)>, btree_map::BTreeMap<PairKey, PoolInfo>) {
+      let mut valid_info =  LiquidityPool::iter()
+        .map(|(pair_key, pool_info)| (Self::pair_key_to_ids(pair_key), pair_key, pool_info))
+        .filter(|(id, _, _)| id.is_some())
+        .map(|(id, pk, info)| (id.unwrap(), pk, info));
+
+      let currency_pairs = valid_info.by_ref().map(|(id, _, _)| id.clone()).collect();
+      let pool_info = valid_info.map(|(_, pk, info)| (pk, info)).collect();
+
+      (currency_pairs, pool_info)
+    }
+
+  pub fn build_currency_map(
+    currency_pairs: &vec::Vec<(CurrencyId, CurrencyId)>)
+    -> btree_map::BTreeMap<CurrencyId, vec::Vec<CurrencyId>>{
+    let mut currency_data = btree_map::BTreeMap::<CurrencyId, vec::Vec<CurrencyId>>::new();
+    for (currency_left, currency_right) in currency_pairs {
+      if let Some(items_left) = currency_data.get_mut(&currency_left) {
+        items_left.push(currency_right.clone());
+      } else {
+        currency_data.insert(currency_left.clone(), vec![currency_right.clone()]);
+      };
+
+      if let Some(items_right) = currency_data.get_mut(&currency_right) {
+        items_right.push(currency_left.clone());
+      } else {
+        currency_data.insert(currency_right.clone(), vec![currency_left.clone()]);
+      }
+    }
+
+    currency_data
   }
 
   // get the minimum amount of supply currency needed for the target currency
-	// amount return 0 means cannot exchange
+  // amount return 0 means cannot exchange
   // and the route info for the exchange
-	pub fn get_supply_amount_needed(
-		supply_currency_id: CurrencyId,
-		target_currency_id: CurrencyId,
-		target_currency_amount: Balance,
-	) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
-		if supply_currency_id == target_currency_id {
+  pub fn get_supply_amount_needed(
+    supply_currency_id: CurrencyId,
+    target_currency_id: CurrencyId,
+    target_currency_amount: Balance,
+  ) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
+    if supply_currency_id == target_currency_id {
       // it doesn't make sense to exchange the same currency
-			return (Zero::zero(), vec![]);
-		}
+      return (Zero::zero(), vec![]);
+    }
 
     let pair_id = Self::get_pair_key(&supply_currency_id, &target_currency_id);
 
@@ -472,6 +530,16 @@ impl<T: Trait> Module<T> {
       );
       return (amount, vec![target_currency_id]);
     }
+
+    let (currency_pair, pool_info) = Self::get_existing_currency_pairs();
+    let currency_map = Self::build_currency_map(&currency_pair);
+    // find a reverse route from target to supply
+    // as we need to caculate the cost reversely
+    let routes = simple_graph::find_all_routes(
+      &target_currency_id, &supply_currency_id,
+      |currency| currency_map.get(&currency).unwrap_or(&vec![]).to_vec(), 6);
+
+    debug::info!("got {:?} routes for currency: {:?}, target: {:?}", routes.len(), supply_currency_id, target_currency_id);
 
     // TODO: find a best route to do the exchange
     panic!("not implemented")

@@ -46,8 +46,7 @@ where
   let valid_successors: vec::Vec<_> = all_successors.into_iter()
     .filter(|n| !visited_nodes.contains(n)).collect();
 
-  let s: N = start.clone();
-  valid_successors.into_iter().map(move |node| {
+  valid_successors.into_iter().map(|node| {
     if target.clone() != node.clone() {
       visited_nodes.insert(node.clone());
       let routes = do_find_all_routes::<N, FN, IN>(&node, target, max_depth - 1,
