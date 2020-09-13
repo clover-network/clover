@@ -348,11 +348,17 @@ impl<T: Trait> Module<T> {
       return Err(Error::<T>::InvalidCurrencyPair.into());
     };
 
-    let (balance_left, balance_right) = Self::liquidity_pool(pair_id);
+    let info = Self::liquidity_pool(pair_id);
+    Ok(Self::normalize_pool_info_with_input(first, second, info))
+  }
+
+  /// normalize pool info to match the currency order
+  pub fn normalize_pool_info_with_input(first: CurrencyId, second: CurrencyId, info: PoolInfo) -> PoolInfo {
+    let (balance_left, balance_right) = info;
     if first < second {
-      Ok((balance_left, balance_right))
+      (balance_left, balance_right)
     } else {
-      Ok((balance_right, balance_left))
+      (balance_right, balance_left)
     }
   }
 
@@ -544,4 +550,35 @@ impl<T: Trait> Module<T> {
     // TODO: find a best route to do the exchange
     panic!("not implemented")
 	}
+
+  pub fn best_target_supply_route(
+    start: &CurrencyId,
+    routes: &vec::Vec<simple_graph::Routes<CurrencyId>>,
+    pool_info: &btree_map::BTreeMap<PairKey, PoolInfo>,
+    start_amount: Balance,
+    fee_rate: Rate) -> Option<(simple_graph::Routes<CurrencyId>, Balance)> {
+    let mut best_route: Option<simple_graph::Routes<CurrencyId>> = None;
+    let mut best_supply_amount = 0;
+
+    for route in routes {
+      let mut cur_currency = start.clone();
+      let mut cur_amount = start_amount.clone();
+      for currency in route {
+        let pair_key = Self::get_pair_key(&cur_currency, &currency);
+        let info = pool_info.get(&pair_key).unwrap();
+        let (target_balance, supply_balance) = Self::normalize_pool_info_with_input(cur_currency, currency.clone(), info.clone());
+        // calculate how much we need to exchange the amount of the currency
+        cur_amount = Self::calculate_swap_supply_amount(
+          supply_balance, target_balance, cur_amount, fee_rate);
+        cur_currency = currency.clone();
+      }
+
+      if cur_amount > 0 && cur_amount < best_supply_amount {
+        best_route = Some(route.clone());
+        best_supply_amount = cur_amount;
+      }
+    }
+
+    best_route.map(|r| (r, best_supply_amount))
+  }
 }
