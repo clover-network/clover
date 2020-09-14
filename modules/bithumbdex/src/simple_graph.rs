@@ -62,6 +62,19 @@ where
   }).filter(|r| !r.is_empty()).flatten().collect()
 }
 
+pub fn format_routes<T>(routes: &Vec<T>) -> String
+where
+T: sp_std::fmt::Debug {
+  let mut s: String = "".to_owned();
+
+  for r in routes {
+    let f = format!("{:?},", r);
+    s  = s + &f;
+  }
+
+  s
+}
+
 #[cfg(test)]
 mod tests {
   use sp_std::collections::btree_map::*;
@@ -72,17 +85,6 @@ mod tests {
 
   fn get_succssors(pos: &Pos, edges: &BTreeMap<Pos, vec::Vec<Pos>>) -> vec::Vec<Pos>{
     edges.get(pos).unwrap_or(&vec![]).clone()
-  }
-
-  fn format_routes(routes: &Vec<Pos>) -> String {
-    let mut s: String = "".to_owned();
-
-    for (x, y) in routes {
-      let f = format!("({:?}, {:?}),", x, y);
-      s  = s + &f;
-    }
-
-    s
   }
 
   #[test]

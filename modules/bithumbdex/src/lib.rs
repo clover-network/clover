@@ -546,12 +546,11 @@ impl<T: Trait> Module<T> {
 
     let fee_rate = T::GetExchangeFee::get();
 
-    if LiquidityPool::contains_key(pair_id) {
+    if let Ok((supply_balance, target_balance)) = Self::get_pool_info(supply_currency_id, target_currency_id) {
       // pool exists for the two currencies, use the pool directly
-      let (other_currency_pool, base_currency_pool) = Self::liquidity_pool(pair_id);
       let amount = Self::calculate_swap_supply_amount(
-        other_currency_pool,
-        base_currency_pool,
+        supply_balance,
+        target_balance,
         target_currency_amount,
         fee_rate,
       );
@@ -573,6 +572,50 @@ impl<T: Trait> Module<T> {
                      target_currency_amount,
                      fee_rate,
                      RouteType::TargetToSupply)
+      .unwrap_or((Zero::zero(), vec![]))
+  }
+
+  // get the maximum amount of target currency you can get for the supply currency
+	// amount return 0 means cannot exchange
+	pub fn get_target_amount_available(
+		supply_currency_id: CurrencyId,
+		target_currency_id: CurrencyId,
+		supply_currency_amount: Balance,
+	) -> (Balance, simple_graph::Routes<CurrencyId>){
+    if supply_currency_id == target_currency_id {
+      // it doesn't make sense to exchange the same currency
+      return (Zero::zero(), vec![]);
+    }
+
+    let pair_id = Self::get_pair_key(&supply_currency_id, &target_currency_id);
+
+    let fee_rate = T::GetExchangeFee::get();
+
+    if let Ok((supply_balance, target_balance)) = Self::get_pool_info(supply_currency_id, target_currency_id) {
+      // pool exists for the two currencies, use the pool directly
+      let amount = Self::calculate_swap_target_amount(
+        supply_balance,
+        target_balance,
+        supply_currency_amount,
+        fee_rate,
+      );
+      return (amount, vec![target_currency_id]);
+    }
+
+    let (currency_pair, pool_info) = Self::get_existing_currency_pairs();
+    let currency_map = Self::build_currency_map(&currency_pair);
+    // find a route from supply to target
+    let routes = simple_graph::find_all_routes(
+      &supply_currency_id, &target_currency_id,
+      |currency| currency_map.get(&currency).unwrap_or(&vec![]).to_vec(), 6);
+
+    debug::info!("got {:?} routes for currency: {:?}, target: {:?}", routes.len(), supply_currency_id, target_currency_id);
+
+    Self::best_route(&supply_currency_id,
+                     &routes, &pool_info,
+                     supply_currency_amount,
+                     fee_rate,
+                     RouteType::SupplyToTarget)
       .unwrap_or((Zero::zero(), vec![]))
   }
 
@@ -611,6 +654,7 @@ impl<T: Trait> Module<T> {
         cur_currency = currency.clone();
       }
 
+      print!("amount: {:?}, {:?}", cur_amount, cur_currency);
       if cur_amount > 0 && is_better(best_amount, cur_amount) {
         best_route = Some(route.clone());
         best_amount = cur_amount;

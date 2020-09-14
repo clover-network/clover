@@ -29,7 +29,6 @@ impl_outer_event! {
 		frame_system<T>,
 		bithumbdex<T>,
 		orml_tokens<T>,
-    pallet_balances<T>,
 	}
 }
 impl_outer_origin! {
@@ -72,22 +71,6 @@ impl frame_system::Trait for TestRuntime {
 }
 
 pub type System = frame_system::Module<TestRuntime>;
-
-parameter_types! {
-	pub const ExistentialDeposit: u128 = 500;
-}
-
-impl pallet_balances::Trait for TestRuntime {
-	/// The type for recording an account's balance.
-	type Balance = Balance;
-	/// The ubiquitous event type.
-	type Event = TestEvent;
-	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
-	type WeightInfo = ();
-}
-
 
 impl orml_tokens::Trait for TestRuntime {
 	type Event = TestEvent;
@@ -160,34 +143,30 @@ impl ExtBuilder {
 			.build_storage::<TestRuntime>()
 			.unwrap();
 
-    //pallet_balances::GenesisConfig::<TestRuntime> {
-		//	// Configure endowed accounts with initial balance of 1 << 60.
-		//	balances: self.endowed_accounts.iter().cloned()
-		//		.map(|k| (k, 1_000_000_000_000_000_000u128))
-		//		.collect(),
-		//}
-		//.assimilate_storage(&mut t)
-		//.unwrap();
+//    pallet_balances: Some(BalancesConfig {
+//			// Configure endowed accounts with initial balance of 1 << 60.
+//			balances: endowed_accounts.iter().cloned()
+//				.map(|k| (k, ENDOWMENT))
+//				.chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
+//				.collect(),
+//		});
 
-		orml_tokens::GenesisConfig::<TestRuntime> {
+    orml_tokens::GenesisConfig::<TestRuntime> {
 			endowed_accounts: self
 				.endowed_accounts
 				.into_iter()
 				.filter(|(_, currency_id, _)| *currency_id != BXB)
 				.collect::<Vec<_>>(),
 		}
-		.assimilate_storage(&mut t)
-      .unwrap();
+		.assimilate_storage(&mut t).unwrap();
 
     bithumbdex::GenesisConfig {
       initial_pairs: vec![
-        (BXB, BETH),
-        (BXB, BUSD),
+        (BUSD, BETH),
         (BUSD, DOT),
+        (DOT, BETH),
       ],
-    }
-    .assimilate_storage::<TestRuntime>(&mut t)
-      .unwrap();
+    }.assimilate_storage::<TestRuntime>(&mut t).unwrap();
 
     t.into()
   }
