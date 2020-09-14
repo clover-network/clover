@@ -17,6 +17,16 @@ fn pair_id_encoding() {
     assert_eq!(currency_right, large);
   };
 
+  let pair_key = BithumbDexModule::get_pair_key(&BXB, &BUSD);
+  // littel endian
+  // [0, 0, 0, 0, b1000000, 0, 0, 0]
+  assert_eq!(pair_key, (2 as u64).pow(32));
+  let pair_key = BithumbDexModule::get_pair_key(&BXB, &DOT);
+  // [0, 0, 0, 0, b01000000, 0, 0, 0]
+  assert_eq!(pair_key, (2 as u64).pow(33));
+  let pair_key = BithumbDexModule::get_pair_key(&BUSD, &DOT);
+  // [1, 0, 0, 0, b01000000, 0, 0, 0]
+  assert_eq!(pair_key, 1 + (2 as u64).pow(33));
   test_currency(BXB, BUSD);
   test_currency(BXB, DOT);
   test_currency(BXB, BETH);
