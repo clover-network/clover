@@ -38,6 +38,9 @@ use sp_std::collections::btree_map;
 
 mod simple_graph;
 
+mod mock;
+mod tests;
+
 pub trait Trait: system::Trait {
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 
@@ -63,6 +66,12 @@ pub trait Trait: system::Trait {
 
 pub type PairKey = u64;
 pub type PoolInfo = (Balance, Balance);
+
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd)]
+pub enum RouteType {
+  TargetToSupply = 0,
+  SupplyToTarget = 1,
+}
 
 decl_event!(
 	pub enum Event<T> where
@@ -115,6 +124,18 @@ decl_storage! {
 		/// Shares records indexed by currency type and account id
 		/// CurrencyType -> Owner -> ShareAmount
 		Shares get(fn shares): double_map hasher(blake2_128_concat) PairKey, hasher(twox_64_concat) T::AccountId => T::Share;
+	}
+
+	add_extra_genesis {
+		config(initial_pairs): Vec<(CurrencyId, CurrencyId)>;
+
+		build(|config: &GenesisConfig| {
+      print!("got config: {:?}", config.initial_pairs);
+			config.initial_pairs.iter().for_each(|(currency_first, currency_second)| {
+        let pair_id = Module::<T>::get_pair_key(currency_first, currency_second);
+        LiquidityPool::insert(pair_id, (0, 0));
+			})
+		})
 	}
 }
 
@@ -515,7 +536,7 @@ impl<T: Trait> Module<T> {
     supply_currency_id: CurrencyId,
     target_currency_id: CurrencyId,
     target_currency_amount: Balance,
-  ) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
+  ) -> (Balance, simple_graph::Routes<CurrencyId>) {
     if supply_currency_id == target_currency_id {
       // it doesn't make sense to exchange the same currency
       return (Zero::zero(), vec![]);
@@ -547,18 +568,31 @@ impl<T: Trait> Module<T> {
 
     debug::info!("got {:?} routes for currency: {:?}, target: {:?}", routes.len(), supply_currency_id, target_currency_id);
 
-    // TODO: find a best route to do the exchange
-    panic!("not implemented")
-	}
+    Self::best_route(&target_currency_id,
+                     &routes, &pool_info,
+                     target_currency_amount,
+                     fee_rate,
+                     RouteType::TargetToSupply)
+      .unwrap_or((Zero::zero(), vec![]))
+  }
 
-  pub fn best_target_supply_route(
+  pub fn best_route(
     start: &CurrencyId,
     routes: &vec::Vec<simple_graph::Routes<CurrencyId>>,
     pool_info: &btree_map::BTreeMap<PairKey, PoolInfo>,
     start_amount: Balance,
-    fee_rate: Rate) -> Option<(simple_graph::Routes<CurrencyId>, Balance)> {
+    fee_rate: Rate,
+    route_type: RouteType,) -> Option<(Balance, simple_graph::Routes<CurrencyId>)> {
     let mut best_route: Option<simple_graph::Routes<CurrencyId>> = None;
-    let mut best_supply_amount = 0;
+    let mut best_amount = 0;
+
+    let is_better = |best_amount: Balance, new_amount: Balance| -> bool {
+      if route_type == RouteType::TargetToSupply {
+        new_amount < best_amount
+      } else {
+        best_amount > new_amount
+      }
+    };
 
     for route in routes {
       let mut cur_currency = start.clone();
@@ -566,19 +600,23 @@ impl<T: Trait> Module<T> {
       for currency in route {
         let pair_key = Self::get_pair_key(&cur_currency, &currency);
         let info = pool_info.get(&pair_key).unwrap();
-        let (target_balance, supply_balance) = Self::normalize_pool_info_with_input(cur_currency, currency.clone(), info.clone());
+        let (input_balance, output_balance) = Self::normalize_pool_info_with_input(cur_currency, currency.clone(), info.clone());
         // calculate how much we need to exchange the amount of the currency
-        cur_amount = Self::calculate_swap_supply_amount(
-          supply_balance, target_balance, cur_amount, fee_rate);
+        cur_amount = match route_type {
+          RouteType::TargetToSupply => Self::calculate_swap_supply_amount(
+            output_balance, input_balance, cur_amount, fee_rate),
+          RouteType::SupplyToTarget => Self::calculate_swap_target_amount(
+            input_balance, output_balance, cur_amount, fee_rate),
+        };
         cur_currency = currency.clone();
       }
 
-      if cur_amount > 0 && cur_amount < best_supply_amount {
+      if cur_amount > 0 && is_better(best_amount, cur_amount) {
         best_route = Some(route.clone());
-        best_supply_amount = cur_amount;
+        best_amount = cur_amount;
       }
     }
 
-    best_route.map(|r| (r, best_supply_amount))
+    best_route.map(|r| (best_amount, r))
   }
 }
