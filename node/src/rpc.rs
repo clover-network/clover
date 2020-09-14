@@ -145,8 +145,12 @@ pub fn create_full<C, P, SC>(
 	);
 
 	io.extend_with(bitdex_rpc::CurrencyBalanceApi::to_delegate(
-    bitdex_rpc::CurrencyBalance::new(client.clone()),
-  ));
+		bitdex_rpc::CurrencyBalance::new(client.clone()),
+	));
+
+	io.extend_with(bitdex_rpc::currency::CurrencyRpc::to_delegate(
+        bitdex_rpc::currency::Currency {},
+    ));
 
 	io
 }

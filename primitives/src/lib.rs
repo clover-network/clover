@@ -11,6 +11,8 @@ use sp_runtime::{
   MultiSignature, RuntimeDebug
 };
 
+use strum_macros::EnumIter;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -61,8 +63,9 @@ pub type BlockId = generic::BlockId<Block>;
 /// Opaque, encoded, unchecked extrinsic.
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
+#[repr(u8)]
 #[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, EnumIter, strum_macros::Display, int_enum::IntEnum))]
 pub enum CurrencyId {
 	  BXB = 0,
 	  BUSD = 1,
