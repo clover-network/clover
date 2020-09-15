@@ -5,6 +5,8 @@ use frame_system::EnsureSignedBy;
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
 use sp_std::cell::RefCell;
+pub use pallet_balances::Call as BalancesCall;
+
 pub use primitives::{
 	AccountId, AccountIndex, Amount, Balance,
   CurrencyId,
@@ -29,6 +31,8 @@ impl_outer_event! {
 		frame_system<T>,
 		bithumbdex<T>,
 		orml_tokens<T>,
+		orml_currencies<T>,
+		pallet_balances<T>,
 	}
 }
 impl_outer_origin! {
@@ -72,6 +76,23 @@ impl frame_system::Trait for TestRuntime {
 
 pub type System = frame_system::Module<TestRuntime>;
 
+parameter_types! {
+	pub const ExistentialDeposit: u128 = 500;
+}
+
+impl pallet_balances::Trait for TestRuntime {
+	/// The type for recording an account's balance.
+	type Balance = Balance;
+	/// The ubiquitous event type.
+	type Event = TestEvent;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type WeightInfo = ();
+}
+
+pub type Balances = pallet_balances::Module<TestRuntime>;
+
 impl orml_tokens::Trait for TestRuntime {
 	type Event = TestEvent;
 	type Balance = Balance;
@@ -84,13 +105,27 @@ impl orml_tokens::Trait for TestRuntime {
 pub type Tokens = orml_tokens::Module<TestRuntime>;
 
 parameter_types! {
+	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::BXB;
+}
+
+impl orml_currencies::Trait for TestRuntime {
+	type Event = TestEvent;
+	type MultiCurrency = Tokens;
+	type NativeCurrency = BasicCurrencyAdapter<Balances, Balance, Balance, Amount, BlockNumber>;
+	type GetNativeCurrencyId = GetNativeCurrencyId;
+	type WeightInfo = ();
+}
+
+pub type Currencies = orml_currencies::Module<TestRuntime>;
+
+parameter_types! {
 	pub GetExchangeFee: Rate = Rate::saturating_from_rational(1, 100);
 	pub const BithumbDexModuleId: ModuleId = ModuleId(*b"bxb/dexm");
 }
 
 impl Trait for TestRuntime {
 	type Event = TestEvent;
-	type Currency = Tokens;
+	type Currency = Currencies;
 	type Share = Share;
 	type GetExchangeFee = GetExchangeFee;
 	type ModuleId = BithumbDexModuleId;
@@ -143,13 +178,18 @@ impl ExtBuilder {
 			.build_storage::<TestRuntime>()
 			.unwrap();
 
-//    pallet_balances: Some(BalancesConfig {
-//			// Configure endowed accounts with initial balance of 1 << 60.
-//			balances: endowed_accounts.iter().cloned()
-//				.map(|k| (k, ENDOWMENT))
-//				.chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
-//				.collect(),
-//		});
+    pallet_balances::GenesisConfig::<TestRuntime> {
+      balances: self
+        .endowed_accounts
+        .clone()
+        .into_iter()
+        .filter(|(_, currency_id, _)| *currency_id == BXB)
+        .map(|(account_id, _, initial_balance)| (account_id, initial_balance))
+        .collect::<Vec<_>>(),
+    }
+    .assimilate_storage(&mut t)
+      .unwrap();
+
 
     orml_tokens::GenesisConfig::<TestRuntime> {
 			endowed_accounts: self
@@ -162,6 +202,7 @@ impl ExtBuilder {
 
     bithumbdex::GenesisConfig {
       initial_pairs: vec![
+        (BXB, BETH),
         (BUSD, BETH),
         (BUSD, DOT),
         (DOT, BETH),

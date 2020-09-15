@@ -159,6 +159,14 @@ fn target_and_supply_amount_calculation() {
 #[test]
 fn make_sure_get_supply_amount_needed_can_affort_target() {
 	ExtBuilder::default().build().execute_with(|| {
+    assert_ok!(BDM::add_liquidity(
+			Origin::signed(AccountId::from(ALICE)),
+			BXB,
+			BETH,
+			500000000000,
+			100000000000000000
+		));
+
 		assert_ok!(BDM::add_liquidity(
 			Origin::signed(AccountId::from(ALICE)),
 			BUSD,

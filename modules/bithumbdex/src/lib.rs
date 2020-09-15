@@ -542,8 +542,6 @@ impl<T: Trait> Module<T> {
       return (Zero::zero(), vec![]);
     }
 
-    let pair_id = Self::get_pair_key(&supply_currency_id, &target_currency_id);
-
     let fee_rate = T::GetExchangeFee::get();
 
     if let Ok((supply_balance, target_balance)) = Self::get_pool_info(supply_currency_id, target_currency_id) {
@@ -586,8 +584,6 @@ impl<T: Trait> Module<T> {
       // it doesn't make sense to exchange the same currency
       return (Zero::zero(), vec![]);
     }
-
-    let pair_id = Self::get_pair_key(&supply_currency_id, &target_currency_id);
 
     let fee_rate = T::GetExchangeFee::get();
 
