@@ -20,11 +20,17 @@ sp-runtime = { version = "2.0.0-rc6" }
 sp-api = { version = "2.0.0-rc6" }
 sp-blockchain = { version = "2.0.0-rc6" }
 bitdex-rpc-runtime-api = { path = "runtime-api" }
+serde = { version = "1.0.101", optional = true }
+bitdex-primitives = { path = "../primitives" }
+strum = "0.19.2"
+strum_macros = "0.19.2"
+int-enum = "0.4.0"
 
 [features]
 default = ["std"]
 std = [
+  "serde",
   "bitdex-rpc-runtime-api/std",
-	"sp-api/std",
-	"codec/std",
+  "sp-api/std",
+  "codec/std",
 ]

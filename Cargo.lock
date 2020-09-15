@@ -479,6 +479,7 @@ dependencies = [
  "sc-rpc-api",
  "sc-service",
  "sc-transaction-pool",
+ "serde_json",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -500,24 +501,32 @@ version = "2.0.0-rc6"
 dependencies = [
  "num-derive",
  "num-traits",
+ "int-enum",
  "parity-scale-codec",
  "serde",
  "sp-core",
  "sp-runtime",
+ "strum 0.19.2",
+ "strum_macros 0.19.2",
 ]
 
 [[package]]
 name = "bitdex-rpc"
 version = "2.0.0-rc6"
 dependencies = [
+ "bitdex-primitives",
  "bitdex-rpc-runtime-api",
+ "int-enum",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "parity-scale-codec",
+ "serde",
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
+ "strum 0.19.2",
+ "strum_macros 0.19.2",
 ]
 
 [[package]]
@@ -535,6 +544,7 @@ dependencies = [
  "bitdex-primitives",
  "bitdex-rpc-runtime-api",
  "bithumbdex",
+ "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
@@ -568,6 +578,7 @@ dependencies = [
  "sp-consensus-babe",
  "sp-core",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -2354,6 +2365,29 @@ name = "instant"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b141fdc7836c525d4d594027d318c84161ca17aaf8113ab1f81ab93ae897485"
+
+[[package]]
+name = "int-enum"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b1428b2b1abe959e6eedb0a17d0ab12f6ba20e1106cc29fc4874e3ba393c177"
+dependencies = [
+ "cfg-if",
+ "int-enum-impl",
+]
+
+[[package]]
+name = "int-enum-impl"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2c3cecaad8ca1a5020843500c696de2b9a07b63b624ddeef91f85f9bafb3671"
+dependencies = [
+ "cfg-if",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "integer-sqrt"
@@ -6789,7 +6823,7 @@ dependencies = [
  "lazy_static",
  "sp-core",
  "sp-runtime",
- "strum",
+ "strum 0.16.0",
 ]
 
 [[package]]
@@ -7163,8 +7197,14 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6138f8f88a16d90134763314e3fc76fa3ed6a7db4725d6acf9a3ef95a3188d22"
 dependencies = [
- "strum_macros",
+ "strum_macros 0.16.0",
 ]
+
+[[package]]
+name = "strum"
+version = "0.19.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3924a58d165da3b7b2922c667ab0673c7b5fd52b5c19ea3442747bcb3cd15abe"
 
 [[package]]
 name = "strum_macros"
@@ -7176,6 +7216,18 @@ dependencies = [
  "proc-macro2 1.0.19",
  "quote 1.0.7",
  "syn 1.0.39",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.19.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d2ab682ecdcae7f5f45ae85cd7c1e6c8e68ea42c8a612d47fedf831c037146a"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

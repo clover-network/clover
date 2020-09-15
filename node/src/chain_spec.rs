@@ -1,3 +1,4 @@
+use serde_json::json;
 use sp_core::{Pair, Public, sr25519};
 use bitdex_runtime::{
   AccountId,
@@ -83,9 +84,12 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		None,
+		Some("bitdexlocal"),
 		// Properties
-		None,
+		Some(json!({
+			"tokenDecimals": 12,
+			"tokenSymbol": "BXBD"
+		}).as_object().expect("Created an object").clone()),
 		// Extensions
 		None,
 	))
@@ -149,7 +153,7 @@ fn testnet_genesis(
 ) -> GenesisConfig {
 	use bitdex_runtime::{DOLLARS};
 
-	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	const ENDOWMENT: Balance = 10_000 * DOLLARS;
 	const STASH: Balance = 100 * DOLLARS;
 
 	GenesisConfig {

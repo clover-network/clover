@@ -1,18 +1,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 #[macro_use]
 extern crate num_derive;
+use codec::{Decode, Encode};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 use sp_runtime::{
-	FixedU128,
   generic,
   traits::{BlakeTwo256, IdentifyAccount, Verify},
-  MultiSignature, RuntimeDebug,
+  MultiSignature, RuntimeDebug
 };
+
+use strum_macros::EnumIter;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -64,20 +65,12 @@ pub type BlockId = generic::BlockId<Block>;
 /// Opaque, encoded, unchecked extrinsic.
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
-#[derive(Encode, Decode, Eq, FromPrimitive, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[repr(u32)]
+#[derive(Encode, Decode, Eq, FromPrimitive, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, EnumIter, strum_macros::Display, int_enum::IntEnum))]
 pub enum CurrencyId {
 	  BXB = 0,
 	  BUSD = 1,
 	  DOT = 2,
 	  BETH = 3,
 }
-
-
-/// dex related types
-pub type Rate = FixedU128;
-pub type Ratio = FixedU128;
-pub type Price = FixedU128;
-/// Share type
-pub type Share = u128;

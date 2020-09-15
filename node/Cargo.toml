@@ -115,6 +115,7 @@ structopt = '0.3.8'
 sc-consensus-epochs = { version = "0.8.0-rc6" }
 sc-keystore = { version = "2.0.0-rc6" }
 sc-finality-grandpa-rpc = { version = "0.8.0-rc6" }
+serde_json = "1.0"
 
 [build-dependencies.substrate-build-script-utils]
 version = '2.0.0-rc6'

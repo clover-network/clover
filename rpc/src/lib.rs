@@ -17,6 +17,8 @@ pub trait CurrencyBalanceApi<BlockHash, AccountId, CurrencyId, Balance> {
   fn account_balance(&self, account: AccountId, currency_id: CurrencyId, at: Option<BlockHash>) -> Result<String>;
 }
 
+pub mod currency;
+
 /// A struct that implements the [`CurrencyBalanceApi`].
 pub struct CurrencyBalance<C, B> {
 	client: Arc<C>,

@@ -158,6 +158,10 @@ version = '2.0.0-rc6'
 default-features = false
 version = '2.0.0-rc6'
 
+[dependencies.sp-io]
+default-features = false
+version = '2.0.0-rc6'
+
 [dependencies.sp-transaction-pool]
 default-features = false
 version = '2.0.0-rc6'
@@ -192,12 +196,17 @@ version = '2.0.0-rc6'
 default-features = false
 version = '2.0.0-rc6'
 
+[dev-dependencies.frame-benchmarking]
+default-features = false
+version = '2.0.0-rc6'
+
 [features]
 default = ['std']
 std = [
     'bitdex-rpc-runtime-api/std',
     'bithumbdex/std',
     'codec/std',
+    "frame-benchmarking/std",
     'frame-executive/std',
     'frame-support/std',
     'frame-system/std',
