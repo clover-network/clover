@@ -21,11 +21,11 @@ frame-benchmarking = { version = "2.0.0-rc6", default-features = false, optional
 frame-support = { version = "2.0.0-rc6", default-features = false }
 frame-system = { version = "2.0.0-rc6", default-features = false }
 sp-std = { version = "2.0.0-rc6", default-features = false }
+pallet-balances = { version = "2.0.0-rc6", default-features = false }
 
 [dev-dependencies]
 sp-core = { version = "2.0.0-rc6", default-features = false }
 sp-io = { version = "2.0.0-rc6", default-features = false }
-pallet-balances = { version = "2.0.0-rc6", default-features = false }
 
 [dependencies.orml-currencies]
 default-features = false
@@ -64,6 +64,7 @@ std = [
   'orml-tokens/std',
   'orml-traits/std',
   'orml-utilities/std',
+  'pallet-balances/std',
   'primitives/std',
   'serde',
   'sp-runtime/std',
