@@ -654,7 +654,7 @@ impl<T: Trait> Module<T> {
         cur_currency = currency.clone();
       }
 
-      print!("amount: {:?}, {:?}", cur_amount, cur_currency);
+      debug::info!("amount: {:?}, {:?}", cur_amount, cur_currency);
       if cur_amount > 0 && is_better(best_amount, cur_amount) {
         best_route = Some(route.clone());
         best_amount = cur_amount;

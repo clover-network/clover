@@ -62,24 +62,24 @@ where
   }).filter(|r| !r.is_empty()).flatten().collect()
 }
 
-pub fn format_routes<T>(routes: &Vec<T>) -> String
-where
-T: sp_std::fmt::Debug {
-  let mut s: String = "".to_owned();
-
-  for r in routes {
-    let f = format!("{:?},", r);
-    s  = s + &f;
-  }
-
-  s
-}
-
 #[cfg(test)]
 mod tests {
   use sp_std::collections::btree_map::*;
   use sp_std::{ clone::*, cmp::*, collections::btree_set, vec,};
   use super::*;
+
+  pub fn format_routes<T>(routes: &vec::Vec<T>) -> String
+  where
+    T: sp_std::fmt::Debug {
+    let mut s: String = "".to_owned();
+
+    for r in routes {
+      let f = format!("{:?},", r);
+      s  = s + &f;
+    }
+
+    s
+  }
 
   type Pos = (u32, u32);
 
