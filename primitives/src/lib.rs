@@ -8,6 +8,7 @@ use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 use sp_runtime::{
+  FixedU128,
   generic,
   traits::{BlakeTwo256, IdentifyAccount, Verify},
   MultiSignature, RuntimeDebug
@@ -74,3 +75,10 @@ pub enum CurrencyId {
 	  DOT = 2,
 	  BETH = 3,
 }
+
+/// dex related types
+pub type Rate = FixedU128;
+pub type Ratio = FixedU128;
+pub type Price = FixedU128;
+/// Share type
+pub type Share = u128;

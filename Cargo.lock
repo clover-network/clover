@@ -499,9 +499,9 @@ dependencies = [
 name = "bitdex-primitives"
 version = "2.0.0-rc6"
 dependencies = [
+ "int-enum",
  "num-derive",
  "num-traits",
- "int-enum",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -2384,9 +2384,9 @@ checksum = "a2c3cecaad8ca1a5020843500c696de2b9a07b63b624ddeef91f85f9bafb3671"
 dependencies = [
  "cfg-if",
  "proc-macro-crate",
- "proc-macro2",
- "quote",
- "syn",
+ "proc-macro2 1.0.19",
+ "quote 1.0.7",
+ "syn 1.0.39",
 ]
 
 [[package]]
@@ -7225,9 +7225,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d2ab682ecdcae7f5f45ae85cd7c1e6c8e68ea42c8a612d47fedf831c037146a"
 dependencies = [
  "heck",
- "proc-macro2",
- "quote",
- "syn",
+ "proc-macro2 1.0.19",
+ "quote 1.0.7",
+ "syn 1.0.39",
 ]
 
 [[package]]

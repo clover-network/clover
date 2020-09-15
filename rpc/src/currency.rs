@@ -13,7 +13,7 @@ pub struct Currency;
 #[derive(Encode, Decode, Eq, PartialEq, Clone, PartialOrd, Ord)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CurrencyInfo {
-    id: u8,
+    id: u32,
     name: String
 }
 

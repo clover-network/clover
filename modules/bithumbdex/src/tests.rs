@@ -10,6 +10,18 @@ pub use primitives::{ AccountId };
 
 use BithumbDexModule as BDM;
 
+fn format_routes<T>(routes: &vec::Vec<T>) -> String
+where
+    T: sp_std::fmt::Debug {
+    let mut s: String = "".to_owned();
+
+    for r in routes {
+        let f = format!("{:?},", r);
+        s  = s + &f;
+    }
+    s
+}
+
 #[test]
 fn pair_id_encoding() {
   let test_currency = |small, large| {
@@ -164,7 +176,7 @@ fn make_sure_get_supply_amount_needed_can_affort_target() {
 
 	  let target_amount_busd_beth = 90000000000000;
 		let (amount, route)= BDM::get_supply_amount_needed(BUSD, DOT, target_amount_busd_beth);
-    assert_eq!(simple_graph::format_routes(&route), "CurrencyId::DOT,");
+    assert_eq!(format_routes(&route), "CurrencyId::DOT,");
 
 		let (target_amount, _)= BDM::get_target_amount_available(BUSD, DOT, amount);
     assert_ne!(target_amount, 0);
