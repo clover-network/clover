@@ -12,6 +12,7 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 bithumbdex = { path = "../modules/bithumbdex", default-features = false }
+enum-iterator = "0.6.0"
 
 [dependencies.bitdex-rpc-runtime-api]
 default-features = false
