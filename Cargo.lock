@@ -525,6 +525,7 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
+ "sp-std",
  "strum 0.19.2",
  "strum_macros 0.19.2",
 ]
@@ -533,8 +534,10 @@ dependencies = [
 name = "bitdex-rpc-runtime-api"
 version = "2.0.0-rc6"
 dependencies = [
+ "bitdex-primitives",
  "parity-scale-codec",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]

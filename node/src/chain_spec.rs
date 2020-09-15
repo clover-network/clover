@@ -1,12 +1,9 @@
 use serde_json::json;
 use sp_core::{Pair, Public, sr25519};
 use bitdex_runtime::{
-  AccountId,
-	BabeConfig, Balance, BalancesConfig,
-  CurrencyId,
-  IndicesConfig, GenesisConfig, GrandpaConfig,
-	SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY, Signature, StakerStatus,
-  TokensConfig,
+  AccountId, BabeConfig, Balance, BalancesConfig, CurrencyId, IndicesConfig, GenesisConfig,
+  GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
+  Signature, StakerStatus, TokensConfig, BithumbDexConfig
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -78,7 +75,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
 			],
       true,
-    ),
+    	),
 		// Bootnodes
 		vec![],
 		// Telemetry
@@ -135,9 +132,12 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		None,
+		Some("bitdexlocal"),
 		// Properties
-		None,
+		Some(json!({
+			"tokenDecimals": 12,
+			"tokenSymbol": "BXBD"
+		}).as_object().expect("Created an object").clone()),
 		// Extensions
 		None,
 	))
@@ -210,6 +210,13 @@ fn testnet_genesis(
 					]
 				})
 				.collect(),
+		}),
+		bithumbdex: Some(BithumbDexConfig {
+		    initial_pairs: vec![
+			    (CurrencyId::BUSD, CurrencyId::BETH),
+			    (CurrencyId::BUSD, CurrencyId::DOT),
+			    (CurrencyId::DOT, CurrencyId::BETH),
+		    ],
 		}),
 		pallet_collective_Instance1: Some(Default::default()),
 		pallet_collective_Instance2: Some(Default::default()),

@@ -134,10 +134,10 @@ decl_storage! {
 		config(initial_pairs): Vec<(CurrencyId, CurrencyId)>;
 
 		build(|config: &GenesisConfig| {
-      print!("got config: {:?}", config.initial_pairs);
+            print!("got config: {:?}", config.initial_pairs);
 			config.initial_pairs.iter().for_each(|(currency_first, currency_second)| {
-        let pair_id = Module::<T>::get_pair_key(currency_first, currency_second);
-        LiquidityPool::insert(pair_id, (0, 0));
+                let pair_id = Module::<T>::get_pair_key(currency_first, currency_second);
+                LiquidityPool::insert(pair_id, (0, 0));
 			})
 		})
 	}

@@ -27,6 +27,6 @@ std = [
   'num-traits/std',
   "serde",
   "codec/std",
-	"sp-runtime/std",
-	"sp-core/std",
+  "sp-runtime/std",
+  "sp-core/std",
 ]
