@@ -6,4 +6,5 @@ members = [
     'node',
     "primitives",
     'runtime',
+    'modules/bithumbdex',
 ]

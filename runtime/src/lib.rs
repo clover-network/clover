@@ -12,7 +12,9 @@ use sp_core::{
 	OpaqueMetadata,
 };
 use sp_runtime::{
-	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, Percent, ModuleId,
+	ApplyExtrinsicResult, generic, create_runtime_str,
+  FixedPointNumber,
+  impl_opaque_keys, Percent, ModuleId,
 	transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
 };
 use sp_runtime::traits::{
@@ -56,7 +58,9 @@ use codec::{Encode};
 pub use primitives::{
 	AccountId, AccountIndex, Amount, Balance, BlockNumber,
   CurrencyId,
-	EraIndex, Hash, Index, Moment, Signature,
+	EraIndex, Hash, Index, Moment,
+  Rate, Share,
+  Signature,
 };
 
 pub use constants::{time::*, currency::*};
@@ -664,6 +668,21 @@ impl orml_currencies::Trait for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub GetExchangeFee: Rate = Rate::saturating_from_rational(1, 1000);
+	pub const BithumbDexModuleId: ModuleId = ModuleId(*b"bxb/dexm");
+}
+
+impl bithumbdex::Trait for Runtime {
+	type Event = Event;
+	type Currency = Currencies;
+	type Share = Share;
+	type GetExchangeFee = GetExchangeFee;
+	type ModuleId = BithumbDexModuleId;
+	type OnAddLiquidity = ();
+	type OnRemoveLiquidity = ();
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -702,6 +721,8 @@ construct_runtime!(
 
 		// Utility module.
 		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+
+		BithumbDex: bithumbdex::{Module, Storage, Call, Event<T>},
 	}
 );
 

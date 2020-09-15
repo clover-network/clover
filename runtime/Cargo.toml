@@ -10,6 +10,9 @@ version = '2.0.0-rc6'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
+[dependencies]
+bithumbdex = { path = "../modules/bithumbdex", default-features = false }
+
 [dependencies.bitdex-rpc-runtime-api]
 default-features = false
 version = '2.0.0-rc6'
@@ -201,6 +204,7 @@ version = '2.0.0-rc6'
 default = ['std']
 std = [
     'bitdex-rpc-runtime-api/std',
+    'bithumbdex/std',
     'codec/std',
     "frame-benchmarking/std",
     'frame-executive/std',
