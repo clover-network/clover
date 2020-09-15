@@ -20,6 +20,7 @@ use sp_runtime::traits::{
 	StaticLookup,
 };
 use sp_runtime::curve::PiecewiseLinear;
+use enum_iterator::IntoEnumIterator;
 
 use sp_api::impl_runtime_apis;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -54,11 +55,8 @@ pub use frame_support::{
 use codec::{Encode};
 
 pub use primitives::{
-	AccountId, AccountIndex, Amount, Balance, BlockNumber,
-  CurrencyId,
-	EraIndex, Hash, Index, Moment,
-  Rate, Share,
-  Signature,
+	AccountId, AccountIndex, Amount, Balance, BlockNumber, CurrencyId, EraIndex, Hash, Index,
+	Moment, Rate, Share, Signature,
 };
 
 pub use constants::{time::*, currency::*};
@@ -913,9 +911,17 @@ impl_runtime_apis! {
 	}
 
 	impl bitdex_rpc_runtime_api::CurrencyBalanceApi<Block, AccountId, CurrencyId, Balance> for Runtime {
-		fn account_balance(account: AccountId, currency_id: CurrencyId) -> Balance {
-			debug::info!("currency: {:?}", currency_id);
-			Currencies::total_balance(currency_id, &account)
+		fn account_balance(account: AccountId, currency_id: Option<CurrencyId>) -> sp_std::vec::Vec<(CurrencyId, Balance)> {
+			let mut balances = sp_std::vec::Vec::new();
+			match currency_id {
+				None => {
+					for cid in CurrencyId::into_enum_iter() {
+						balances.push((cid, Currencies::total_balance(cid, &account)));
+					}
+				},
+				Some(cid) => balances.push((cid, Currencies::total_balance(cid, &account)))
+			}
+			balances
 		}
 	}
 
