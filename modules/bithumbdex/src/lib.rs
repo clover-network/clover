@@ -11,9 +11,11 @@ use byteorder::{ByteOrder, LittleEndian};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
   debug,
+	dispatch::{PaysFee, WeighData},
 	traits::{Get, Happened},
 	weights::constants::WEIGHT_PER_MICROS,
 	Parameter,
+  weights::{ClassifyDispatch, DispatchClass, Pays, Weight},
 };
 use frame_support::storage::IterableStorageMap;
 
@@ -108,6 +110,8 @@ decl_error! {
 		UnacceptablePrice,
 		/// The increment of liquidity is invalid
 		InvalidLiquidityIncrement,
+    /// the route is not valid
+    InvalidRoute,
 	}
 }
 
@@ -136,6 +140,36 @@ decl_storage! {
         LiquidityPool::insert(pair_id, (0, 0));
 			})
 		})
+	}
+}
+
+// Transaction weight caculation for routed swap
+// transaction weight relates to the number of routes going through
+pub struct SwapCurrencyUsingRoute(u64, u64);
+
+impl WeighData<(&CurrencyId, &Balance, &CurrencyId,
+                &Balance, &vec::Vec<CurrencyId>)> for SwapCurrencyUsingRoute {
+	fn weigh_data(
+    &self,
+    (_, _, _, _, routes): (&CurrencyId, &Balance, &CurrencyId, &Balance, &vec::Vec<CurrencyId>))
+    -> Weight {
+    let len = routes.len() as u64;
+
+	  (200 * WEIGHT_PER_MICROS)
+      .saturating_add(self.0.saturating_mul(len).saturating_mul(9).into())
+      .saturating_add(self.1.saturating_mul(len).saturating_mul(6).into()).into()
+	}
+}
+
+impl<T> PaysFee<T> for SwapCurrencyUsingRoute {
+	fn pays_fee(&self, _: T) -> Pays {
+		Pays::Yes
+	}
+}
+
+impl<T> ClassifyDispatch<T> for SwapCurrencyUsingRoute {
+	fn classify_dispatch(&self, _: T) -> DispatchClass {
+		Default::default()
 	}
 }
 
@@ -313,10 +347,34 @@ decl_module! {
 		) {
 			with_transaction_result(|| {
 				let who = ensure_signed(origin)?;
-				Self::basic_swap(&who, supply_currency_id, supply_amount, target_currency_id, acceptable_target_amount)?;
+        let fee_rate = T::GetExchangeFee::get();
+				Self::basic_swap(&who, supply_currency_id, supply_amount, target_currency_id, acceptable_target_amount, fee_rate)?;
 				Ok(())
 			})?;
 		}
+
+
+    /// trading with route is pretty heavy
+	  #[weight = SwapCurrencyUsingRoute(T::DbWeight::get().reads(1), T::DbWeight::get().writes(1))]
+    pub fn swap_currency(
+      origin,
+      supply_currency_id: CurrencyId,
+      #[compact] supply_amount: Balance,
+      target_currency_id: CurrencyId,
+      #[compact] acceptable_target_amount: Balance,
+      route: vec::Vec<CurrencyId>,
+    ) {
+      with_transaction_result(|| {
+        let who = ensure_signed(origin)?;
+				Self::swap_currencies_using_route(&who,
+                                          supply_currency_id,
+                                          supply_amount,
+                                          target_currency_id,
+                                          acceptable_target_amount,
+                                          route)?;
+        Ok(())
+      })?;
+    }
   }
 }
 
@@ -457,13 +515,14 @@ impl<T: Trait> Module<T> {
     from_currency_amount: Balance,
     target_currency_id: CurrencyId,
 		acceptable_target_currency_amount: Balance,
+    fee_rate: Rate,
 	) -> sp_std::result::Result<Balance, DispatchError> {
 		let (from_currency_pool, target_currency_pool) = Self::get_pool_info(from_currency_id, target_currency_id)?;
 		let target_currency_amount = Self::calculate_swap_target_amount(
 			from_currency_pool,
 			target_currency_pool,
 			from_currency_amount,
-			T::GetExchangeFee::get(),
+      fee_rate,
 		);
 
 		 // ensure the amount can get is not 0 and >= minium acceptable
@@ -494,6 +553,40 @@ impl<T: Trait> Module<T> {
 
 		 Ok(target_currency_amount)
 	}
+
+  fn swap_currencies_using_route(who: &T::AccountId,
+                                 from_currency_id: CurrencyId,
+                                 from_currency_amount: Balance,
+                                 target_currency_id: CurrencyId,
+                                 acceptable_target_currency_amount: Balance,
+                                 route: vec::Vec<CurrencyId>,
+  ) -> sp_std::result::Result<Balance, DispatchError> {
+    // at least one route item
+    ensure!(!route.is_empty(), Error::<T>::InvalidRoute);
+    // route should ends with target currency
+    ensure!(*(route.last().unwrap()) == target_currency_id, Error::<T>::InvalidRoute);
+    // route should not contains the from currency
+    ensure!(!route.contains(&from_currency_id), Error::<T>::InvalidRoute);
+
+    let fee_rate = T::GetExchangeFee::get();
+
+    let mut last_currency = from_currency_id;
+    let mut last_exchange_amount = from_currency_amount;
+    // first swap follow the route to the last one
+    for currency in &route[0 .. route.len() - 1 ] {
+      last_exchange_amount = Self::basic_swap(
+        who, last_currency, last_exchange_amount, currency.clone(), Zero::zero(),
+        fee_rate)?;
+      last_currency = currency.clone();
+      ensure!(last_exchange_amount > 0, Error::<T>::UnacceptablePrice);
+    }
+    ensure!(last_currency != target_currency_id, Error::<T>::InvalidRoute);
+    // swap the last currency with the target currency
+    Self::basic_swap(
+      who, last_currency, last_exchange_amount,
+      target_currency_id, acceptable_target_currency_amount,
+      fee_rate)
+  }
 
   pub fn get_existing_currency_pairs() ->
     (vec::Vec<(CurrencyId, CurrencyId)>, btree_map::BTreeMap<PairKey, PoolInfo>) {
