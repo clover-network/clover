@@ -10,4 +10,8 @@ sp_api::decl_runtime_apis! {
 		/// Get account balance of a currency
 		fn account_balance(account: AccountId, currency_id: CurrencyId) -> Balance;
 	}
+
+	pub trait CurrencyPairApi {
+	    fn currency_pair() -> sp_std::vec::Vec<(primitives::CurrencyId, primitives::CurrencyId)>;
+	}
 }

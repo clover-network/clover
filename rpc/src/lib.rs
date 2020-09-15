@@ -18,6 +18,7 @@ pub trait CurrencyBalanceApi<BlockHash, AccountId, CurrencyId, Balance> {
 }
 
 pub mod currency;
+pub mod pair;
 
 /// A struct that implements the [`CurrencyBalanceApi`].
 pub struct CurrencyBalance<C, B> {

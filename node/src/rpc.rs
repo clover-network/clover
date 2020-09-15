@@ -85,6 +85,7 @@ pub fn create_full<C, P, SC>(
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: bitdex_rpc::CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
+	C::Api: bitdex_rpc::pair::CurrencyPairRuntimeApi<Block>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
@@ -150,6 +151,10 @@ pub fn create_full<C, P, SC>(
 
 	io.extend_with(bitdex_rpc::currency::CurrencyRpc::to_delegate(
         bitdex_rpc::currency::Currency {},
+    ));
+
+	io.extend_with(bitdex_rpc::pair::CurrencyPairRpc::to_delegate(
+		bitdex_rpc::pair::CurrencyPair::new(client.clone()),
     ));
 
 	io

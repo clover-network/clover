@@ -12,10 +12,8 @@ use sp_core::{
 	OpaqueMetadata,
 };
 use sp_runtime::{
-	ApplyExtrinsicResult, generic, create_runtime_str,
-  FixedPointNumber,
-  impl_opaque_keys, Percent, ModuleId,
-	transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
+	ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
+	ModuleId, transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
 };
 use sp_runtime::traits::{
 	BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion, Saturating,
@@ -722,7 +720,7 @@ construct_runtime!(
 		// Utility module.
 		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
 
-		BithumbDex: bithumbdex::{Module, Storage, Call, Event<T>},
+		BithumbDex: bithumbdex::{Module, Storage, Call, Event<T>, Config},
 	}
 );
 
@@ -760,7 +758,6 @@ pub type Executive = frame_executive::Executive<
 >;
 
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
-
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
@@ -919,6 +916,13 @@ impl_runtime_apis! {
 		fn account_balance(account: AccountId, currency_id: CurrencyId) -> Balance {
 			debug::info!("currency: {:?}", currency_id);
 			Currencies::total_balance(currency_id, &account)
+		}
+	}
+
+	impl bitdex_rpc_runtime_api::CurrencyPairApi<Block> for Runtime {
+		fn currency_pair() -> sp_std::vec::Vec<(CurrencyId, CurrencyId)> {
+		 	let pair = BithumbDex::get_existing_currency_pairs().0;
+		 	pair
 		}
 	}
 }
