@@ -9,6 +9,7 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 pub mod currency;
 pub mod pair;
 pub mod balance;
+pub mod exchange;
 
 pub enum Error {
 	RuntimeError,
