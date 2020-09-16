@@ -202,10 +202,10 @@ impl ExtBuilder {
 
     bithumbdex::GenesisConfig {
       initial_pairs: vec![
-        (BXB, BETH),
-        (BUSD, BETH),
-        (BUSD, DOT),
-        (DOT, BETH),
+        (BXB, BETH, Some(0), Some(0)),
+        (BUSD, BETH, Some(0), Some(0)),
+        (BUSD, DOT, Some(0), Some(0)),
+        (DOT, BETH, Some(0), Some(0)),
       ],
     }.assimilate_storage::<TestRuntime>(&mut t).unwrap();
 

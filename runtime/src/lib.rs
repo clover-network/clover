@@ -931,4 +931,16 @@ impl_runtime_apis! {
 		 	pair
 		}
 	}
+
+	impl bitdex_rpc_runtime_api::CurrencyExchangeApi<Block, CurrencyId, Balance> for Runtime {
+		fn target_amount_available(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
+			let balance = BithumbDex::get_target_amount_available(source, target, amount);
+			balance
+		}
+
+		fn supply_amount_needed(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
+			let balance = BithumbDex::get_supply_amount_needed(source, target, amount);
+			balance
+		}
+	}
 }

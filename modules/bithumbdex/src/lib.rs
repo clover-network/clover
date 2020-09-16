@@ -131,13 +131,13 @@ decl_storage! {
 	}
 
 	add_extra_genesis {
-		config(initial_pairs): Vec<(CurrencyId, CurrencyId)>;
+		config(initial_pairs): Vec<(CurrencyId, CurrencyId, Option<Balance>, Option<Balance>)>;
 
 		build(|config: &GenesisConfig| {
             print!("got config: {:?}", config.initial_pairs);
-			config.initial_pairs.iter().for_each(|(currency_first, currency_second)| {
+			config.initial_pairs.iter().for_each(|(currency_first, currency_second, balance_first, balance_second)| {
                 let pair_id = Module::<T>::get_pair_key(currency_first, currency_second);
-                LiquidityPool::insert(pair_id, (0, 0));
+                LiquidityPool::insert(pair_id, (balance_first.unwrap_or_else(||0), balance_second.unwrap_or_else(||0)));
 			})
 		})
 	}
@@ -590,13 +590,18 @@ impl<T: Trait> Module<T> {
 
   pub fn get_existing_currency_pairs() ->
     (vec::Vec<(CurrencyId, CurrencyId)>, btree_map::BTreeMap<PairKey, PoolInfo>) {
-      let mut valid_info =  LiquidityPool::iter()
+      let valid_info =  LiquidityPool::iter()
         .map(|(pair_key, pool_info)| (Self::pair_key_to_ids(pair_key), pair_key, pool_info))
         .filter(|(id, _, _)| id.is_some())
-        .map(|(id, pk, info)| (id.unwrap(), pk, info));
+        .map(|(id, pk, info)| (id.unwrap(), pk, info))
+        .collect::<vec::Vec<_>>();
 
-      let currency_pairs = valid_info.by_ref().map(|(id, _, _)| id.clone()).collect();
-      let pool_info = valid_info.map(|(_, pk, info)| (pk, info)).collect();
+      let currency_pairs = valid_info.iter().map(|(id, _, _)| id.clone()).collect();
+      let pool_info = valid_info.iter()
+        .map(|(_, pk, info)| (pk.clone(), info.clone()))
+        .collect();
+
+      debug::info!("pool info: {:?}", pool_info);
 
       (currency_pairs, pool_info)
     }
@@ -698,7 +703,7 @@ impl<T: Trait> Module<T> {
       &supply_currency_id, &target_currency_id,
       |currency| currency_map.get(&currency).unwrap_or(&vec![]).to_vec(), 6);
 
-    debug::info!("got {:?} routes for currency: {:?}, target: {:?}", routes.len(), supply_currency_id, target_currency_id);
+    debug::info!("got {:?} routes for currency: {:?}, target: {:?}, routes: {:?}", routes.len(), supply_currency_id, target_currency_id, routes);
 
     Self::best_route(&supply_currency_id,
                      &routes, &pool_info,
@@ -719,7 +724,9 @@ impl<T: Trait> Module<T> {
     let mut best_amount = 0;
 
     let is_better = |best_amount: Balance, new_amount: Balance| -> bool {
-      if route_type == RouteType::TargetToSupply {
+      if best_amount == 0 {
+        true
+      } else if route_type == RouteType::TargetToSupply {
         new_amount < best_amount
       } else {
         best_amount > new_amount
@@ -743,7 +750,7 @@ impl<T: Trait> Module<T> {
         cur_currency = currency.clone();
       }
 
-      debug::info!("amount: {:?}, {:?}", cur_amount, cur_currency);
+      debug::info!("amount: {:?}, {:?}, route: {:?}", cur_amount, cur_currency, route);
       if cur_amount > 0 && is_better(best_amount, cur_amount) {
         best_route = Some(route.clone());
         best_amount = cur_amount;
