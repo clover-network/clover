@@ -179,15 +179,27 @@ fn make_sure_get_supply_amount_needed_can_affort_target() {
 			BUSD,
 			DOT,
 			80000000000,
-			4000000000000000
+			4000000000000
 		));
 
-	  let target_amount_busd_beth = 90000000000000;
+	  let target_amount_busd_beth = 90000000;
+    // supply: 80000000000
+    // target: 4000000000000
+    // new target_pool = 4000000000000 - 90000000 / (1 - 0.01)
+    //                 = 4000000000000 - (90,909,090.90909091 ~ 90,909,091)
+    //                 = 3999909090909
+    // supply_amount = (4000000000000 * 80000000000 ) / 3999909090909- 80000000000
+    //               = 1818223.14326 ~ 1818224
 		let (amount, route)= BDM::get_supply_amount_needed(BUSD, DOT, target_amount_busd_beth);
     assert_eq!(format_routes(&route), "CurrencyId::DOT,");
+    assert_eq!(amount, 1818224, "supply amount should match expected");
 
+    // new_target_pool = 4000000000000 * 80000000000 / (1818224 + 80000000000)
+    //                 = 3999909090866.165 ~ 3999909090867
+    // target_amount = (4000000000000 - 3999909090867) * 0.99
+    //               = 90000041.67 ~ 90000042
 		let (target_amount, _)= BDM::get_target_amount_available(BUSD, DOT, amount);
-    assert_ne!(target_amount, 0);
+    assert_eq!(target_amount, 90000042);
 		assert!(target_amount >= amount);
 	});
 }
