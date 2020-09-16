@@ -87,7 +87,7 @@ decl_event!(
 		/// Withdraw liquidity from the trading pool success. [who, currency_type, withdrawn_currency_amount, withdrawn_base_currency_amount, burned_share_amount]
 		WithdrawLiquidity(AccountId, CurrencyId, CurrencyId, Balance, Balance, Share),
 		/// Use supply currency to swap target currency. [trader, supply_currency_type, supply_currency_amount, target_currency_type, target_currency_amount]
-		Swap(AccountId, CurrencyId, CurrencyId, Balance, CurrencyId, Balance),
+		Swap(AccountId, CurrencyId, Balance, CurrencyId, Balance),
 		/// Incentive reward rate updated. [currency_type, new_rate]
 		LiquidityIncentiveRateUpdated(CurrencyId, CurrencyId, Rate),
 		/// Incentive interest claimed. [who, currency_type, amount]
@@ -550,6 +550,15 @@ impl<T: Trait> Module<T> {
 		 	 *from = from.saturating_add(from_currency_amount);
        *target = target.saturating_sub(target_currency_amount);
      });
+
+
+	  <Module<T>>::deposit_event(RawEvent::Swap(
+			who.clone(),
+			from_currency_id,
+			from_currency_amount,
+			target_currency_id,
+			target_currency_amount,
+		));
 
 		 Ok(target_currency_amount)
 	}
