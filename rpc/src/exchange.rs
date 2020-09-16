@@ -1,17 +1,28 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 use super::*;
 use std::fmt::Display;
-use codec::Codec;
+
+use codec::{Codec, Decode, Encode};
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 pub use bitdex_rpc_runtime_api::CurrencyExchangeApi as CurrencyExchangeRuntimeApi;
+
+#[derive(Encode, Decode, Eq, PartialEq, Clone, PartialOrd, Ord)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct ExchangeInfo<CurrencyId> {
+    balance: String,
+    routes: Vec<CurrencyId>
+}
 
 #[rpc]
 pub trait CurrencyExchangeRpc<BlockHash, CurrencyId, Balance> {
   #[rpc(name = "target_amount_available")]
-  fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<String>;
+  fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
   #[rpc(name = "supply_amount_needed")]
-  fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<String>;
+  fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 }
 
 pub struct CurrencyExchange<C, M> {
@@ -33,7 +44,7 @@ where
     CurrencyId: Codec,
 	Balance: Codec + Display,
 {
-    fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<<Block as BlockT>::Hash>) -> Result<String> {
+    fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<<Block as BlockT>::Hash>) -> Result<ExchangeInfo<CurrencyId>> {
         let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(||
 			// If the block hash is not supplied assume the best block.
@@ -42,12 +53,15 @@ where
 			code: ErrorCode::ServerError(Error::RuntimeError.into()),
 			message: "Unable to get value.".into(),
 			data: Some(format!("{:?}", e).into()),
-		}).map(|v| {
-			format!("{}", v)
+		}).map(|(b, r)| {
+            ExchangeInfo {
+                balance: format!("{}", b),
+                routes: r
+            }
 		})
     }
 
-    fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<<Block as BlockT>::Hash>) -> Result<String> {
+    fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<<Block as BlockT>::Hash>) -> Result<ExchangeInfo<CurrencyId>> {
         let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(||
 			// If the block hash is not supplied assume the best block.
@@ -56,8 +70,11 @@ where
 			code: ErrorCode::ServerError(Error::RuntimeError.into()),
 			message: "Unable to get value.".into(),
 			data: Some(format!("{:?}", e).into()),
-		}).map(|v| {
-			format!("{}", v)
+		}).map(|(b, r)| {
+            ExchangeInfo {
+                balance: format!("{}", b),
+                routes: r
+            }
 		})
     }
 

@@ -213,9 +213,9 @@ fn testnet_genesis(
 		}),
 		bithumbdex: Some(BithumbDexConfig {
 		    initial_pairs: vec![
-			    (CurrencyId::BUSD, CurrencyId::BETH),
-			    (CurrencyId::BUSD, CurrencyId::DOT),
-			    (CurrencyId::DOT, CurrencyId::BETH),
+			    (CurrencyId::BUSD, CurrencyId::BETH, Some(1000 * DOLLARS), Some(500 * DOLLARS)),
+			    (CurrencyId::BUSD, CurrencyId::DOT, Some(700 * DOLLARS), Some(250 * DOLLARS)),
+			    (CurrencyId::DOT, CurrencyId::BETH, Some(300 * DOLLARS), Some(600 * DOLLARS)),
 		    ],
 		}),
 		pallet_collective_Instance1: Some(Default::default()),

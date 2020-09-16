@@ -16,7 +16,7 @@ sp_api::decl_runtime_apis! {
 	pub trait CurrencyExchangeApi<CurrencyId, Balance> where 
 		CurrencyId: codec::Codec,
 		Balance: codec::Codec {
-		fn target_amount_available(source: CurrencyId, target: CurrencyId, amount: Balance) -> Balance;
-		fn supply_amount_needed(source: CurrencyId, target: CurrencyId, amount: Balance) -> Balance;
+		fn target_amount_available(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>);
+		fn supply_amount_needed(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>);
 	}
 }
