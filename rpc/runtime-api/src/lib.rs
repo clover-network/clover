@@ -13,10 +13,13 @@ sp_api::decl_runtime_apis! {
 		fn currency_pair() -> sp_std::vec::Vec<(primitives::CurrencyId, primitives::CurrencyId)>;
 	}
 
-	pub trait CurrencyExchangeApi<CurrencyId, Balance> where 
+	pub trait CurrencyExchangeApi<AccountId, CurrencyId, Balance> where
+		AccountId: codec::Codec,
 		CurrencyId: codec::Codec,
 		Balance: codec::Codec {
 		fn target_amount_available(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>);
 		fn supply_amount_needed(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>);
+
+		fn my_liquidity(account: AccountId) -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, Balance, Balance)>;
 	}
 }

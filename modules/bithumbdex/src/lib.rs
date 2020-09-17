@@ -92,8 +92,6 @@ decl_event!(
 		LiquidityIncentiveRateUpdated(CurrencyId, CurrencyId, Rate),
 		/// Incentive interest claimed. [who, currency_type, amount]
 		IncentiveInterestClaimed(AccountId, CurrencyId, CurrencyId, Balance),
-		/// Liquidity info claimed
-		LiquidityClaimed(vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, Share, Share)>),
 	}
 );
 
@@ -354,31 +352,6 @@ decl_module! {
 				Ok(())
 			})?;
     }
-    
-    #[weight = 200 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(9, 6)]
-    pub fn my_liquidity(origin) {
-        with_transaction_result(|| {
-          let who = ensure_signed(origin)?;
-          let mut result = vec::Vec::<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)>::new();
-          LiquidityPool::iter()
-            .map(|(pair_key, pool_info)| (Self::pair_key_to_ids(pair_key), pair_key, pool_info))
-            .filter(|(id, _, _)| id.is_some())
-            .map(|(id, pk, info)| (id.unwrap(), pk, info))
-            .for_each(|(id, pk, info)| {
-              if <Shares<T>>::contains_key(pk, who.clone()) {
-                let (other_currency_pool, base_currency_pool): (Balance, Balance) = info;
-                let self_share = <Shares<T>>::get(pk, who.clone());
-                let proportion = Ratio::checked_from_rational(self_share, Self::total_shares(pk)).unwrap_or_default();
-                let other_currency_amount = proportion.saturating_mul_int(other_currency_pool);
-                let base_currency_amount = proportion.saturating_mul_int(base_currency_pool);
-                result.push((id.0, id.1, other_currency_amount, base_currency_amount, self_share, Self::total_shares(pk)));
-              }
-            });
-          	Self::deposit_event(RawEvent::LiquidityClaimed(result));
-          Ok(())
-        })?;
-    }
-
 
     /// trading with route is pretty heavy
 	  #[weight = SwapCurrencyUsingRoute(T::DbWeight::get().reads(1), T::DbWeight::get().writes(1))]
@@ -405,6 +378,25 @@ decl_module! {
 }
 
 impl<T: Trait> Module<T> {
+  pub fn my_liquidity(account: T::AccountId) -> vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)> {
+      let mut result = vec::Vec::<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)>::new();
+      LiquidityPool::iter()
+          .map(|(pair_key, pool_info)| (Self::pair_key_to_ids(pair_key), pair_key, pool_info))
+          .filter(|(id, _, _)| id.is_some())
+          .map(|(id, pk, info)| (id.unwrap(), pk, info))
+          .for_each(|(id, pk, info)| {
+              if <Shares<T>>::contains_key(pk, account.clone()) {
+                  let (other_currency_pool, base_currency_pool): (Balance, Balance) = info;
+                  let self_share = <Shares<T>>::get(pk, account.clone());
+                  let proportion = Ratio::checked_from_rational(self_share, Self::total_shares(pk)).unwrap_or_default();
+                  let other_currency_amount = proportion.saturating_mul_int(other_currency_pool);
+                  let base_currency_amount = proportion.saturating_mul_int(base_currency_pool);
+                  result.push((id.0, id.1, other_currency_amount, base_currency_amount, self_share, Self::total_shares(pk)));
+              }
+          });
+      result
+  }
+
   /// generate the pair key from two currency ids.
   /// currency ids are sorted by asc order.
   /// the pair key was a u64 number, whose first 32bits is smaller currency id.

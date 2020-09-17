@@ -17,12 +17,15 @@ pub struct ExchangeInfo<CurrencyId> {
 }
 
 #[rpc]
-pub trait CurrencyExchangeRpc<BlockHash, CurrencyId, Balance> {
+pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance> {
   #[rpc(name = "target_amount_available")]
   fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
   #[rpc(name = "supply_amount_needed")]
   fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
+
+  #[rpc(name = "my_liquidity")]
+  fn my_liquidity(&self, account: AccountId, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>>;
 }
 
 pub struct CurrencyExchange<C, M> {
@@ -36,11 +39,12 @@ impl<C, M> CurrencyExchange<C, M> {
     }
 }
 
-impl<C, Block, CurrencyId, Balance> CurrencyExchangeRpc<<Block as BlockT>::Hash, CurrencyId, Balance> for CurrencyExchange<C, Block>
+impl<C, Block, AccountId, CurrencyId, Balance> CurrencyExchangeRpc<<Block as BlockT>::Hash, AccountId, CurrencyId, Balance> for CurrencyExchange<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: CurrencyExchangeRuntimeApi<Block, CurrencyId, Balance>,
+    C::Api: CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance>,
+    AccountId: Codec,
     CurrencyId: Codec,
 	Balance: Codec + Display,
 {
@@ -78,4 +82,18 @@ where
 		})
     }
 
+    fn my_liquidity(&self, account: AccountId, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>> {
+        let api = self.client.runtime_api();
+        let at = BlockId::hash(at.unwrap_or_else(||
+            // If the block hash is not supplied assume the best block.
+            self.client.info().best_hash));
+        let info = api.my_liquidity(&at, account).map_err(|e| RpcError {
+            code: ErrorCode::ServerError(Error::RuntimeError.into()),
+            message: "Unable to get value.".into(),
+            data: Some(format!("{:?}", e).into()),
+        }).unwrap().into_iter().map(|(c1, c2, b1, b2, s1, s2)| {
+            (c1, c2, format!("{}", b1), format!("{}", b2), format!("{}", s1), format!("{}", s2))
+        }).collect();
+        Ok(info)
+    }
 }
