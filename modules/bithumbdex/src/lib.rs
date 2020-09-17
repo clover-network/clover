@@ -378,7 +378,7 @@ decl_module! {
 }
 
 impl<T: Trait> Module<T> {
-  pub fn my_liquidity(account: T::AccountId) -> vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)> {
+  pub fn get_liquidity(account: T::AccountId) -> vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)> {
       let mut result = vec::Vec::<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)>::new();
       LiquidityPool::iter()
           .map(|(pair_key, pool_info)| (Self::pair_key_to_ids(pair_key), pair_key, pool_info))
