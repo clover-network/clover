@@ -378,20 +378,29 @@ decl_module! {
 }
 
 impl<T: Trait> Module<T> {
-  pub fn get_liquidity(account: T::AccountId) -> vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)> {
+  pub fn get_liquidity(account: Option<T::AccountId>) -> vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)> {
       let mut result = vec::Vec::<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)>::new();
       LiquidityPool::iter()
           .map(|(pair_key, pool_info)| (Self::pair_key_to_ids(pair_key), pair_key, pool_info))
           .filter(|(id, _, _)| id.is_some())
           .map(|(id, pk, info)| (id.unwrap(), pk, info))
           .for_each(|(id, pk, info)| {
-              if <Shares<T>>::contains_key(pk, account.clone()) {
-                  let (other_currency_pool, base_currency_pool): (Balance, Balance) = info;
-                  let self_share = <Shares<T>>::get(pk, account.clone());
-                  let proportion = Ratio::checked_from_rational(self_share, Self::total_shares(pk)).unwrap_or_default();
-                  let other_currency_amount = proportion.saturating_mul_int(other_currency_pool);
-                  let base_currency_amount = proportion.saturating_mul_int(base_currency_pool);
-                  result.push((id.0, id.1, other_currency_amount, base_currency_amount, self_share, Self::total_shares(pk)));
+              match account.clone() {
+                  None => {
+                      let (other_currency_pool, base_currency_pool): (Balance, Balance) = info;
+                      result.push((id.0, id.1, other_currency_pool, base_currency_pool, Self::total_shares(pk), Self::total_shares(pk)));
+                  }
+
+                  Some(aid) => {
+                      if <Shares<T>>::contains_key(pk, aid.clone()) {
+                          let (other_currency_pool, base_currency_pool): (Balance, Balance) = info;
+                          let self_share = <Shares<T>>::get(pk, aid.clone());
+                          let proportion = Ratio::checked_from_rational(self_share, Self::total_shares(pk)).unwrap_or_default();
+                          let other_currency_amount = proportion.saturating_mul_int(other_currency_pool);
+                          let base_currency_amount = proportion.saturating_mul_int(base_currency_pool);
+                          result.push((id.0, id.1, other_currency_amount, base_currency_amount, self_share, Self::total_shares(pk)));
+                      }
+                  }
               }
           });
       result
