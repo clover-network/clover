@@ -5100,6 +5100,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e005d658ad26eacc2b6c506dfde519f4e277e328d0eb3379ca61647d70a8f531"
 
 [[package]]
+name = "reward-pool"
+version = "2.0.0-rc6"
+dependencies = [
+ "bitdex-primitives",
+ "byteorder 1.3.4",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-derive",
+ "num-traits",
+ "orml-currencies",
+ "orml-tokens",
+ "orml-traits",
+ "orml-utilities",
+ "pallet-balances",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "ring"
 version = "0.16.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,0 +1,72 @@
+[package]
+authors = ['pangwa <pangwa@gmail.com>']
+edition = '2018'
+homepage = 'https://substrate.dev'
+license = 'Unlicense'
+name = 'reward-pool'
+repository = 'https://github.com/bithumb-dev/bitdex/'
+version = '2.0.0-rc6'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+serde = { version = "1.0.101", optional = true }
+byteorder = { version = "1.1.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "1.3.4", default-features = false }
+num-traits = { version = "0.2", default-features = false}
+num-derive= { version = "0.2", default-features = false}
+sp-runtime = { version = "2.0.0-rc6", default-features = false }
+frame-benchmarking = { version = "2.0.0-rc6", default-features = false, optional = true }
+frame-support = { version = "2.0.0-rc6", default-features = false }
+frame-system = { version = "2.0.0-rc6", default-features = false }
+sp-std = { version = "2.0.0-rc6", default-features = false }
+pallet-balances = { version = "2.0.0-rc6", default-features = false }
+
+[dev-dependencies]
+sp-core = { version = "2.0.0-rc6", default-features = false }
+sp-io = { version = "2.0.0-rc6", default-features = false }
+
+[dependencies.orml-currencies]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-tokens]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-traits]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-utilities]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.primitives]
+  default-features = false
+  package = 'bitdex-primitives'
+  path = '../../primitives'
+  version = '2.0.0-rc6'
+
+[features]
+default = ['std']
+std = [
+  'byteorder/std',
+  'frame-support/std',
+  'frame-system/std',
+  'num-traits/std',
+  'orml-currencies/std',
+  'orml-tokens/std',
+  'orml-traits/std',
+  'orml-utilities/std',
+  'pallet-balances/std',
+  'primitives/std',
+  'serde',
+  'sp-runtime/std',
+  'sp-std/std',
+]

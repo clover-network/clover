@@ -7,4 +7,5 @@ members = [
     "primitives",
     'runtime',
     'modules/bithumbdex',
+    'modules/reward-pool',
 ]
