@@ -25,7 +25,7 @@ pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance> {
   fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
   #[rpc(name = "get_liquidity")]
-  fn get_liquidity(&self, account: AccountId, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>>;
+  fn get_liquidity(&self, account: Option<AccountId>, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>>;
 }
 
 pub struct CurrencyExchange<C, M> {
@@ -82,7 +82,7 @@ where
 		})
     }
 
-    fn get_liquidity(&self, account: AccountId, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>> {
+    fn get_liquidity(&self, account: Option<AccountId>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(||
             // If the block hash is not supplied assume the best block.
