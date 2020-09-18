@@ -1,10 +1,8 @@
 #![cfg(test)]
 use super::*;
-use frame_support::{impl_outer_event, impl_outer_origin, ord_parameter_types, parameter_types};
-use frame_system::EnsureSignedBy;
+use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
-use sp_std::cell::RefCell;
 pub use pallet_balances::Call as BalancesCall;
 
 pub use primitives::{
@@ -137,7 +135,6 @@ pub type BithumbDexModule = Module<TestRuntime>;
 
 pub const ALICE: [u8; 32] = [0u8; 32];
 pub const BOB: [u8; 32] = [1u8; 32];
-pub const DAVE: [u8; 32] = [2u8; 32];
 pub const BXB: CurrencyId = CurrencyId::BXB;
 pub const BUSD: CurrencyId = CurrencyId::BUSD;
 pub const DOT: CurrencyId = CurrencyId::DOT;
@@ -168,11 +165,6 @@ impl Default for ExtBuilder {
 }
 
 impl ExtBuilder {
-	pub fn balances(mut self, endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>) -> Self {
-		self.endowed_accounts = endowed_accounts;
-		self
-	}
-
 	pub fn build(self) -> sp_io::TestExternalities {
 		let mut t = frame_system::GenesisConfig::default()
 			.build_storage::<TestRuntime>()

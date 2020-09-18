@@ -1,9 +1,9 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{assert_noop, assert_ok};
+use frame_support::assert_ok;
 use mock::{
-	BithumbDexModule, ExtBuilder, Origin, TestRuntime, System, TestEvent, Tokens, BXB, ALICE, BUSD, BOB, DOT, BETH,
+	BithumbDexModule, ExtBuilder, Origin, BXB, ALICE, BUSD, BOB, DOT, BETH,
 };
 
 pub use primitives::{ AccountId };
@@ -20,6 +20,30 @@ where
         s  = s + &f;
     }
     s
+}
+
+#[test]
+fn test_compound_rote() {
+	ExtBuilder::default().build().execute_with(|| {
+		assert_ok!(BDM::add_liquidity(
+			Origin::signed(AccountId::from(ALICE)),
+			BXB,
+			BETH,
+			500000000000,
+			100000000000000000
+		));
+		assert_ok!(BDM::add_liquidity(
+			Origin::signed(AccountId::from(BOB)),
+			BETH,
+			DOT,
+			80000000000,
+			4000000000000
+		));
+
+	  	let source_amount_bxb = 90000000;
+		let (_, route) = BDM::get_target_amount_available(BXB, DOT, source_amount_bxb);
+		assert_eq!(route, [BETH, DOT]);
+	});
 }
 
 #[test]

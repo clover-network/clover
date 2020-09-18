@@ -6,7 +6,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::{ clone::*, cmp::*, collections::btree_set, vec,};
+use sp_std::{ clone::*, collections::btree_set, vec};
 
 pub type Routes<N> = vec::Vec<N>;
 
@@ -65,7 +65,7 @@ where
 #[cfg(test)]
 mod tests {
   use sp_std::collections::btree_map::*;
-  use sp_std::{ clone::*, cmp::*, collections::btree_set, vec,};
+  use sp_std::{ clone::*, vec,};
   use super::*;
 
   pub fn format_routes<T>(routes: &vec::Vec<T>) -> String
