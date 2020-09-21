@@ -53,6 +53,9 @@ pub trait Trait: system::Trait {
 	/// Currency for transfer currencies
 	type Currency: MultiCurrencyExtended<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
 
+  /// Trading fee rate
+  type GetExchangeFee: Get<Rate>;
+  
 	/// The DEX's module id, keep all assets in DEX sub account.
 	type ModuleId: Get<ModuleId>;
 
@@ -128,7 +131,7 @@ decl_storage! {
     Shares get(fn shares): double_map hasher(blake2_128_concat) PairKey, hasher(twox_64_concat) T::AccountId => T::Share;
     
     /// Exchange fee for governance
-    ExchangeFee get(fn exchange_fee): Rate = Rate::saturating_from_rational(1, 1000);
+    ExchangeFee get(fn exchange_fee): Rate;
 	}
 
 	add_extra_genesis {
@@ -355,7 +358,7 @@ decl_module! {
 		) {
 			with_transaction_result(|| {
 				let who = ensure_signed(origin)?;
-        let fee_rate = Self::exchange_fee();
+        let fee_rate = Self::get_exchange_fee();
 				Self::basic_swap(&who, supply_currency_id, supply_amount, target_currency_id, acceptable_target_amount, fee_rate)?;
 				Ok(())
 			})?;
@@ -386,6 +389,14 @@ decl_module! {
 }
 
 impl<T: Trait> Module<T> {
+  pub fn get_exchange_fee() -> Rate {
+    if ExchangeFee::exists() {
+      Self::exchange_fee()
+    } else {
+      T::GetExchangeFee::get()
+    }
+  }
+
   pub fn get_liquidity(account: Option<T::AccountId>) -> vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)> {
       let mut result = vec::Vec::<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)>::new();
       LiquidityPool::iter()
@@ -612,7 +623,7 @@ impl<T: Trait> Module<T> {
     // route should not contains the from currency
     ensure!(!route.contains(&from_currency_id), Error::<T>::InvalidRoute);
 
-    let fee_rate = Self::exchange_fee();
+    let fee_rate = Self::get_exchange_fee();
 
     let mut last_currency = from_currency_id;
     let mut last_exchange_amount = from_currency_amount;
@@ -684,7 +695,7 @@ impl<T: Trait> Module<T> {
       return (Zero::zero(), vec![]);
     }
 
-    let fee_rate = Self::exchange_fee();
+    let fee_rate = Self::get_exchange_fee();
 
     if let Ok((supply_balance, target_balance)) = Self::get_pool_info(supply_currency_id, target_currency_id) {
       // pool exists for the two currencies, use the pool directly
@@ -727,7 +738,7 @@ impl<T: Trait> Module<T> {
       return (Zero::zero(), vec![]);
     }
 
-    let fee_rate = Self::exchange_fee();
+    let fee_rate = Self::get_exchange_fee();
 
     if let Ok((supply_balance, target_balance)) = Self::get_pool_info(supply_currency_id, target_currency_id) {
       // pool exists for the two currencies, use the pool directly
