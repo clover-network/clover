@@ -12,7 +12,7 @@ use sp_core::{
 	OpaqueMetadata,
 };
 use sp_runtime::{
-	ApplyExtrinsicResult, generic, create_runtime_str, impl_opaque_keys, Percent,
+	ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
 	ModuleId, transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
 };
 use sp_runtime::traits::{
@@ -665,6 +665,7 @@ impl orml_currencies::Trait for Runtime {
 }
 
 parameter_types! {
+	pub GetExchangeFee: Rate = Rate::saturating_from_rational(1, 1000);
 	pub const BithumbDexModuleId: ModuleId = ModuleId(*b"bxb/dexm");
 }
 
@@ -672,6 +673,7 @@ impl bithumbdex::Trait for Runtime {
 	type Event = Event;
 	type Currency = Currencies;
 	type Share = Share;
+	type GetExchangeFee = GetExchangeFee;
 	type ModuleId = BithumbDexModuleId;
 	type OnAddLiquidity = ();
 	type OnRemoveLiquidity = ();
