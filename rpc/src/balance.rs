@@ -12,7 +12,7 @@ pub use bitdex_rpc_runtime_api::CurrencyBalanceApi as CurrencyBalanceRuntimeApi;
 
 #[rpc]
 pub trait CurrencyBalanceRpc<BlockHash, AccountId, CurrencyId, Balance> {
-  #[rpc(name = "get_balance")]
+  #[rpc(name = "bitdex_get_balance")]
   fn account_balance(&self, account: AccountId, currency_id: Option<CurrencyId>, at: Option<BlockHash>) -> Result<sp_std::vec::Vec<(CurrencyId, String)>>;
 }
 

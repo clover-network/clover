@@ -6,7 +6,7 @@ pub use bitdex_rpc_runtime_api::CurrencyPairApi as CurrencyPairRuntimeApi;
 
 #[rpc]
 pub trait CurrencyPairRpc<BlockHash> {
-  #[rpc(name = "currency_pair")]
+  #[rpc(name = "bitdex_currency_pair")]
   fn currency_pair(&self, at: Option<BlockHash>) -> Result<sp_std::vec::Vec<(CurrencyId, CurrencyId)>>;
 }
 

@@ -19,7 +19,7 @@ pub struct CurrencyInfo {
 
 #[rpc]
 pub trait CurrencyRpc {
-    #[rpc(name = "get_currencies")]
+    #[rpc(name = "bitdex_get_currencies")]
     fn get_currencies(&self) -> Result<Vec<CurrencyInfo>>;
 }
 

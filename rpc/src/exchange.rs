@@ -18,13 +18,13 @@ pub struct ExchangeInfo<CurrencyId> {
 
 #[rpc]
 pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance> {
-  #[rpc(name = "target_amount_available")]
+  #[rpc(name = "bitdex_target_amount_available")]
   fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
-  #[rpc(name = "supply_amount_needed")]
+  #[rpc(name = "bitdex_supply_amount_needed")]
   fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
-  #[rpc(name = "get_liquidity")]
+  #[rpc(name = "bitdex_get_liquidity")]
   fn get_liquidity(&self, account: Option<AccountId>, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>>;
 }
 
