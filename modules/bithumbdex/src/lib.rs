@@ -19,7 +19,7 @@ use frame_support::{
 };
 use frame_support::storage::IterableStorageMap;
 
-use frame_system::{self as system, ensure_signed};
+use frame_system::{self as system, ensure_signed, ensure_root};
 
 use num_traits::FromPrimitive;
 
@@ -52,9 +52,6 @@ pub trait Trait: system::Trait {
 
 	/// Currency for transfer currencies
 	type Currency: MultiCurrencyExtended<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
-
-	/// Trading fee rate
-	type GetExchangeFee: Get<Rate>;
 
 	/// The DEX's module id, keep all assets in DEX sub account.
 	type ModuleId: Get<ModuleId>;
@@ -112,6 +109,7 @@ decl_error! {
 		InvalidLiquidityIncrement,
     /// the route is not valid
     InvalidRoute,
+    InvalidExchangeRate,
 	}
 }
 
@@ -127,7 +125,10 @@ decl_storage! {
 
 		/// Shares records indexed by currency type and account id
 		/// CurrencyType -> Owner -> ShareAmount
-		Shares get(fn shares): double_map hasher(blake2_128_concat) PairKey, hasher(twox_64_concat) T::AccountId => T::Share;
+    Shares get(fn shares): double_map hasher(blake2_128_concat) PairKey, hasher(twox_64_concat) T::AccountId => T::Share;
+    
+    /// Exchange fee for governance
+    ExchangeFee get(fn exchange_fee): Rate = Rate::saturating_from_rational(1, 1000);
 	}
 
 	add_extra_genesis {
@@ -179,11 +180,18 @@ decl_module! {
 
 		fn deposit_event() = default;
 
-		/// Trading fee rate
-		const GetExchangeFee: Rate = T::GetExchangeFee::get();
-
 		/// The DEX's module id, keep all assets in DEX.
-		const ModuleId: ModuleId = T::ModuleId::get();
+    const ModuleId: ModuleId = T::ModuleId::get();
+    
+    #[weight = 100_000]
+    fn set_exchange_rate(origin, fee: Rate) {
+      with_transaction_result(|| {
+        ensure_root(origin)?;
+        ensure!(fee > Rate::checked_from_integer(0).unwrap_or_default(), Error::<T>::InvalidExchangeRate);
+        ExchangeFee::put(fee);
+        Ok(())
+			})?;
+    }
 
 		#[weight = 206 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(10, 9)]
 		pub fn add_liquidity(
@@ -198,10 +206,10 @@ decl_module! {
 			with_transaction_result(|| {
 				let who = ensure_signed(origin)?;
         let pair_id = Self::get_pair_key(&currency_id_first, &currency_id_second);
-				ensure!(
-					LiquidityPool::contains_key(pair_id),
-					Error::<T>::InvalidCurrencyPair,
-				);
+
+        if !LiquidityPool::contains_key(pair_id) {
+          LiquidityPool::insert(pair_id, (0, 0));
+        }
 
         //
         // normalize currency pair, smaller at the left side
@@ -347,7 +355,7 @@ decl_module! {
 		) {
 			with_transaction_result(|| {
 				let who = ensure_signed(origin)?;
-        let fee_rate = T::GetExchangeFee::get();
+        let fee_rate = Self::exchange_fee();
 				Self::basic_swap(&who, supply_currency_id, supply_amount, target_currency_id, acceptable_target_amount, fee_rate)?;
 				Ok(())
 			})?;
@@ -604,7 +612,7 @@ impl<T: Trait> Module<T> {
     // route should not contains the from currency
     ensure!(!route.contains(&from_currency_id), Error::<T>::InvalidRoute);
 
-    let fee_rate = T::GetExchangeFee::get();
+    let fee_rate = Self::exchange_fee();
 
     let mut last_currency = from_currency_id;
     let mut last_exchange_amount = from_currency_amount;
@@ -676,7 +684,7 @@ impl<T: Trait> Module<T> {
       return (Zero::zero(), vec![]);
     }
 
-    let fee_rate = T::GetExchangeFee::get();
+    let fee_rate = Self::exchange_fee();
 
     if let Ok((supply_balance, target_balance)) = Self::get_pool_info(supply_currency_id, target_currency_id) {
       // pool exists for the two currencies, use the pool directly
@@ -719,7 +727,7 @@ impl<T: Trait> Module<T> {
       return (Zero::zero(), vec![]);
     }
 
-    let fee_rate = T::GetExchangeFee::get();
+    let fee_rate = Self::exchange_fee();
 
     if let Ok((supply_balance, target_balance)) = Self::get_pool_info(supply_currency_id, target_currency_id) {
       // pool exists for the two currencies, use the pool directly
