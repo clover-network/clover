@@ -17,7 +17,7 @@ pub struct ExchangeInfo<CurrencyId> {
 }
 
 #[rpc]
-pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance> {
+pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance, Rate> {
   #[rpc(name = "bitdex_target_amount_available")]
   fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
@@ -26,6 +26,9 @@ pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance> {
 
   #[rpc(name = "bitdex_get_liquidity")]
   fn get_liquidity(&self, account: Option<AccountId>, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>>;
+
+  #[rpc(name = "bitdex_get_exchange_rate")]
+  fn get_exchange_rate(&self, at: Option<BlockHash>) -> Result<Rate>;
 }
 
 pub struct CurrencyExchange<C, M> {
@@ -39,14 +42,15 @@ impl<C, M> CurrencyExchange<C, M> {
     }
 }
 
-impl<C, Block, AccountId, CurrencyId, Balance> CurrencyExchangeRpc<<Block as BlockT>::Hash, AccountId, CurrencyId, Balance> for CurrencyExchange<C, Block>
+impl<C, Block, AccountId, CurrencyId, Balance, Rate> CurrencyExchangeRpc<<Block as BlockT>::Hash, AccountId, CurrencyId, Balance, Rate> for CurrencyExchange<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-    C::Api: CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance>,
+    C::Api: CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance, Rate>,
     AccountId: Codec,
     CurrencyId: Codec,
 	Balance: Codec + Display,
+    Rate: Codec,
 {
     fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<<Block as BlockT>::Hash>) -> Result<ExchangeInfo<CurrencyId>> {
         let api = self.client.runtime_api();
@@ -95,5 +99,17 @@ where
             (c1, c2, format!("{}", b1), format!("{}", b2), format!("{}", s1), format!("{}", s2))
         }).collect();
         Ok(info)
+    }
+
+    fn get_exchange_rate(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Rate> {
+        let api = self.client.runtime_api();
+		let at = BlockId::hash(at.unwrap_or_else(||
+			// If the block hash is not supplied assume the best block.
+			self.client.info().best_hash));
+		api.get_exchange_rate(&at).map_err(|e| RpcError {
+			code: ErrorCode::ServerError(Error::RuntimeError.into()),
+			message: "Unable to get value.".into(),
+			data: Some(format!("{:?}", e).into()),
+		})
     }
 }
