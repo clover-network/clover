@@ -197,6 +197,10 @@ version = '2.0.0-rc6'
 default-features = false
 version = '2.0.0-rc6'
 
+[dependencies.pallet-utility]
+default-features = false
+version = '2.0.0-rc6'
+
 [dev-dependencies.frame-benchmarking]
 default-features = false
 version = '2.0.0-rc6'
@@ -247,6 +251,7 @@ std = [
     "pallet-treasury/std",
     "pallet-membership/std",
     "pallet-scheduler/std",
+    "pallet-utility/std",
 ]
 
 [build-dependencies.wasm-builder-runner]
