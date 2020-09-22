@@ -15,7 +15,9 @@ use frame_support::{
 use sp_runtime::{
   traits::{
     AccountIdConversion,
-    Member, Zero,
+    Member,
+    UniqueSaturatedInto,
+    Zero,
   },
   DispatchResult, DispatchError,
   FixedPointNumber,
@@ -27,7 +29,9 @@ use sp_std::{
   cmp::{Eq, PartialEq},
 };
 
-use primitives::{Balance, CurrencyId, Price, Share, Ratio};
+use frame_system::{ensure_signed};
+
+use primitives::{Amount, Balance, CurrencyId, Price, Share, Ratio};
 
 use orml_traits::{MultiCurrency, MultiCurrencyExtended};
 
@@ -133,6 +137,10 @@ impl<T: Trait> Module<T> {
     Self::get_pool(pool_id)
   }
 
+  pub fn get_pool_account_info(pool_id: &T::PoolId, account: &T::AccountId) -> PoolAccountInfo<Share, Balance> {
+    Self::pool_account_data(pool_id, account)
+  }
+
   /// add shares to the reward pool
   /// note: should call this function insdie a storage transaction
   /// steps:
@@ -142,7 +150,7 @@ impl<T: Trait> Module<T> {
   /// 4. the native currency amount is user "borrowed" which should repay back when user
   ///    removes shares from the reward pool
   /// the rewards are allocated at (block_add, block_remove]
-  pub fn add_share(who: T::AccountId, pool: T::PoolId, amount: Share) -> DispatchResult {
+  pub fn add_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> DispatchResult {
     if amount.is_zero() {
       return Ok(());
     }
@@ -170,7 +178,7 @@ impl<T: Trait> Module<T> {
       *info = pool_info;
     });
 
-    <PoolAccountData<T>>::try_mutate(pool, &who, |data| -> DispatchResult {
+    <PoolAccountData<T>>::try_mutate(pool, who, |data| -> DispatchResult {
       data.shares = data.shares.checked_add(amount).ok_or(Error::<T>::RewardCaculationError)?;
       // record the virtual rewards that the account 'borrowed'
       data.borrowed_amount = data.borrowed_amount.checked_add(virtual_reward_amount.into()).ok_or(Error::<T>::RewardCaculationError)?;
@@ -200,7 +208,7 @@ impl<T: Trait> Module<T> {
     });
 
     let sub_account = Self::sub_account_id(pool);
-		T::Currency::transfer(T::GetNativeCurrencyId::get(), &who, &sub_account, reward)?;
+		T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, reward)?;
 
     Ok(())
   }
@@ -234,7 +242,7 @@ impl<T: Trait> Module<T> {
     let new_balance = borrowed_amount.checked_sub(account_balance_to_remove)
       .ok_or(Error::<T>::RewardCaculationError)?;
 
-    let reward = reward_with_virtual.checked_sub(borrowed_amount)
+    let reward = reward_with_virtual.checked_sub(account_balance_to_remove)
       .ok_or(Error::<T>::RewardCaculationError)?;
 
     // should not happen, but it's nice to have a check
@@ -242,13 +250,15 @@ impl<T: Trait> Module<T> {
       debug::error!("got wrong reward for account: {:?}, pool info: {:?}, shares: {:?}", account_info, pool_info, amount);
       return Err(Error::<T>::RewardCaculationError.into());
     }
+    let total_shares = total_shares.checked_sub(amount)
+      .ok_or(Error::<T>::InsufficientShares)?;
     let total_rewards = total_rewards.checked_sub(reward_with_virtual)
       .ok_or(Error::<T>::RewardCaculationError)?;
     let total_rewards_useable = total_rewards_useable.checked_sub(reward)
       .ok_or(Error::<T>::RewardCaculationError)?;
 
     let pool_info = PoolInfo::<Share, Balance,  T::BlockNumber> {
-      total_rewards, total_rewards_useable,
+      total_rewards, total_rewards_useable, total_shares,
       ..pool_info
     };
     let shares = shares.checked_sub(amount)
@@ -262,47 +272,54 @@ impl<T: Trait> Module<T> {
     Ok((pool_info, account_info, reward))
   }
 
+  /// update the pool reward and releated storage
+  fn update_pool_reward(pool: &T::PoolId,)
+                        -> Result<PoolInfo<Share, Balance, T::BlockNumber>, DispatchError> {
+    let (pool_info, balance_change) = Self::calc_pool_reward(pool)?;
+
+
+    if !balance_change.is_zero() {
+      let sub_account = Self::sub_account_id(pool.clone());
+      debug::info!("updating reward pool {:?}, account {:?} balance by: {:?}", pool, sub_account, balance_change);
+
+      let amount = balance_change.unique_saturated_into();
+      T::Currency::update_balance(T::GetNativeCurrencyId::get(), &sub_account, amount)?;
+    }
+    <Pools<T>>::mutate(pool, |info| {
+      *info = pool_info.clone();
+    });
+
+    Ok(pool_info)
+ }
+
   /// update the pool reward at the specified block height
-  fn update_pool_reward(
+  fn calc_pool_reward(
     pool: &T::PoolId,
-  ) -> Result<PoolInfo<Share, Balance, T::BlockNumber>, DispatchError> {
+  ) -> Result<(PoolInfo<Share, Balance, T::BlockNumber>, Balance), DispatchError> {
     let pool_info = Self::get_pool(pool);
     let last_update_block  = pool_info.last_update_block;
     let cur_block = <frame_system::Module<T>>::block_number();
     if cur_block <= last_update_block {
       debug::info!("ignore update pool reward: {:?} at block: {:?}, already updated at: {:?}", pool, cur_block, last_update_block);
 
-      return Ok(pool_info.clone());
+      return Ok((pool_info.clone(), 0));
     }
 
     let reward = T::Handler::caculate_reward(pool, &pool_info.total_shares, last_update_block, cur_block);
+
+    let mut new_info = pool_info.clone();
+    new_info.last_update_block = cur_block;
 
     // reward is zero, this is a valid case
     // it's not necessary to update the storage in this case
     if reward == 0 {
       debug::warn!("0 reward: {:?}, pool: {:?}, between {:?} - {:?}", reward, pool, last_update_block, cur_block);
-      return Ok(pool_info.clone());
+      return Ok((new_info, 0));
     }
 
-    let mut new_info = pool_info.clone();
     new_info.total_rewards = new_info.total_rewards.checked_add(reward).ok_or(Error::<T>::RewardCaculationError)?;
-    new_info.total_rewards_useable = new_info.total_rewards.checked_add(reward).ok_or(Error::<T>::RewardCaculationError)?;
+    new_info.total_rewards_useable = new_info.total_rewards_useable.checked_add(reward).ok_or(Error::<T>::RewardCaculationError)?;
 
-    let sub_account = Self::sub_account_id(pool.clone());
-    let balance_change = reward.try_into()
-      .map_err(|_| Error::<T>::RewardCaculationError)?;
-
-    debug::info!("updating reward pool {:?}, account {:?} balance by: {:?}", pool, sub_account, balance_change);
-    T::Currency::update_balance(T::GetNativeCurrencyId::get(), &sub_account, balance_change)?;
-
-    // <Pools<T>>::try_mutate(pool, |info| -> DispatchResult {
-    //   info.total_rewards = info.total_rewards.checked_add(&reward).ok_or(Error::<T>::RewardCaculationError)?;
-    //   info.total_rewards_useable = info.total_rewards.checked_add(&reward).ok_or(Error::<T>::RewardCaculationError)?;
-    //   info.last_update_block = cur_block;
-    //   new_info = info.clone();
-    //   Ok(())
-    // })?;
-
-    Ok(new_info)
+    Ok((new_info, reward))
   }
 }

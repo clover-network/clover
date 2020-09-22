@@ -14,6 +14,7 @@ pub use primitives::{
 	EraIndex, Hash, Index, Moment,
   Rate, Share,
   Signature,
+  currency::*,
 };
 
 use orml_currencies::{BasicCurrencyAdapter};
@@ -134,12 +135,12 @@ impl RewardHandler<AccountId, BlockNumber, Balance, Share, PoolId> for Handler {
   // simple reward calculation, 1 block 1 reward
   fn caculate_reward(pool_id: &PoolId, total_share: &Share, last_update_block: BlockNumber,
                      now: BlockNumber) -> Balance {
-    debug::info!("calculate reward for pool: {:?}", pool_id);
+    println!("calculate reward for pool: {:?}", pool_id);
     if total_share.is_zero() {
-      debug::info!("no reward because no share in pool, pool: {:?}", pool_id);
+      println!("no reward because no share in pool, pool: {:?}", pool_id);
       0
     } else {
-      (now - last_update_block).try_into().unwrap()
+      DOLLARS.checked_mul((now - last_update_block).into()).unwrap()
     }
   }
 }
