@@ -8,7 +8,7 @@
 
 use codec::{Decode, Encode, FullCodec, HasCompact};
 use frame_support::{
-  decl_error, decl_module, decl_storage, Parameter,
+  decl_error, decl_event, decl_module, decl_storage, Parameter,
   debug,
   traits::{Get},
 };
@@ -34,6 +34,9 @@ use orml_traits::{MultiCurrency, MultiCurrencyExtended};
 mod traits;
 
 use traits::RewardHandler;
+
+mod mock;
+mod tests;
 
 /// The Reward Pool Info.
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, Default)]
@@ -65,6 +68,8 @@ pub struct PoolAccountInfo <Share: HasCompact, Balance: HasCompact> {
 }
 
 pub trait Trait: frame_system::Trait {
+  type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+
   /// The reward pool ID type.
   type PoolId: Parameter + Member + Copy + FullCodec;
 
@@ -78,6 +83,18 @@ pub trait Trait: frame_system::Trait {
 
   type GetNativeCurrencyId: Get<CurrencyId>;
 }
+
+decl_event!(
+	pub enum Event<T> where
+    <T as frame_system::Trait>::AccountId,
+    <T as Trait>::PoolId,
+    Share = Share,
+    Balance = Balance,
+  {
+		RewardUpdated(PoolId, Balance),
+		ShareRemoved(PoolId, AccountId, Share),
+  }
+);
 
 decl_error! {
   /// Error for dex module.
@@ -100,6 +117,9 @@ decl_storage! {
 
 decl_module! {
   pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    type Error = Error<T>;
+		fn deposit_event() = default;
+
     const GetNativeCurrencyId: CurrencyId = T::GetNativeCurrencyId::get();
   }
 }
