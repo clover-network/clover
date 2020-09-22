@@ -1,6 +1,9 @@
 #![cfg(test)]
 use super::*;
-use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
+use frame_support::{
+  impl_outer_event, impl_outer_origin, parameter_types,
+  traits::{OnFinalize, OnInitialize},
+};
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
 pub use pallet_balances::Call as BalancesCall;
@@ -127,12 +130,17 @@ pub enum PoolId {
 }
 
 pub struct Handler;
-impl RewardHandler<AccountId, BlockNumber, Balance, PoolId> for Handler {
+impl RewardHandler<AccountId, BlockNumber, Balance, Share, PoolId> for Handler {
   // simple reward calculation, 1 block 1 reward
-  fn caculate_reward(pool_id: &PoolId, last_update_block: BlockNumber,
+  fn caculate_reward(pool_id: &PoolId, total_share: &Share, last_update_block: BlockNumber,
                      now: BlockNumber) -> Balance {
     debug::info!("calculate reward for pool: {:?}", pool_id);
-    (now - last_update_block).try_into().unwrap()
+    if total_share.is_zero() {
+      debug::info!("no reward because no share in pool, pool: {:?}", pool_id);
+      0
+    } else {
+      (now - last_update_block).try_into().unwrap()
+    }
   }
 }
 
@@ -212,5 +220,21 @@ impl ExtBuilder {
 		.assimilate_storage(&mut t).unwrap();
 
     t.into()
+  }
+}
+
+pub fn run_to_block(n: u64) {
+  while System::block_number() < n {
+    RewardPoolModule::on_finalize(System::block_number());
+    Currencies::on_finalize(System::block_number());
+    Tokens::on_finalize(System::block_number());
+    Balances::on_finalize(System::block_number());
+    System::on_finalize(System::block_number());
+    System::set_block_number(System::block_number() + 1);
+    System::on_initialize(System::block_number());
+    Balances::on_initialize(System::block_number());
+    Tokens::on_initialize(System::block_number());
+    Currencies::on_initialize(System::block_number());
+    RewardPoolModule::on_initialize(System::block_number());
   }
 }

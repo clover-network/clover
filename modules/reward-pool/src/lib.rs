@@ -76,7 +76,7 @@ pub trait Trait: frame_system::Trait {
 	/// The reward  module id, keep all assets in DEX sub account.
 	type ModuleId: Get<ModuleId>;
 
-  type Handler: RewardHandler<Self::AccountId, Self::BlockNumber, Balance, Self::PoolId>;
+  type Handler: RewardHandler<Self::AccountId, Self::BlockNumber, Balance, Share, Self::PoolId>;
 
 	/// Currency for transfer currencies
 	type Currency: MultiCurrencyExtended<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
@@ -128,6 +128,11 @@ impl<T: Trait> Module<T> {
   pub fn sub_account_id(pool_id: T::PoolId) -> T::AccountId {
     T::ModuleId::get().into_sub_account(pool_id)
   }
+
+  pub fn get_pool_info(pool_id: &T::PoolId) -> PoolInfo<Share, Balance, T::BlockNumber> {
+    Self::get_pool(pool_id)
+  }
+
   /// add shares to the reward pool
   /// note: should call this function insdie a storage transaction
   /// steps:
@@ -270,7 +275,7 @@ impl<T: Trait> Module<T> {
       return Ok(pool_info.clone());
     }
 
-    let reward = T::Handler::caculate_reward(pool, last_update_block, cur_block);
+    let reward = T::Handler::caculate_reward(pool, &pool_info.total_shares, last_update_block, cur_block);
 
     // reward is zero, this is a valid case
     // it's not necessary to update the storage in this case
