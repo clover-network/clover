@@ -424,6 +424,12 @@ impl pallet_democracy::Trait for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_utility::Trait for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type WeightInfo = ();
+}
+
 parameter_types! {
 	pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
 	pub const CouncilMaxProposals: u32 = 100;
@@ -717,7 +723,7 @@ construct_runtime!(
 
 		// Utility module.
 		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
-
+		Utility: pallet_utility::{Module, Call, Event},
 		BithumbDex: bithumbdex::{Module, Storage, Call, Event<T>, Config},
 	}
 );

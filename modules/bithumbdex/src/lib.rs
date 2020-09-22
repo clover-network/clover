@@ -185,8 +185,8 @@ decl_module! {
 
 		/// The DEX's module id, keep all assets in DEX.
     const ModuleId: ModuleId = T::ModuleId::get();
-    
-    #[weight = 100_000]
+
+    #[weight = (0, DispatchClass::Operational, Pays::No)]
     fn set_exchange_rate(origin, fee: Rate) {
       with_transaction_result(|| {
         ensure_root(origin)?;
