@@ -152,6 +152,7 @@ impl Trait for TestRuntime {
 	type GetNativeCurrencyId = GetNativeCurrencyId;
   type PoolId = PoolId;
   type Handler = Handler;
+	type ExistentialReward = ExistentialDeposit;
 }
 
 pub type RewardPoolModule = Module<TestRuntime>;

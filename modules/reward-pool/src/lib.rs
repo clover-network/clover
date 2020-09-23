@@ -86,6 +86,9 @@ pub trait Trait: frame_system::Trait {
 	type Currency: MultiCurrencyExtended<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
 
   type GetNativeCurrencyId: Get<CurrencyId>;
+
+  /// minimum amount that reward could be sent to account
+	type ExistentialReward: Get<Balance>;
 }
 
 decl_event!(
@@ -125,6 +128,7 @@ decl_module! {
 		fn deposit_event() = default;
 
     const GetNativeCurrencyId: CurrencyId = T::GetNativeCurrencyId::get();
+		const ExistentialReward: Balance = T::ExistentialReward::get();
   }
 }
 
@@ -252,10 +256,16 @@ impl<T: Trait> Module<T> {
     }
     let total_shares = total_shares.checked_sub(amount)
       .ok_or(Error::<T>::InsufficientShares)?;
-    let total_rewards = total_rewards.checked_sub(reward_with_virtual)
-      .ok_or(Error::<T>::RewardCaculationError)?;
-    let total_rewards_useable = total_rewards_useable.checked_sub(reward)
-      .ok_or(Error::<T>::RewardCaculationError)?;
+    let (reward, total_rewards, total_rewards_useable) = if reward <= T::ExistentialReward::get() {
+      println!("reward {:?} is less than existential reward, don't send the reward", reward);
+      (0, total_rewards, total_rewards_useable)
+    } else {
+      let rewards = total_rewards.checked_sub(reward_with_virtual)
+        .ok_or(Error::<T>::RewardCaculationError)?;
+      let rewards_useable = total_rewards_useable.checked_sub(reward)
+        .ok_or(Error::<T>::RewardCaculationError)?;
+      (reward, rewards, rewards_useable)
+    };
 
     let pool_info = PoolInfo::<Share, Balance,  T::BlockNumber> {
       total_rewards, total_rewards_useable, total_shares,
