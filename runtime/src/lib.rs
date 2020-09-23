@@ -57,9 +57,10 @@ use codec::{Encode};
 pub use primitives::{
 	AccountId, AccountIndex, Amount, Balance, BlockNumber, CurrencyId, EraIndex, Hash, Index,
 	Moment, Rate, Share, Signature,
+  currency::*,
 };
 
-pub use constants::{time::*, currency::*};
+pub use constants::{time::*, };
 
 mod constants;
 mod mock;
