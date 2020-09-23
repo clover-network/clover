@@ -139,10 +139,10 @@ decl_storage! {
 
 		build(|config: &GenesisConfig| {
             print!("got config: {:?}", config.initial_pairs);
-			config.initial_pairs.iter().for_each(|(currency_first, currency_second, balance_first, balance_second)| {
-                let pair_id = Module::<T>::get_pair_key(currency_first, currency_second);
-                LiquidityPool::insert(pair_id, (balance_first.unwrap_or_else(||0), balance_second.unwrap_or_else(||0)));
-			})
+			// config.initial_pairs.iter().for_each(|(currency_first, currency_second, balance_first, balance_second)| {
+                // let pair_id = Module::<T>::get_pair_key(currency_first, currency_second);
+                // LiquidityPool::insert(pair_id, (balance_first.unwrap_or(0), balance_second.unwrap_or(0)));
+			// })
 		})
 	}
 }
@@ -395,6 +395,60 @@ impl<T: Trait> Module<T> {
     } else {
       T::GetExchangeFee::get()
     }
+  }
+
+  pub fn to_add_liquidity(
+    currency_id_first: CurrencyId,
+    currency_id_second: CurrencyId,
+    max_first_currency_amount: Balance,
+    max_second_currency_amount: Balance,
+  ) -> (<T as Trait>::Share, <T as Trait>::Share) {
+    let pair_id = Self::get_pair_key(&currency_id_first, &currency_id_second);
+    //
+    // normalize currency pair, smaller at the left side
+    let (max_currency_amount_left, max_currency_amount_right) = if currency_id_first < currency_id_second {
+      (max_first_currency_amount, max_second_currency_amount)
+    } else {
+      (max_second_currency_amount, max_first_currency_amount)
+    };
+
+    let total_shares = if LiquidityPool::contains_key(pair_id) { 
+      Self::total_shares(pair_id)
+    } else {
+      T::Share::zero()
+    };
+
+    let (left_currency_pool, right_currency_pool): (Balance, Balance) = if LiquidityPool::contains_key(pair_id) {
+      Self::liquidity_pool(pair_id)
+    } else {
+      (0, 0)
+    };
+    let share_increment: T::Share =
+      if total_shares.is_zero() {
+        // initialize this liquidity pool, the initial share is equal to the max value between currency amounts
+        sp_std::cmp::max(max_currency_amount_left, max_currency_amount_right).unique_saturated_into()
+      } else {
+        let left_price = Price::checked_from_rational(right_currency_pool, left_currency_pool).unwrap_or_default();
+        let input_left_price = Price::checked_from_rational(max_currency_amount_right, max_currency_amount_left).unwrap_or_default();
+
+        if input_left_price <= left_price {
+          // max_currency_amount_left may be too much, calculate the actual left currency amount
+          let base_left_price = Price::checked_from_rational(left_currency_pool, right_currency_pool).unwrap_or_default();
+          let left_currency_amount = base_left_price.saturating_mul_int(max_currency_amount_right);
+          Ratio::checked_from_rational(left_currency_amount, left_currency_pool)
+            .and_then(|n| n.checked_mul_int(total_shares))
+            .unwrap_or_default()
+        } else {
+          // max_currency_amount_right is too much, calculate the actual right currency amount
+          let right_currency_amount = left_price.saturating_mul_int(max_currency_amount_left);
+          Ratio::checked_from_rational(right_currency_amount, right_currency_pool)
+            .and_then(|n| n.checked_mul_int(total_shares))
+            .unwrap_or_default()
+        }
+      };
+      
+      let pool_total_share = total_shares.checked_add(&share_increment);
+      (share_increment, pool_total_share.unwrap_or_default())
   }
 
   pub fn get_liquidity(account: Option<T::AccountId>) -> vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)> {

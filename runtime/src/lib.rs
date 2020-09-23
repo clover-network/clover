@@ -938,7 +938,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl bitdex_rpc_runtime_api::CurrencyExchangeApi<Block, AccountId, CurrencyId, Balance, Rate> for Runtime {
+	impl bitdex_rpc_runtime_api::CurrencyExchangeApi<Block, AccountId, CurrencyId, Balance, Rate, Share> for Runtime {
 		fn target_amount_available(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
 			let balance = BithumbDex::get_target_amount_available(source, target, amount);
 			balance
@@ -956,6 +956,11 @@ impl_runtime_apis! {
 
 		fn get_exchange_rate() -> Rate {
 			let result = BithumbDex::get_exchange_fee();
+			result
+		}
+
+		fn to_add_liquidity(source: CurrencyId, target: CurrencyId, source_amount: Balance, target_amount: Balance) -> (Share, Share) {
+			let result = BithumbDex::to_add_liquidity(source, target, source_amount, target_amount);
 			result
 		}
 	}
