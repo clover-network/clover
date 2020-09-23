@@ -1,11 +1,10 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{assert_noop, assert_ok};
 use mock::{
-	ALICE, Currencies, PoolId, RewardPoolModule,
+	ALICE, BOB, DAVE, Currencies, PoolId, RewardPoolModule,
   run_to_block,
-  ExtBuilder, Origin, TestRuntime, System,
+  ExtBuilder,
 };
 
 pub use primitives::{ AccountId, currency::*, };
@@ -115,5 +114,55 @@ fn test_reward_single_account_existential() {
 
     assert_eq!(Currencies::total_balance(CurrencyId::BXB, &alice), initial_balance + 10 * DOLLARS);
     assert_eq!(Currencies::total_balance(CurrencyId::BXB, &pool_account), 0);
+  });
+}
+
+#[test]
+fn test_multi_account_rewards() {
+  let pool_id = PoolId::Swap(1);
+  let alice = AccountId::from(ALICE);
+  let bob = AccountId::from(BOB);
+  let dave = AccountId::from(DAVE);
+  let pool_account = RPM::sub_account_id(pool_id.clone());
+
+  //block 100       200         300        400        500
+  //       |---------|-----------|----------|----------|------------|
+  //     alice     alice(1/2)  bob(1/2)    bob        bob
+  //               bob(1/4)    dave(1/2)
+  //               dave(1/4)
+  // rewards:
+  //  alice: 100 + 50 = 150
+  //  bob: 25 + 50 + 100 = 175
+  //  dave: 25 + 50  = 75
+
+  ExtBuilder::default().build().execute_with(|| {
+    let initial_alice = Currencies::total_balance(CurrencyId::BXB, &alice);
+    let initial_bob = Currencies::total_balance(CurrencyId::BXB, &bob);
+    let initial_dave = Currencies::total_balance(CurrencyId::BXB, &dave);
+    run_to_block(100);
+    assert!(RPM::add_share(&alice, pool_id, 100 * DOLLARS).is_ok(), "should add shares to the pool");
+    run_to_block(200);
+    assert!(RPM::add_share(&bob, pool_id, 50 * DOLLARS).is_ok(), "should add shares to the pool");
+    assert!(RPM::add_share(&dave, pool_id, 50 * DOLLARS).is_ok(), "should add shares to the pool");
+
+    run_to_block(300);
+    assert!(RPM::remove_share(&alice, pool_id, 100 * DOLLARS).is_ok(), "should remove shares to the pool");
+    assert!(RPM::add_share(&bob, pool_id, 50 * DOLLARS).is_ok(), "should add shares to the pool");
+    assert!(RPM::add_share(&dave, pool_id, 50 * DOLLARS).is_ok(), "should add shares to the pool");
+
+    run_to_block(400);
+    assert!(RPM::remove_share(&bob, pool_id, 50 * DOLLARS).is_ok(), "should remove shares to the pool");
+    assert!(RPM::remove_share(&dave, pool_id, 100 * DOLLARS).is_ok(), "should remove shares to the pool");
+    run_to_block(500);
+    assert!(RPM::remove_share(&bob, pool_id, 50 * DOLLARS).is_ok(), "should remove shares to the pool");
+
+    check_pool_data(&pool_id, &alice, 0, 0, 0, 0, 0);
+    check_pool_data(&pool_id, &bob, 0, 0, 0, 0, 0);
+    check_pool_data(&pool_id, &dave, 0, 0, 0, 0, 0);
+    assert_eq!(Currencies::total_balance(CurrencyId::BXB, &pool_account), 0);
+    assert_eq!(Currencies::total_balance(CurrencyId::BXB, &alice), initial_alice + 150 * DOLLARS);
+    // rounding issue
+    assert_eq!(Currencies::total_balance(CurrencyId::BXB, &bob), initial_bob + 175 * DOLLARS + 1);
+    assert_eq!(Currencies::total_balance(CurrencyId::BXB, &dave), initial_dave + 75 * DOLLARS - 1);
   });
 }

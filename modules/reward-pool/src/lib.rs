@@ -23,15 +23,12 @@ use sp_runtime::{
   FixedPointNumber,
   ModuleId, RuntimeDebug,
 };
-use std::convert::TryInto;
 
 use sp_std::{
   cmp::{Eq, PartialEq},
 };
 
-use frame_system::{ensure_signed};
-
-use primitives::{Amount, Balance, CurrencyId, Price, Share, Ratio};
+use primitives::{Balance, CurrencyId, Price, Share, Ratio};
 
 use orml_traits::{MultiCurrency, MultiCurrencyExtended};
 
