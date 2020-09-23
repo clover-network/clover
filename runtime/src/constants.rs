@@ -1,4 +1,3 @@
-
 /// Time and blocks.
 pub mod time {
 	use primitives::{BlockNumber, Moment};

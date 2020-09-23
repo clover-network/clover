@@ -205,8 +205,9 @@ fn testnet_genesis(
 				.iter()
 				.flat_map(|x| {
 					vec![
-						(x.clone(), CurrencyId::BETH, 1000 * DOLLARS),
-						(x.clone(), CurrencyId::BUSD, 1000 * DOLLARS),
+						(x.clone(), CurrencyId::BETH, 10000 * DOLLARS),
+						(x.clone(), CurrencyId::BUSD, 10000 * DOLLARS),
+						(x.clone(), CurrencyId::DOT, 10000 * DOLLARS),
 					]
 				})
 				.collect(),
