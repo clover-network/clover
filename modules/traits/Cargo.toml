@@ -3,7 +3,7 @@ authors = ['pangwa <pangwa@gmail.com>']
 edition = '2018'
 homepage = 'https://substrate.dev'
 license = 'Unlicense'
-name = 'reward-pool'
+name = 'clover-traits'
 repository = 'https://github.com/bithumb-dev/bitdex/'
 version = '2.0.0-rc6'
 
@@ -22,7 +22,6 @@ frame-support = { version = "2.0.0-rc6", default-features = false }
 frame-system = { version = "2.0.0-rc6", default-features = false }
 sp-std = { version = "2.0.0-rc6", default-features = false }
 pallet-balances = { version = "2.0.0-rc6", default-features = false }
-clover-traits = { path = "../traits", default-features = false }
 
 [dev-dependencies]
 sp-core = { version = "2.0.0-rc6", default-features = false }
@@ -58,7 +57,6 @@ rev = '12c5cdc297'
 default = ['std']
 std = [
   'byteorder/std',
-  'clover-traits/std',
   'frame-support/std',
   'frame-system/std',
   'num-traits/std',
