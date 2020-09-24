@@ -205,14 +205,14 @@ impl ExtBuilder {
 		}
 		.assimilate_storage(&mut t).unwrap();
 
-    bithumbdex::GenesisConfig {
-      initial_pairs: vec![
-        (BXB, BETH, Some(0), Some(0)),
-        (BUSD, BETH, Some(0), Some(0)),
-        (BUSD, DOT, Some(0), Some(0)),
-        (DOT, BETH, Some(0), Some(0)),
-      ],
-    }.assimilate_storage::<TestRuntime>(&mut t).unwrap();
+    // bithumbdex::GenesisConfig {
+    //   initial_pairs: vec![
+    //     (BXB, BETH, Some(0), Some(0)),
+    //     (BUSD, BETH, Some(0), Some(0)),
+    //     (BUSD, DOT, Some(0), Some(0)),
+    //     (DOT, BETH, Some(0), Some(0)),
+    //   ],
+    // }.assimilate_storage::<TestRuntime>(&mut t).unwrap();
 
     t.into()
   }
