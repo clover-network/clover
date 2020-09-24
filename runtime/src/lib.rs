@@ -679,7 +679,7 @@ parameter_types! {
 impl reward_pool::Trait for Runtime {
   type Event = Event;
   type PoolId = clover_incentives::PoolId;
-	type ModuleId = RewardModuleId;
+  type ModuleId = RewardModuleId;
   type Currency = Currencies;
   type GetNativeCurrencyId = GetNativeCurrencyId;
 	type ExistentialReward = ExistentialReward;
