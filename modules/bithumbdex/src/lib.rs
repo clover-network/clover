@@ -36,6 +36,7 @@ use sp_runtime::{
 };
 
 use sp_std::vec;
+use sp_std::vec::Vec;
 use sp_std::collections::btree_map;
 use clover_traits::IncentiveOps;
 
@@ -375,7 +376,7 @@ decl_module! {
       #[compact] supply_amount: Balance,
       target_currency_id: CurrencyId,
       #[compact] acceptable_target_amount: Balance,
-      route: vec::Vec<CurrencyId>,
+      route: Vec<CurrencyId>,
     ) {
       with_transaction_result(|| {
         let who = ensure_signed(origin)?;
