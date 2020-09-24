@@ -59,7 +59,20 @@ pub trait Trait: frame_system::Trait {
 decl_storage! {
 	trait Store for Module<T: Trait> as Incentives {
     // mapping from pool id to its incentive reward per block
-		pub DexIncentiveRewads get(fn dex_incentive_rewards): map hasher(twox_64_concat) PoolId => Balance;
+		pub DexIncentiveRewards get(fn dex_incentive_rewards): map hasher(twox_64_concat) PoolId => Balance;
+  }
+
+  add_extra_genesis {
+    config(dex_rewards): Vec<(CurrencyId, CurrencyId, Balance)>;
+
+    build(|config: &GenesisConfig| {
+      debug::info!("got incentives config: {:?}", config.dex_rewards);
+      for (left, right, reward_per_block) in &config.dex_rewards {
+        let pair_key = PairKey::try_from(*left, *right).unwrap();
+        assert!(!reward_per_block.is_zero());
+        DexIncentiveRewards::insert(PoolId::Dex(pair_key), reward_per_block);
+      }
+    })
   }
 }
 
@@ -124,7 +137,7 @@ where T::BlockNumber: SaturatedConversion, {
                      _total_share: &Share,
                      last_update_block: T::BlockNumber,
                      now: T::BlockNumber) -> Balance {
-    if !DexIncentiveRewads::contains_key(pool_id) || last_update_block >= now {
+    if !DexIncentiveRewards::contains_key(pool_id) || last_update_block >= now {
       return Balance::zero();
     }
     let reward_ratio = Self::dex_incentive_rewards(pool_id);
