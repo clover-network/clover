@@ -747,7 +747,7 @@ construct_runtime!(
 		Utility: pallet_utility::{Module, Call, Event},
 		BithumbDex: bithumbdex::{Module, Storage, Call, Event<T>, Config},
 		RewardPool: reward_pool::{Module, Storage, Call, Event<T>,},
-		Incentives: clover_incentives::{Module, Storage, Call, },
+		Incentives: clover_incentives::{Module, Storage, Call, Config},
 	}
 );
 
