@@ -4,6 +4,7 @@ use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
 pub use pallet_balances::Call as BalancesCall;
+use clover_traits::IncentiveOps;
 
 pub use primitives::{
 	AccountId, AccountIndex, Amount, Balance,
@@ -129,6 +130,7 @@ impl Trait for TestRuntime {
 	type ModuleId = BithumbDexModuleId;
 	type OnAddLiquidity = ();
 	type OnRemoveLiquidity = ();
+  type IncentiveOps = IncentiveOpsHandler;
 }
 
 pub type BithumbDexModule = Module<TestRuntime>;
@@ -139,6 +141,17 @@ pub const BXB: CurrencyId = CurrencyId::BXB;
 pub const BUSD: CurrencyId = CurrencyId::BUSD;
 pub const DOT: CurrencyId = CurrencyId::DOT;
 pub const BETH: CurrencyId = CurrencyId::BETH;
+
+pub struct IncentiveOpsHandler;
+impl IncentiveOps<AccountId, CurrencyId, Share> for IncentiveOpsHandler {
+  fn add_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> DispatchResult {
+    Ok(())
+  }
+
+  fn remove_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> DispatchResult {
+    Ok(())
+  }
+}
 
 pub struct ExtBuilder {
 	endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>,

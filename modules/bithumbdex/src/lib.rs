@@ -37,6 +37,7 @@ use sp_runtime::{
 
 use sp_std::vec;
 use sp_std::collections::btree_map;
+use clover_traits::IncentiveOps;
 
 mod simple_graph;
 
@@ -55,10 +56,12 @@ pub trait Trait: system::Trait {
 
   /// Trading fee rate
   type GetExchangeFee: Get<Rate>;
-  
+
 	/// The DEX's module id, keep all assets in DEX sub account.
 	type ModuleId: Get<ModuleId>;
 
+  /// incentive ops
+  type IncentiveOps:  IncentiveOps<Self::AccountId, CurrencyId, Self::Share>;
 	/// Event handler which calls when add liquidity.
 	type OnAddLiquidity: Happened<(Self::AccountId, CurrencyId, CurrencyId, Self::Share)>;
 
@@ -129,7 +132,7 @@ decl_storage! {
 		/// Shares records indexed by currency type and account id
 		/// CurrencyType -> Owner -> ShareAmount
     Shares get(fn shares): double_map hasher(blake2_128_concat) PairKey, hasher(twox_64_concat) T::AccountId => T::Share;
-    
+ 
     /// Exchange fee for governance
     ExchangeFee get(fn exchange_fee): Rate;
 	}

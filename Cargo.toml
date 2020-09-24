@@ -8,4 +8,6 @@ members = [
     'runtime',
     'modules/bithumbdex',
     'modules/reward-pool',
+    'modules/incentives',
+    'modules/traits',
 ]

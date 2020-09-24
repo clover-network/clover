@@ -32,9 +32,10 @@ use primitives::{Balance, CurrencyId, Price, Share, Ratio};
 
 use orml_traits::{MultiCurrency, MultiCurrencyExtended};
 
-mod traits;
+pub mod traits;
 
 use traits::RewardHandler;
+use clover_traits::RewardPoolOps;
 
 mod mock;
 mod tests;
@@ -142,78 +143,6 @@ impl<T: Trait> Module<T> {
     Self::pool_account_data(pool_id, account)
   }
 
-  /// add shares to the reward pool
-  /// note: should call this function insdie a storage transaction
-  /// steps:
-  /// 1. update the rewards
-  /// 2. caculate the share price in the pool
-  /// 3. calculate native currency amount needs to add to the pool to balance the share price
-  /// 4. the native currency amount is user "borrowed" which should repay back when user
-  ///    removes shares from the reward pool
-  /// the rewards are allocated at (block_add, block_remove]
-  pub fn add_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> DispatchResult {
-    if amount.is_zero() {
-      return Ok(());
-    }
-
-    let mut pool_info = Self::update_pool_reward(&pool)?;
-
-    let price = if pool_info.total_shares.is_zero() {
-      Ok(Price::zero())
-    } else {
-      Price::checked_from_rational(pool_info.total_rewards, pool_info.total_shares)
-        .ok_or(Error::<T>::RewardCaculationError)
-    }?;
-
-    let virtual_reward_amount = price
-      .checked_mul_int(amount)
-      .ok_or(Error::<T>::RewardCaculationError)?;
-
-    pool_info.total_shares = pool_info.total_shares.checked_add(amount)
-      .ok_or(Error::<T>::RewardCaculationError)?;
-    pool_info.total_rewards = pool_info.total_rewards.checked_add(virtual_reward_amount.into())
-      .ok_or(Error::<T>::RewardCaculationError)?;
-    //
-    // the account need to "borrow" the amount of native currencies to balance the reward pool
-    <Pools<T>>::mutate(pool, |info| {
-      *info = pool_info;
-    });
-
-    <PoolAccountData<T>>::try_mutate(pool, who, |data| -> DispatchResult {
-      data.shares = data.shares.checked_add(amount).ok_or(Error::<T>::RewardCaculationError)?;
-      // record the virtual rewards that the account 'borrowed'
-      data.borrowed_amount = data.borrowed_amount.checked_add(virtual_reward_amount.into()).ok_or(Error::<T>::RewardCaculationError)?;
-      Ok(())
-    })?;
-
-    Ok(())
-  }
-
-  /// remove shares from reward pool
-  pub fn remove_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> DispatchResult {
-    let pool_info = Self::update_pool_reward(&pool)?;
-    let account_info = <Module<T>>::pool_account_data(&pool, &who);
-    // don't have sufficient shares
-    if account_info.shares < amount {
-      return Err(Error::<T>::InsufficientShares.into());
-    }
-
-    let (pool_info, account_info, reward) = Self::get_rewards_by_account_shares(pool_info, account_info, amount)?;
-
-    <Pools<T>>::mutate(pool, |info| {
-      *info = pool_info;
-    });
-
-    <PoolAccountData<T>>::mutate(pool, &who, |data| {
-      *data = account_info;
-    });
-
-    let sub_account = Self::sub_account_id(pool);
-		T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, reward)?;
-
-    Ok(())
-  }
-
   fn get_rewards_by_account_shares(
     pool_info: PoolInfo<Share, Balance, T::BlockNumber>,
     account_info: PoolAccountInfo<Share, Balance>,
@@ -254,7 +183,7 @@ impl<T: Trait> Module<T> {
     let total_shares = total_shares.checked_sub(amount)
       .ok_or(Error::<T>::InsufficientShares)?;
     let (reward, total_rewards, total_rewards_useable) = if reward <= T::ExistentialReward::get() {
-      println!("reward {:?} is less than existential reward, don't send the reward", reward);
+      debug::warn!("reward {:?} is less than existential reward, don't send the reward", reward);
       (0, total_rewards, total_rewards_useable)
     } else {
       let rewards = total_rewards.checked_sub(reward_with_virtual)
@@ -330,3 +259,78 @@ impl<T: Trait> Module<T> {
     Ok((new_info, reward))
   }
 }
+
+impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
+  /// add shares to the reward pool
+  /// note: should call this function insdie a storage transaction
+  /// steps:
+  /// 1. update the rewards
+  /// 2. caculate the share price in the pool
+  /// 3. calculate native currency amount needs to add to the pool to balance the share price
+  /// 4. the native currency amount is user "borrowed" which should repay back when user
+  ///    removes shares from the reward pool
+  /// the rewards are allocated at (block_add, block_remove]
+  fn add_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> DispatchResult {
+    if amount.is_zero() {
+      return Ok(());
+    }
+
+    let mut pool_info = Self::update_pool_reward(&pool)?;
+
+    let price = if pool_info.total_shares.is_zero() {
+      Ok(Price::zero())
+    } else {
+      Price::checked_from_rational(pool_info.total_rewards, pool_info.total_shares)
+        .ok_or(Error::<T>::RewardCaculationError)
+    }?;
+
+    let virtual_reward_amount = price
+      .checked_mul_int(amount)
+      .ok_or(Error::<T>::RewardCaculationError)?;
+
+    pool_info.total_shares = pool_info.total_shares.checked_add(amount)
+      .ok_or(Error::<T>::RewardCaculationError)?;
+    pool_info.total_rewards = pool_info.total_rewards.checked_add(virtual_reward_amount.into())
+      .ok_or(Error::<T>::RewardCaculationError)?;
+    //
+    // the account need to "borrow" the amount of native currencies to balance the reward pool
+    <Pools<T>>::mutate(pool, |info| {
+      *info = pool_info;
+    });
+
+    <PoolAccountData<T>>::try_mutate(pool, who, |data| -> DispatchResult {
+      data.shares = data.shares.checked_add(amount).ok_or(Error::<T>::RewardCaculationError)?;
+      // record the virtual rewards that the account 'borrowed'
+      data.borrowed_amount = data.borrowed_amount.checked_add(virtual_reward_amount.into()).ok_or(Error::<T>::RewardCaculationError)?;
+      Ok(())
+    })?;
+
+    Ok(())
+  }
+
+  /// remove shares from reward pool
+  fn remove_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> DispatchResult {
+    let pool_info = Self::update_pool_reward(&pool)?;
+    let account_info = <Module<T>>::pool_account_data(&pool, &who);
+    // don't have sufficient shares
+    if account_info.shares < amount {
+      return Err(Error::<T>::InsufficientShares.into());
+    }
+
+    let (pool_info, account_info, reward) = Self::get_rewards_by_account_shares(pool_info, account_info, amount)?;
+
+    <Pools<T>>::mutate(pool, |info| {
+      *info = pool_info;
+    });
+
+    <PoolAccountData<T>>::mutate(pool, &who, |data| {
+      *data = account_info;
+    });
+
+    let sub_account = Self::sub_account_id(pool);
+		T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, reward)?;
+
+    Ok(())
+  }
+}
+
