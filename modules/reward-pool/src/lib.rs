@@ -32,7 +32,7 @@ use primitives::{Balance, CurrencyId, Price, Share, Ratio};
 
 use orml_traits::{MultiCurrency, MultiCurrencyExtended};
 
-mod traits;
+pub mod traits;
 
 use traits::RewardHandler;
 use clover_traits::RewardPoolOps;
@@ -183,7 +183,7 @@ impl<T: Trait> Module<T> {
     let total_shares = total_shares.checked_sub(amount)
       .ok_or(Error::<T>::InsufficientShares)?;
     let (reward, total_rewards, total_rewards_useable) = if reward <= T::ExistentialReward::get() {
-      println!("reward {:?} is less than existential reward, don't send the reward", reward);
+      debug::warn!("reward {:?} is less than existential reward, don't send the reward", reward);
       (0, total_rewards, total_rewards_useable)
     } else {
       let rewards = total_rewards.checked_sub(reward_with_virtual)

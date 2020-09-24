@@ -548,6 +548,8 @@ dependencies = [
  "bitdex-primitives",
  "bitdex-rpc-runtime-api",
  "bithumbdex",
+ "clover-incentives",
+ "clover-traits",
  "enum-iterator",
  "frame-benchmarking",
  "frame-executive",
@@ -578,6 +580,7 @@ dependencies = [
  "pallet-treasury",
  "pallet-utility",
  "parity-scale-codec",
+ "reward-pool",
  "serde",
  "sp-api",
  "sp-block-builder",
@@ -607,6 +610,7 @@ version = "2.0.0-rc6"
 dependencies = [
  "bitdex-primitives",
  "byteorder 1.3.4",
+ "clover-traits",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -936,6 +940,7 @@ version = "2.0.0-rc6"
 dependencies = [
  "bitdex-primitives",
  "byteorder 1.3.4",
+ "clover-traits",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

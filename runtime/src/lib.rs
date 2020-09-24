@@ -672,6 +672,25 @@ impl orml_currencies::Trait for Runtime {
 }
 
 parameter_types! {
+	pub const RewardModuleId: ModuleId = ModuleId(*b"bxb/repm");
+	pub const ExistentialReward: u128 = 100;
+}
+
+impl reward_pool::Trait for Runtime {
+  type Event = Event;
+  type PoolId = clover_incentives::PoolId;
+	type ModuleId = RewardModuleId;
+  type Currency = Currencies;
+  type GetNativeCurrencyId = GetNativeCurrencyId;
+	type ExistentialReward = ExistentialReward;
+  type Handler = Incentives;
+}
+
+impl clover_incentives::Trait for Runtime {
+  type RewardPool = RewardPool;
+}
+
+parameter_types! {
 	pub GetExchangeFee: Rate = Rate::saturating_from_rational(1, 1000);
 	pub const BithumbDexModuleId: ModuleId = ModuleId(*b"bxb/dexm");
 }
@@ -684,6 +703,7 @@ impl bithumbdex::Trait for Runtime {
 	type ModuleId = BithumbDexModuleId;
 	type OnAddLiquidity = ();
 	type OnRemoveLiquidity = ();
+  type IncentiveOps = Incentives;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -726,6 +746,8 @@ construct_runtime!(
 		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
 		Utility: pallet_utility::{Module, Call, Event},
 		BithumbDex: bithumbdex::{Module, Storage, Call, Event<T>, Config},
+		RewardPool: reward_pool::{Module, Storage, Call, Event<T>,},
+		Incentives: clover_incentives::{Module, Storage, Call, },
 	}
 );
 
