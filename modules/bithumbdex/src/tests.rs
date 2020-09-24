@@ -56,7 +56,7 @@ fn test_exchange_rate() {
 			BUSD,
 			DOT,
 			supply_pool,
-			supply_pool
+			target_pool
 		));
 
 	  	let source_amount = 1000000000000000;
@@ -69,8 +69,9 @@ fn test_exchange_rate() {
 		let (amount, _) = BDM::get_target_amount_available(DOT, BUSD, 2);
 		assert_eq!(amount, 0);
 
-		let (amount, _) = BDM::get_supply_amount_needed(DOT, BUSD, 2);
-		assert_eq!(target_amount, 0);
+		let (amount, _) = BDM::get_supply_amount_needed(BUSD, DOT, 1000000);
+		// supply_amount = (10^15 * 10^6) / (0.99 * 2 * 10^15 - 10^6) ~ 505050
+		assert_eq!(amount, 505052);
 	});
 }
 
