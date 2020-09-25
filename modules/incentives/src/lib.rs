@@ -14,7 +14,7 @@ use frame_support::{
   weights::constants::WEIGHT_PER_MICROS,
 };
 use sp_runtime::{
-  DispatchResult,
+  DispatchError, DispatchResult,
   FixedPointNumber, FixedPointOperand,
   RuntimeDebug,
   traits::{
@@ -153,7 +153,7 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
   fn add_share(who: &T::AccountId,
                currency_first: &CurrencyId,
                currency_second: &CurrencyId,
-               amount: &Share) -> DispatchResult {
+               amount: &Share) -> Result<Share, DispatchError>{
     let pair_key = PairKey::try_from(*currency_first, *currency_second)
       .ok_or(Error::<T>::InvalidCurrencyPair)?;
     T::RewardPool::add_share(who, PoolId::Dex(pair_key), *amount)
@@ -166,5 +166,10 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
     let pair_key = PairKey::try_from(*currency_first, *currency_second)
       .ok_or(Error::<T>::InvalidCurrencyPair)?;
     T::RewardPool::remove_share(who, PoolId::Dex(pair_key), *amount)
+  }
+
+  fn get_account_shares(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
+    let pair_key = PairKey::try_from(*left, *right).unwrap();
+    T::RewardPool::get_account_shares(who, &PoolId::Dex(pair_key))
   }
 }

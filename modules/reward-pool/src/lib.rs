@@ -107,6 +107,7 @@ decl_error! {
     /// invalid reward caculated
     RewardCaculationError,
     InsufficientShares,
+    InvalidAmount,
   }
 }
 
@@ -270,9 +271,9 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
   /// 4. the native currency amount is user "borrowed" which should repay back when user
   ///    removes shares from the reward pool
   /// the rewards are allocated at (block_add, block_remove]
-  fn add_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> DispatchResult {
+  fn add_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> Result<Share, DispatchError> {
     if amount.is_zero() {
-      return Ok(());
+      return Err(Error::<T>::InvalidAmount.into());
     }
 
     let mut pool_info = Self::update_pool_reward(&pool)?;
@@ -298,14 +299,16 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
       *info = pool_info;
     });
 
+    let mut total_shares = 0;
     <PoolAccountData<T>>::try_mutate(pool, who, |data| -> DispatchResult {
       data.shares = data.shares.checked_add(amount).ok_or(Error::<T>::RewardCaculationError)?;
       // record the virtual rewards that the account 'borrowed'
       data.borrowed_amount = data.borrowed_amount.checked_add(virtual_reward_amount.into()).ok_or(Error::<T>::RewardCaculationError)?;
+      total_shares = data.shares;
       Ok(())
     })?;
 
-    Ok(())
+    Ok(total_shares)
   }
 
   /// remove shares from reward pool
@@ -331,6 +334,12 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
 		T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, reward)?;
 
     Ok(())
+  }
+
+  /// weight: 1 db read
+  fn get_account_shares(who: &T::AccountId, pool: &T::PoolId)  -> Share {
+    let PoolAccountInfo { shares, ..} = Self::get_pool_account_info(&pool, who);
+    shares
   }
 }
 
