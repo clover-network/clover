@@ -333,7 +333,8 @@ decl_module! {
           // should check the free shares before removing liquidity
           // remaining shares amount should >= locked shares amount
           let locked_shares = T::IncentiveOps::get_account_shares(&who, &currency_id_first, &currency_id_right);
-          if !locked_shares.is_zero() && locked_shares < new_shares {
+          debug::info!("new_shares: {:?}, locked_shares: {:?}", new_shares, locked_shares);
+          if !locked_shares.is_zero() && locked_shares > new_shares {
             return Err(Error::<T>::ShareNotEnough.into());
           }
 
@@ -424,7 +425,7 @@ decl_module! {
       with_transaction_result(|| {
         let who = ensure_signed(origin)?;
         ensure!(amount > T::Share::zero(), Error::<T>::InvalidAmount);
-        Self::add_stake_to_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
+        Self::remove_stake_from_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
         Ok(())
       })?;
     }
@@ -923,14 +924,15 @@ impl<T: Trait> Module<T> {
     // should check we have enough shares to add to the pool
     let pair_id = Self::get_pair_key(&currency_id_first, &currency_id_second);
     let total_shares = Self::shares(&pair_id, who);
+    debug::info!("add stake: totals shares: {:?}, locked shares: {:?}", total_shares, locked_shares);
     ensure!(locked_shares <= total_shares, Error::<T>::ShareNotEnough);
     Ok(())
   }
 
-  pub fn remove_stake_to_reward_pool(who: &T::AccountId,
-                                  currency_id_first: CurrencyId,
-                                  currency_id_second: CurrencyId,
-                                  amount: T::Share) -> DispatchResult {
+  pub fn remove_stake_from_reward_pool(who: &T::AccountId,
+                                       currency_id_first: CurrencyId,
+                                       currency_id_second: CurrencyId,
+                                       amount: T::Share) -> DispatchResult {
 
     T::IncentiveOps::remove_share(&who,
                                   &currency_id_first,

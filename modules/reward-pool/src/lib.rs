@@ -316,6 +316,7 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
     let pool_info = Self::update_pool_reward(&pool)?;
     let account_info = <Module<T>>::pool_account_data(&pool, &who);
     // don't have sufficient shares
+    debug::info!("to remove shares: {:?}, amount: {:?}", account_info.shares, amount);
     if account_info.shares < amount {
       return Err(Error::<T>::InsufficientShares.into());
     }
