@@ -162,7 +162,7 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
   fn remove_share(who: &T::AccountId,
                   currency_first: &CurrencyId,
                   currency_second: &CurrencyId,
-                  amount: &Share) -> DispatchResult {
+                  amount: &Share) -> Result<Share, DispatchError> {
     let pair_key = PairKey::try_from(*currency_first, *currency_second)
       .ok_or(Error::<T>::InvalidCurrencyPair)?;
     T::RewardPool::remove_share(who, PoolId::Dex(pair_key), *amount)

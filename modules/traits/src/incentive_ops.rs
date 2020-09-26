@@ -5,7 +5,7 @@ use sp_runtime::{
 
 pub trait IncentiveOps<AccountId, CurrencyId, Share> {
   fn add_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> Result<Share, DispatchError>;
-  fn remove_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> DispatchResult;
+  fn remove_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> Result<Share, DispatchError>;
 
   fn get_account_shares(who: &AccountId, left: &CurrencyId, right: &CurrencyId) -> Share;
 }

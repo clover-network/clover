@@ -96,6 +96,12 @@ decl_event!(
 		LiquidityIncentiveRateUpdated(CurrencyId, CurrencyId, Rate),
 		/// Incentive interest claimed. [who, currency_type, amount]
 		IncentiveInterestClaimed(AccountId, CurrencyId, CurrencyId, Balance),
+    /// Share Staked
+    /// account, currency left/right, amount staked, total staked amount
+    StakeShare(AccountId, CurrencyId, CurrencyId, Share, Share),
+    /// Share unstaked
+    /// account, currency left/right, amount unstaked, total staked amount
+    UnStakeShare(AccountId, CurrencyId, CurrencyId, Share, Share),
 	}
 );
 
@@ -410,7 +416,9 @@ decl_module! {
       with_transaction_result(|| {
         let who = ensure_signed(origin)?;
         ensure!(amount > T::Share::zero(), Error::<T>::InvalidAmount);
-        Self::add_stake_to_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
+        let total_share = Self::add_stake_to_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
+
+        Self::deposit_event(RawEvent::StakeShare(who, currency_id_first, currency_id_second, amount, total_share));
         Ok(())
       })?;
     }
@@ -425,7 +433,9 @@ decl_module! {
       with_transaction_result(|| {
         let who = ensure_signed(origin)?;
         ensure!(amount > T::Share::zero(), Error::<T>::InvalidAmount);
-        Self::remove_stake_from_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
+        let total_share = Self::remove_stake_from_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
+
+        Self::deposit_event(RawEvent::UnStakeShare(who, currency_id_first, currency_id_second, amount, total_share));
         Ok(())
       })?;
     }
@@ -916,7 +926,7 @@ impl<T: Trait> Module<T> {
   pub fn add_stake_to_reward_pool(who: &T::AccountId,
                                   currency_id_first: CurrencyId,
                                   currency_id_second: CurrencyId,
-                                  amount: T::Share) -> DispatchResult {
+                                  amount: T::Share) -> Result<T::Share, DispatchError>{
     let locked_shares = T::IncentiveOps::add_share(&who,
                                                    &currency_id_first,
                                                    &currency_id_second,
@@ -926,13 +936,13 @@ impl<T: Trait> Module<T> {
     let total_shares = Self::shares(&pair_id, who);
     debug::info!("add stake: totals shares: {:?}, locked shares: {:?}", total_shares, locked_shares);
     ensure!(locked_shares <= total_shares, Error::<T>::ShareNotEnough);
-    Ok(())
+    Ok(locked_shares)
   }
 
   pub fn remove_stake_from_reward_pool(who: &T::AccountId,
                                        currency_id_first: CurrencyId,
                                        currency_id_second: CurrencyId,
-                                       amount: T::Share) -> DispatchResult {
+                                       amount: T::Share) -> Result<T::Share, DispatchError>{
 
     T::IncentiveOps::remove_share(&who,
                                   &currency_id_first,

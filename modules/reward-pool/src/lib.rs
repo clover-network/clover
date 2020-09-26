@@ -312,7 +312,7 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
   }
 
   /// remove shares from reward pool
-  fn remove_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> DispatchResult {
+  fn remove_share(who: &T::AccountId, pool: T::PoolId, amount: Share) -> Result<Share, DispatchError>{
     let pool_info = Self::update_pool_reward(&pool)?;
     let account_info = <Module<T>>::pool_account_data(&pool, &who);
     // don't have sufficient shares
@@ -328,13 +328,13 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
     });
 
     <PoolAccountData<T>>::mutate(pool, &who, |data| {
-      *data = account_info;
+      *data = account_info.clone();
     });
 
     let sub_account = Self::sub_account_id(pool);
 		T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, reward)?;
 
-    Ok(())
+    Ok(account_info.shares)
   }
 
   /// weight: 1 db read
