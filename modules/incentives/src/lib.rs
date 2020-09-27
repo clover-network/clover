@@ -6,24 +6,18 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-  decl_module, decl_error, decl_event, decl_storage, debug,
-  traits::{
-    EnsureOrigin, Get, Happened,
-  },
-  IterableStorageMap,
-  weights::constants::WEIGHT_PER_MICROS,
+  decl_module, decl_error, decl_storage, debug,
 };
 use sp_runtime::{
-  DispatchError, DispatchResult,
-  FixedPointNumber, FixedPointOperand,
+  DispatchError,
   RuntimeDebug,
   traits::{
-    AtLeast32Bit, MaybeSerializeDeserialize, Member, SaturatedConversion, Saturating,
+    SaturatedConversion,
     Zero,
   }
 };
 use sp_std::prelude::*;
-use primitives::{Balance, CurrencyId, Price, Share, Ratio};
+use primitives::{Balance, CurrencyId, Share, };
 use clover_traits::{RewardPoolOps, IncentiveOps};
 use reward_pool::traits::RewardHandler;
 

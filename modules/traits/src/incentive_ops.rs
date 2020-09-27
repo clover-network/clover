@@ -1,6 +1,5 @@
 use sp_runtime::{
   DispatchError,
-  DispatchResult,
 };
 
 pub trait IncentiveOps<AccountId, CurrencyId, Share> {

@@ -25,7 +25,7 @@ pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance, Rate, S
   fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
   #[rpc(name = "bitdex_get_liquidity")]
-  fn get_liquidity(&self, account: Option<AccountId>, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>>;
+  fn get_liquidity(&self, account: Option<AccountId>, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String, String)>>;
 
   #[rpc(name = "bitdex_get_exchange_rate")]
   fn get_exchange_rate(&self, at: Option<BlockHash>) -> Result<Rate>;
@@ -90,7 +90,7 @@ where
 		})
     }
 
-    fn get_liquidity(&self, account: Option<AccountId>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String)>> {
+    fn get_liquidity(&self, account: Option<AccountId>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String, String)>> {
         let api = self.client.runtime_api();
         let at = BlockId::hash(at.unwrap_or_else(||
             // If the block hash is not supplied assume the best block.
@@ -99,8 +99,8 @@ where
             code: ErrorCode::ServerError(Error::RuntimeError.into()),
             message: "Unable to get value.".into(),
             data: Some(format!("{:?}", e).into()),
-        }).unwrap().into_iter().map(|(c1, c2, b1, b2, s1, s2)| {
-            (c1, c2, format!("{}", b1), format!("{}", b2), format!("{}", s1), format!("{}", s2))
+        }).unwrap().into_iter().map(|(c1, c2, b1, b2, s1, s2, s3)| {
+            (c1, c2, format!("{}", b1), format!("{}", b2), format!("{}", s1), format!("{}", s2), format!("{}", s3))
         }).collect();
         Ok(info)
     }

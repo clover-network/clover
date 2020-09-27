@@ -1,6 +1,5 @@
 use sp_runtime::{
   DispatchError,
-  DispatchResult,
 };
 
 pub trait RewardPoolOps<AccountId, PoolId, Share> {

@@ -972,7 +972,7 @@ impl_runtime_apis! {
 			balance
 		}
 
-		fn get_liquidity(account: Option<AccountId>) -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, Balance, Balance)> {
+		fn get_liquidity(account: Option<AccountId>) -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, Balance, Balance, Balance)> {
 			let result = BithumbDex::get_liquidity(account);
 			result
 		}

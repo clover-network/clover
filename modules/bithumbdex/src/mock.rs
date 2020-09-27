@@ -153,7 +153,7 @@ pub struct IncentiveOpsHandler;
 impl IncentiveOps<AccountId, CurrencyId, Share> for IncentiveOpsHandler {
   fn add_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> Result<Share, DispatchError> {
     let t = SHARES_STAKED.with(|v| {
-      let mut total;
+      let total;
       let mut old_map = v.borrow().clone();
       let key = BithumbDexModule::get_pair_key(left, right);
       if let Some(before) = old_map.get_mut(&(who.clone(), key)) {
@@ -171,7 +171,7 @@ impl IncentiveOps<AccountId, CurrencyId, Share> for IncentiveOpsHandler {
 
   fn remove_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> Result<Share, DispatchError> {
     let total = SHARES_STAKED.with(|v| {
-      let mut total;
+      let total;
       let mut old_map = v.borrow().clone();
       let key = BithumbDexModule::get_pair_key(left, right);
       if let Some(before) = old_map.get_mut(&(who.clone(), key)) {
