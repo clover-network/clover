@@ -161,7 +161,7 @@ pub const ALICE: [u8; 32] = [0u8; 32];
 pub const BOB: [u8; 32] = [1u8; 32];
 pub const DAVE: [u8; 32] = [2u8; 32];
 pub const CLV: CurrencyId = CurrencyId::CLV;
-pub const CUSD: CurrencyId = CurrencyId::CUSD;
+pub const CUSDT: CurrencyId = CurrencyId::CUSDT;
 pub const DOT: CurrencyId = CurrencyId::DOT;
 pub const CETH: CurrencyId = CurrencyId::CETH;
 
@@ -178,8 +178,8 @@ impl Default for ExtBuilder {
 			endowed_accounts: vec![
         (alice.clone(), CLV, 1_000_000_000_000_000_000u128),
         (bob.clone(), CLV, 1_000_000_000_000_000_000u128),
-        (alice.clone(), CUSD, 1_000_000_000_000_000_000u128),
-        (bob.clone(), CUSD, 1_000_000_000_000_000_000u128),
+        (alice.clone(), CUSDT, 1_000_000_000_000_000_000u128),
+        (bob.clone(), CUSDT, 1_000_000_000_000_000_000u128),
         (alice.clone(), DOT, 1_000_000_000_000_000_000u128),
         (bob.clone(), DOT, 1_000_000_000_000_000_000u128),
         (alice.clone(), CETH, 1_000_000_000_000_000_000u128),
