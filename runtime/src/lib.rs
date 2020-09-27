@@ -660,7 +660,7 @@ impl orml_tokens::Trait for Runtime {
 }
 
 parameter_types! {
-	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::BXB;
+	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::CLV;
 }
 
 impl orml_currencies::Trait for Runtime {

@@ -3,7 +3,7 @@
 use super::*;
 use frame_support::assert_ok;
 use mock::{
-	BithumbDexModule, ExtBuilder, Origin, BXB, ALICE, BUSD, BOB, DOT, BETH,
+	BithumbDexModule, ExtBuilder, Origin, CLV, ALICE, CUSD, BOB, DOT, CETH,
 };
 
 pub use primitives::{ AccountId, currency::*, };
@@ -27,22 +27,22 @@ fn test_compound_rote() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_ok!(BDM::add_liquidity(
 			Origin::signed(AccountId::from(ALICE)),
-			BXB,
-			BETH,
+			CLV,
+			CETH,
 			500000000000,
 			100000000000000000
 		));
 		assert_ok!(BDM::add_liquidity(
 			Origin::signed(AccountId::from(BOB)),
-			BETH,
+			CETH,
 			DOT,
 			80000000000,
 			4000000000000
 		));
 
 	  	let source_amount_bxb = 90000000;
-		let (_, route) = BDM::get_target_amount_available(BXB, DOT, source_amount_bxb);
-		assert_eq!(route, [BETH, DOT]);
+		let (_, route) = BDM::get_target_amount_available(CLV, DOT, source_amount_bxb);
+		assert_eq!(route, [CETH, DOT]);
 	});
 }
 
@@ -53,23 +53,23 @@ fn test_exchange_rate() {
 		let target_pool = 2000000000000000;
 		assert_ok!(BDM::add_liquidity(
 			Origin::signed(AccountId::from(ALICE)),
-			BUSD,
+			CUSD,
 			DOT,
 			supply_pool,
 			target_pool
 		));
 
 	  	let source_amount = 1000000000000000;
-		let (amount, _) = BDM::get_target_amount_available(DOT, BUSD, source_amount);
+		let (amount, _) = BDM::get_target_amount_available(DOT, CUSD, source_amount);
 		// 1000 / (2000 + 1000) * 1000 * (1 - 0.01) = 330
 		assert_eq!(amount, 330000000000000);
-		// suppose we want to exchange BUSD > 1, then we at least need DOT:
+		// suppose we want to exchange CUSD > 1, then we at least need DOT:
 		// 1000 * X / (2000 + X) * (1 - 0.01) > 1,  then X > 2.02
 
-		let (amount, _) = BDM::get_target_amount_available(DOT, BUSD, 2);
+		let (amount, _) = BDM::get_target_amount_available(DOT, CUSD, 2);
 		assert_eq!(amount, 0);
 
-		let (amount, _) = BDM::get_supply_amount_needed(BUSD, DOT, 1000000);
+		let (amount, _) = BDM::get_supply_amount_needed(CUSD, DOT, 1000000);
 		// supply_amount = (10^15 * 10^6) / (0.99 * 2 * 10^15 - 10^6) ~ 505050
 		assert_eq!(amount, 505052);
 	});
@@ -86,22 +86,22 @@ fn pair_id_encoding() {
     assert_eq!(currency_right, large);
   };
 
-  let pair_key = BDM::get_pair_key(&BXB, &BUSD);
+  let pair_key = BDM::get_pair_key(&CLV, &CUSD);
   // littel endian
   // [0, 0, 0, 0, b1000000, 0, 0, 0]
   assert_eq!(pair_key, (2 as u64).pow(32));
-  let pair_key = BDM::get_pair_key(&BXB, &DOT);
+  let pair_key = BDM::get_pair_key(&CLV, &DOT);
   // [0, 0, 0, 0, b01000000, 0, 0, 0]
   assert_eq!(pair_key, (2 as u64).pow(33));
-  let pair_key = BDM::get_pair_key(&BUSD, &DOT);
+  let pair_key = BDM::get_pair_key(&CUSD, &DOT);
   // [1, 0, 0, 0, b01000000, 0, 0, 0]
   assert_eq!(pair_key, 1 + (2 as u64).pow(33));
-  test_currency(BXB, BUSD);
-  test_currency(BXB, DOT);
-  test_currency(BXB, BETH);
-  test_currency(BUSD, DOT);
-  test_currency(BUSD, BETH);
-  test_currency(DOT, BETH);
+  test_currency(CLV, CUSD);
+  test_currency(CLV, DOT);
+  test_currency(CLV, CETH);
+  test_currency(CUSD, DOT);
+  test_currency(CUSD, CETH);
+  test_currency(DOT, CETH);
 }
 
 #[test]
@@ -214,22 +214,22 @@ fn make_sure_get_supply_amount_needed_can_affort_target() {
 	ExtBuilder::default().build().execute_with(|| {
     assert_ok!(BDM::add_liquidity(
 			Origin::signed(AccountId::from(ALICE)),
-			BXB,
-			BETH,
+			CLV,
+			CETH,
 			500000000000,
 			100000000000000000
 		));
 
 		assert_ok!(BDM::add_liquidity(
 			Origin::signed(AccountId::from(ALICE)),
-			BUSD,
-			BETH,
+			CUSD,
+			CETH,
 			500000000000,
 			100000000000000000
 		));
 		assert_ok!(BDM::add_liquidity(
 			Origin::signed(AccountId::from(BOB)),
-			BUSD,
+			CUSD,
 			DOT,
 			80000000000,
 			4000000000000
@@ -243,7 +243,7 @@ fn make_sure_get_supply_amount_needed_can_affort_target() {
     //                 = 3999909090909
     // supply_amount = (4000000000000 * 80000000000 ) / 3999909090909- 80000000000
     //               = 1818223.14326 ~ 1818224
-		let (amount, route)= BDM::get_supply_amount_needed(BUSD, DOT, target_amount_busd_beth);
+		let (amount, route)= BDM::get_supply_amount_needed(CUSD, DOT, target_amount_busd_beth);
     assert_eq!(format_routes(&route), "CurrencyId::DOT,");
     assert_eq!(amount, 1818224, "supply amount should match expected");
 
@@ -251,7 +251,7 @@ fn make_sure_get_supply_amount_needed_can_affort_target() {
     //                 = 3999909090866.165 ~ 3999909090867
     // target_amount = (4000000000000 - 3999909090867) * 0.99
     //               = 90000041.67 ~ 90000042
-		let (target_amount, _)= BDM::get_target_amount_available(BUSD, DOT, amount);
+		let (target_amount, _)= BDM::get_target_amount_available(CUSD, DOT, amount);
     assert_eq!(target_amount, 90000042);
 		assert!(target_amount >= amount);
 	});
@@ -274,35 +274,35 @@ fn test_lp_staking() {
   ExtBuilder::default().build().execute_with(|| {
     assert_ok!(BDM::add_liquidity(
       Origin::signed(alice.clone()),
-      BXB,
-      BETH,
+      CLV,
+      CETH,
       1000000000000000,
       1000000000000000
     ));
 
     assert_ok!(BDM::stake_pool_shares(
       Origin::signed(alice.clone()),
-      BXB,
-      BETH,
+      CLV,
+      CETH,
       1000000000000000,
     ));
 
     assert_ok!(BDM::unstake_pool_shares(
       Origin::signed(alice.clone()),
-      BXB,
-      BETH,
+      CLV,
+      CETH,
       500000000000000,
     ));
 
-    assert_eq!(BDM::get_staked_shares(&alice, BXB, BETH), 500000000000000);
+    assert_eq!(BDM::get_staked_shares(&alice, CLV, CETH), 500000000000000);
 
     assert_ok!(BDM::unstake_pool_shares(
       Origin::signed(alice.clone()),
-      BXB,
-      BETH,
+      CLV,
+      CETH,
       500000000000000,
     ));
 
-    assert_eq!(BDM::get_staked_shares(&alice, BXB, BETH), 0);
+    assert_eq!(BDM::get_staked_shares(&alice, CLV, CETH), 0);
   });
 }

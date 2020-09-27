@@ -85,7 +85,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		// Properties
 		Some(json!({
 			"tokenDecimals": 12,
-			"tokenSymbol": "BXBD"
+			"tokenSymbol": "CLV"
 		}).as_object().expect("Created an object").clone()),
 		// Extensions
 		None,
@@ -136,7 +136,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		// Properties
 		Some(json!({
 			"tokenDecimals": 12,
-			"tokenSymbol": "BXBD"
+			"tokenSymbol": "CLVD"
 		}).as_object().expect("Created an object").clone()),
 		// Extensions
 		None,
@@ -205,8 +205,8 @@ fn testnet_genesis(
 				.iter()
 				.flat_map(|x| {
 					vec![
-						(x.clone(), CurrencyId::BETH, 10000 * DOLLARS),
-						(x.clone(), CurrencyId::BUSD, 10000 * DOLLARS),
+						(x.clone(), CurrencyId::CETH, 10000 * DOLLARS),
+						(x.clone(), CurrencyId::CUSD, 10000 * DOLLARS),
 						(x.clone(), CurrencyId::DOT, 10000 * DOLLARS),
 					]
 				})
@@ -214,16 +214,16 @@ fn testnet_genesis(
 		}),
     clover_incentives: Some(IncentivesConfig{
       dex_rewards: vec![
-        (CurrencyId::BXB, CurrencyId::DOT, 1 * DOLLARS),
-        (CurrencyId::BXB, CurrencyId::BUSD, 2 * DOLLARS),
-        (CurrencyId::BETH, CurrencyId::BUSD, 3 * DOLLARS),
+        (CurrencyId::CLV, CurrencyId::DOT, 1 * DOLLARS),
+        (CurrencyId::CLV, CurrencyId::CUSD, 2 * DOLLARS),
+        (CurrencyId::CETH, CurrencyId::CUSD, 3 * DOLLARS),
       ],
     }),
     bithumbdex: Some(BithumbDexConfig {
 		    initial_pairs: vec![
-			    (CurrencyId::BUSD, CurrencyId::BETH, Some(1000 * DOLLARS), Some(500 * DOLLARS)),
-			    (CurrencyId::BUSD, CurrencyId::DOT, Some(700 * DOLLARS), Some(250 * DOLLARS)),
-			    (CurrencyId::BUSD, CurrencyId::BXB, Some(300 * DOLLARS), Some(600 * DOLLARS)),
+			    (CurrencyId::CUSD, CurrencyId::CETH, Some(1000 * DOLLARS), Some(500 * DOLLARS)),
+			    (CurrencyId::CUSD, CurrencyId::DOT, Some(700 * DOLLARS), Some(250 * DOLLARS)),
+			    (CurrencyId::CUSD, CurrencyId::CLV, Some(300 * DOLLARS), Some(600 * DOLLARS)),
 		    ],
 		}),
 		pallet_collective_Instance1: Some(Default::default()),

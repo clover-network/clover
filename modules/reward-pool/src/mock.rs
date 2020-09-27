@@ -108,7 +108,7 @@ impl orml_tokens::Trait for TestRuntime {
 pub type Tokens = orml_tokens::Module<TestRuntime>;
 
 parameter_types! {
-	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::BXB;
+	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::CLV;
 }
 
 impl orml_currencies::Trait for TestRuntime {
@@ -160,10 +160,10 @@ pub type RewardPoolModule = Module<TestRuntime>;
 pub const ALICE: [u8; 32] = [0u8; 32];
 pub const BOB: [u8; 32] = [1u8; 32];
 pub const DAVE: [u8; 32] = [2u8; 32];
-pub const BXB: CurrencyId = CurrencyId::BXB;
-pub const BUSD: CurrencyId = CurrencyId::BUSD;
+pub const CLV: CurrencyId = CurrencyId::CLV;
+pub const CUSD: CurrencyId = CurrencyId::CUSD;
 pub const DOT: CurrencyId = CurrencyId::DOT;
-pub const BETH: CurrencyId = CurrencyId::BETH;
+pub const CETH: CurrencyId = CurrencyId::CETH;
 
 pub struct ExtBuilder {
 	endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>,
@@ -176,14 +176,14 @@ impl Default for ExtBuilder {
 
 		Self {
 			endowed_accounts: vec![
-        (alice.clone(), BXB, 1_000_000_000_000_000_000u128),
-        (bob.clone(), BXB, 1_000_000_000_000_000_000u128),
-        (alice.clone(), BUSD, 1_000_000_000_000_000_000u128),
-        (bob.clone(), BUSD, 1_000_000_000_000_000_000u128),
+        (alice.clone(), CLV, 1_000_000_000_000_000_000u128),
+        (bob.clone(), CLV, 1_000_000_000_000_000_000u128),
+        (alice.clone(), CUSD, 1_000_000_000_000_000_000u128),
+        (bob.clone(), CUSD, 1_000_000_000_000_000_000u128),
         (alice.clone(), DOT, 1_000_000_000_000_000_000u128),
         (bob.clone(), DOT, 1_000_000_000_000_000_000u128),
-        (alice.clone(), BETH, 1_000_000_000_000_000_000u128),
-        (bob.clone(), BETH, 1_000_000_000_000_000_000u128),
+        (alice.clone(), CETH, 1_000_000_000_000_000_000u128),
+        (bob.clone(), CETH, 1_000_000_000_000_000_000u128),
       ],
     }
 	}
@@ -200,7 +200,7 @@ impl ExtBuilder {
         .endowed_accounts
         .clone()
         .into_iter()
-        .filter(|(_, currency_id, _)| *currency_id == BXB)
+        .filter(|(_, currency_id, _)| *currency_id == CLV)
         .map(|(account_id, _, initial_balance)| (account_id, initial_balance))
         .collect::<Vec<_>>(),
     }
@@ -211,7 +211,7 @@ impl ExtBuilder {
 			endowed_accounts: self
 				.endowed_accounts
 				.into_iter()
-				.filter(|(_, currency_id, _)| *currency_id != BXB)
+				.filter(|(_, currency_id, _)| *currency_id != CLV)
 				.collect::<Vec<_>>(),
 		}
 		.assimilate_storage(&mut t).unwrap();
