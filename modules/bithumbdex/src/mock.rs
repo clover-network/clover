@@ -3,6 +3,8 @@ use super::*;
 use frame_support::{impl_outer_event, impl_outer_origin, parameter_types};
 use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
+use sp_std::cell::RefCell;
+use std::collections::HashMap;
 pub use pallet_balances::Call as BalancesCall;
 use clover_traits::IncentiveOps;
 
@@ -142,14 +144,54 @@ pub const BUSD: CurrencyId = CurrencyId::BUSD;
 pub const DOT: CurrencyId = CurrencyId::DOT;
 pub const BETH: CurrencyId = CurrencyId::BETH;
 
+thread_local! {
+	pub static SHARES_STAKED: RefCell<HashMap<(AccountId, PairKey), Balance>> = RefCell::new(HashMap::new());
+}
+
 pub struct IncentiveOpsHandler;
+
 impl IncentiveOps<AccountId, CurrencyId, Share> for IncentiveOpsHandler {
-  fn add_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> DispatchResult {
-    Ok(())
+  fn add_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> Result<Share, DispatchError> {
+    let t = SHARES_STAKED.with(|v| {
+      let mut total;
+      let mut old_map = v.borrow().clone();
+      let key = BithumbDexModule::get_pair_key(left, right);
+      if let Some(before) = old_map.get_mut(&(who.clone(), key)) {
+        *before += amount;
+        total = before.clone();
+      } else {
+        old_map.insert((who.clone(), key), amount.clone());
+        total = amount.clone();
+      };
+      *v.borrow_mut() = old_map;
+      total
+    });
+    Ok(t)
   }
 
-  fn remove_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> DispatchResult {
-    Ok(())
+  fn remove_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> Result<Share, DispatchError> {
+    let total = SHARES_STAKED.with(|v| {
+      let mut total;
+      let mut old_map = v.borrow().clone();
+      let key = BithumbDexModule::get_pair_key(left, right);
+      if let Some(before) = old_map.get_mut(&(who.clone(), key)) {
+        *before -= amount;
+        total = before.clone();
+      } else {
+        old_map.insert((who.clone(), key), amount.clone());
+        total = amount.clone();
+      };
+      *v.borrow_mut() = old_map;
+      total
+    });
+    Ok(total)
+  }
+
+  fn get_account_shares(who: &AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
+    SHARES_STAKED.with(|v| {
+      let key = BithumbDexModule::get_pair_key(left, right);
+      v.borrow().get(&(who.clone(), key)).unwrap_or(&0).clone()
+    })
   }
 }
 

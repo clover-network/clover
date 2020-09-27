@@ -949,4 +949,12 @@ impl<T: Trait> Module<T> {
                                   &currency_id_second,
                                   &amount)
   }
+
+  pub fn get_staked_shares(who: &T::AccountId,
+                           currency_id_first: CurrencyId,
+                           currency_id_second: CurrencyId) -> T::Share {
+    T::IncentiveOps::get_account_shares(who,
+                                        &currency_id_first,
+                                        &currency_id_second)
+  }
 }
