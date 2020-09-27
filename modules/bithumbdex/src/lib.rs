@@ -96,6 +96,12 @@ decl_event!(
 		LiquidityIncentiveRateUpdated(CurrencyId, CurrencyId, Rate),
 		/// Incentive interest claimed. [who, currency_type, amount]
 		IncentiveInterestClaimed(AccountId, CurrencyId, CurrencyId, Balance),
+    /// Share Staked
+    /// account, currency left/right, amount staked, total staked amount
+    StakeShare(AccountId, CurrencyId, CurrencyId, Share, Share),
+    /// Share unstaked
+    /// account, currency left/right, amount unstaked, total staked amount
+    UnStakeShare(AccountId, CurrencyId, CurrencyId, Share, Share),
 	}
 );
 
@@ -117,6 +123,7 @@ decl_error! {
     /// the route is not valid
     InvalidRoute,
     InvalidExchangeRate,
+    InvalidAmount,
 	}
 }
 
@@ -133,7 +140,7 @@ decl_storage! {
 		/// Shares records indexed by currency type and account id
 		/// CurrencyType -> Owner -> ShareAmount
     Shares get(fn shares): double_map hasher(blake2_128_concat) PairKey, hasher(twox_64_concat) T::AccountId => T::Share;
- 
+
     /// Exchange fee for governance
     ExchangeFee get(fn exchange_fee): Rate;
 	}
@@ -293,7 +300,7 @@ decl_module! {
 			})?;
 		}
 
-    #[weight = 248 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(11, 9)]
+    #[weight = 248 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(11, 10)]
     pub fn withdraw_liquidity(origin,
                               currency_id_first: CurrencyId,
                               currency_id_second: CurrencyId,
@@ -327,8 +334,17 @@ decl_module! {
         T::Currency::transfer(currency_id_left, &sub_account, &who, withdraw_other_currency_amount)?;
         T::Currency::transfer(currency_id_right, &sub_account, &who, withdraw_base_currency_amount)?;
 
-        <Shares<T>>::try_mutate(pair_id, &who, |share| -> DispatchResult {
-          *share = share.checked_sub(&remove_share).ok_or(Error::<T>::ShareNotEnough)?;
+        <Shares<T>>::try_mutate(pair_id, &who, |share| -> DispatchResult{
+          let new_shares = share.checked_sub(&remove_share).ok_or(Error::<T>::ShareNotEnough)?;
+          // should check the free shares before removing liquidity
+          // remaining shares amount should >= locked shares amount
+          let locked_shares = T::IncentiveOps::get_account_shares(&who, &currency_id_first, &currency_id_right);
+          debug::info!("new_shares: {:?}, locked_shares: {:?}", new_shares, locked_shares);
+          if !locked_shares.is_zero() && locked_shares > new_shares {
+            return Err(Error::<T>::ShareNotEnough.into());
+          }
+
+          *share = new_shares;
           Ok(())
         })?;
         <TotalShares<T>>::mutate(pair_id, |share|
@@ -352,23 +368,23 @@ decl_module! {
 			})?;
 		}
 
-	  #[weight = 200 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(9, 6)]
-		pub fn basic_swap_currency(
-			origin,
-			supply_currency_id: CurrencyId,
-			#[compact] supply_amount: Balance,
-			target_currency_id: CurrencyId,
-			#[compact] acceptable_target_amount: Balance,
-		) {
-			with_transaction_result(|| {
-				let who = ensure_signed(origin)?;
-        let fee_rate = Self::get_exchange_fee();
-				Self::basic_swap(&who, supply_currency_id, supply_amount, target_currency_id, acceptable_target_amount, fee_rate)?;
-				Ok(())
-			})?;
-    }
+	  //#[weight = 200 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(9, 6)]
+		//pub fn basic_swap_currency(
+		//	origin,
+		//	supply_currency_id: CurrencyId,
+		//	#[compact] supply_amount: Balance,
+		//	target_currency_id: CurrencyId,
+		//	#[compact] acceptable_target_amount: Balance,
+		//) {
+		//	with_transaction_result(|| {
+		//		let who = ensure_signed(origin)?;
+    //    let fee_rate = Self::get_exchange_fee();
+		//		Self::basic_swap(&who, supply_currency_id, supply_amount, target_currency_id, acceptable_target_amount, fee_rate)?;
+		//		Ok(())
+		//	})?;
+    //}
 
-    /// trading with route is pretty heavy
+    /// swap currencies using specified routes
 	  #[weight = SwapCurrencyUsingRoute(T::DbWeight::get().reads(1), T::DbWeight::get().writes(1))]
     pub fn swap_currency(
       origin,
@@ -386,6 +402,40 @@ decl_module! {
                                           target_currency_id,
                                           acceptable_target_amount,
                                           route)?;
+        Ok(())
+      })?;
+    }
+
+    #[weight = 206 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(8, 5)]
+    pub fn stake_pool_shares(
+      origin,
+      currency_id_first: CurrencyId,
+      currency_id_second: CurrencyId,
+      amount: T::Share,
+    ) {
+      with_transaction_result(|| {
+        let who = ensure_signed(origin)?;
+        ensure!(amount > T::Share::zero(), Error::<T>::InvalidAmount);
+        let total_share = Self::add_stake_to_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
+
+        Self::deposit_event(RawEvent::StakeShare(who, currency_id_first, currency_id_second, amount, total_share));
+        Ok(())
+      })?;
+    }
+
+    #[weight = 206 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(8, 5)]
+    pub fn unstake_pool_shares(
+      origin,
+      currency_id_first: CurrencyId,
+      currency_id_second: CurrencyId,
+      amount: T::Share,
+    ) {
+      with_transaction_result(|| {
+        let who = ensure_signed(origin)?;
+        ensure!(amount > T::Share::zero(), Error::<T>::InvalidAmount);
+        let total_share = Self::remove_stake_from_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
+
+        Self::deposit_event(RawEvent::UnStakeShare(who, currency_id_first, currency_id_second, amount, total_share));
         Ok(())
       })?;
     }
@@ -416,7 +466,7 @@ impl<T: Trait> Module<T> {
       (max_second_currency_amount, max_first_currency_amount)
     };
 
-    let total_shares = if LiquidityPool::contains_key(pair_id) { 
+    let total_shares = if LiquidityPool::contains_key(pair_id) {
       Self::total_shares(pair_id)
     } else {
       T::Share::zero()
@@ -450,13 +500,19 @@ impl<T: Trait> Module<T> {
             .unwrap_or_default()
         }
       };
-      
+
       let pool_total_share = total_shares.checked_add(&share_increment);
       (share_increment, pool_total_share.unwrap_or_default())
   }
 
-  pub fn get_liquidity(account: Option<T::AccountId>) -> vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)> {
-      let mut result = vec::Vec::<(CurrencyId, CurrencyId, Balance, Balance, T::Share, T::Share)>::new();
+  /// get liquidity information
+  /// includes account shares/staked shares if account was provided
+  pub fn get_liquidity(account: Option<T::AccountId>)
+                       -> Vec<(CurrencyId, CurrencyId,
+                               Balance, Balance,
+                               T::Share, T::Share, // account total shares/locked shares
+                               T::Share)> { // total shares in the pool
+      let mut result = vec::Vec::new();
       LiquidityPool::iter()
           .map(|(pair_key, pool_info)| (Self::pair_key_to_ids(pair_key), pair_key, pool_info))
           .filter(|(id, _, _)| id.is_some())
@@ -465,17 +521,22 @@ impl<T: Trait> Module<T> {
               match account.clone() {
                   None => {
                       let (other_currency_pool, base_currency_pool): (Balance, Balance) = info;
-                      result.push((id.0, id.1, other_currency_pool, base_currency_pool, Self::total_shares(pk), Self::total_shares(pk)));
+                    result.push((id.0, id.1, other_currency_pool, base_currency_pool,
+                                 Zero::zero(), Zero::zero(),
+                                 Self::total_shares(pk)));
                   }
 
                   Some(aid) => {
                       if <Shares<T>>::contains_key(pk, aid.clone()) {
+                        if let Some((id_left, id_right)) = Self::pair_key_to_ids(pk) {
                           let (other_currency_pool, base_currency_pool): (Balance, Balance) = info;
                           let self_share = <Shares<T>>::get(pk, aid.clone());
+                          let staked_share = Self::get_staked_shares(&aid, id_left, id_right);
                           let proportion = Ratio::checked_from_rational(self_share, Self::total_shares(pk)).unwrap_or_default();
                           let other_currency_amount = proportion.saturating_mul_int(other_currency_pool);
                           let base_currency_amount = proportion.saturating_mul_int(base_currency_pool);
-                          result.push((id.0, id.1, other_currency_amount, base_currency_amount, self_share, Self::total_shares(pk)));
+                          result.push((id.0, id.1, other_currency_amount, base_currency_amount, self_share, staked_share, Self::total_shares(pk)));
+                        }
                       }
                   }
               }
@@ -871,5 +932,40 @@ impl<T: Trait> Module<T> {
     }
 
     best_route.map(|r| (best_amount, r))
+  }
+
+  pub fn add_stake_to_reward_pool(who: &T::AccountId,
+                                  currency_id_first: CurrencyId,
+                                  currency_id_second: CurrencyId,
+                                  amount: T::Share) -> Result<T::Share, DispatchError>{
+    let locked_shares = T::IncentiveOps::add_share(&who,
+                                                   &currency_id_first,
+                                                   &currency_id_second,
+                                                   &amount)?;
+    // should check we have enough shares to add to the pool
+    let pair_id = Self::get_pair_key(&currency_id_first, &currency_id_second);
+    let total_shares = Self::shares(&pair_id, who);
+    debug::info!("add stake: totals shares: {:?}, locked shares: {:?}", total_shares, locked_shares);
+    ensure!(locked_shares <= total_shares, Error::<T>::ShareNotEnough);
+    Ok(locked_shares)
+  }
+
+  pub fn remove_stake_from_reward_pool(who: &T::AccountId,
+                                       currency_id_first: CurrencyId,
+                                       currency_id_second: CurrencyId,
+                                       amount: T::Share) -> Result<T::Share, DispatchError>{
+
+    T::IncentiveOps::remove_share(&who,
+                                  &currency_id_first,
+                                  &currency_id_second,
+                                  &amount)
+  }
+
+  pub fn get_staked_shares(who: &T::AccountId,
+                           currency_id_first: CurrencyId,
+                           currency_id_second: CurrencyId) -> T::Share {
+    T::IncentiveOps::get_account_shares(who,
+                                        &currency_id_first,
+                                        &currency_id_second)
   }
 }

@@ -267,3 +267,42 @@ fn test_supply_target_calculation() {
   let new_supply_amount = BDM::calculate_swap_supply_amount(left_balance, right_balance, target_amount, fee_rate);
   assert_eq!(new_supply_amount, supply_amount + 1);
 }
+
+#[test]
+fn test_lp_staking() {
+  let alice = AccountId::from(ALICE);
+  ExtBuilder::default().build().execute_with(|| {
+    assert_ok!(BDM::add_liquidity(
+      Origin::signed(alice.clone()),
+      BXB,
+      BETH,
+      1000000000000000,
+      1000000000000000
+    ));
+
+    assert_ok!(BDM::stake_pool_shares(
+      Origin::signed(alice.clone()),
+      BXB,
+      BETH,
+      1000000000000000,
+    ));
+
+    assert_ok!(BDM::unstake_pool_shares(
+      Origin::signed(alice.clone()),
+      BXB,
+      BETH,
+      500000000000000,
+    ));
+
+    assert_eq!(BDM::get_staked_shares(&alice, BXB, BETH), 500000000000000);
+
+    assert_ok!(BDM::unstake_pool_shares(
+      Origin::signed(alice.clone()),
+      BXB,
+      BETH,
+      500000000000000,
+    ));
+
+    assert_eq!(BDM::get_staked_shares(&alice, BXB, BETH), 0);
+  });
+}

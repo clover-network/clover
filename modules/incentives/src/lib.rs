@@ -6,24 +6,18 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-  decl_module, decl_error, decl_event, decl_storage, debug,
-  traits::{
-    EnsureOrigin, Get, Happened,
-  },
-  IterableStorageMap,
-  weights::constants::WEIGHT_PER_MICROS,
+  decl_module, decl_error, decl_storage, debug,
 };
 use sp_runtime::{
-  DispatchResult,
-  FixedPointNumber, FixedPointOperand,
+  DispatchError,
   RuntimeDebug,
   traits::{
-    AtLeast32Bit, MaybeSerializeDeserialize, Member, SaturatedConversion, Saturating,
+    SaturatedConversion,
     Zero,
   }
 };
 use sp_std::prelude::*;
-use primitives::{Balance, CurrencyId, Price, Share, Ratio};
+use primitives::{Balance, CurrencyId, Share, };
 use clover_traits::{RewardPoolOps, IncentiveOps};
 use reward_pool::traits::RewardHandler;
 
@@ -153,7 +147,7 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
   fn add_share(who: &T::AccountId,
                currency_first: &CurrencyId,
                currency_second: &CurrencyId,
-               amount: &Share) -> DispatchResult {
+               amount: &Share) -> Result<Share, DispatchError>{
     let pair_key = PairKey::try_from(*currency_first, *currency_second)
       .ok_or(Error::<T>::InvalidCurrencyPair)?;
     T::RewardPool::add_share(who, PoolId::Dex(pair_key), *amount)
@@ -162,9 +156,14 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
   fn remove_share(who: &T::AccountId,
                   currency_first: &CurrencyId,
                   currency_second: &CurrencyId,
-                  amount: &Share) -> DispatchResult {
+                  amount: &Share) -> Result<Share, DispatchError> {
     let pair_key = PairKey::try_from(*currency_first, *currency_second)
       .ok_or(Error::<T>::InvalidCurrencyPair)?;
     T::RewardPool::remove_share(who, PoolId::Dex(pair_key), *amount)
+  }
+
+  fn get_account_shares(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
+    let pair_key = PairKey::try_from(*left, *right).unwrap();
+    T::RewardPool::get_account_shares(who, &PoolId::Dex(pair_key))
   }
 }

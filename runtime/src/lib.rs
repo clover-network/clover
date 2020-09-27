@@ -679,7 +679,7 @@ parameter_types! {
 impl reward_pool::Trait for Runtime {
   type Event = Event;
   type PoolId = clover_incentives::PoolId;
-	type ModuleId = RewardModuleId;
+  type ModuleId = RewardModuleId;
   type Currency = Currencies;
   type GetNativeCurrencyId = GetNativeCurrencyId;
 	type ExistentialReward = ExistentialReward;
@@ -972,7 +972,7 @@ impl_runtime_apis! {
 			balance
 		}
 
-		fn get_liquidity(account: Option<AccountId>) -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, Balance, Balance)> {
+		fn get_liquidity(account: Option<AccountId>) -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, Balance, Balance, Balance)> {
 			let result = BithumbDex::get_liquidity(account);
 			result
 		}
