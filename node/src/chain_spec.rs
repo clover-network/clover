@@ -206,7 +206,7 @@ fn testnet_genesis(
 				.flat_map(|x| {
 					vec![
 						(x.clone(), CurrencyId::CETH, 10000 * DOLLARS),
-						(x.clone(), CurrencyId::CUSD, 10000 * DOLLARS),
+						(x.clone(), CurrencyId::CUSDT, 10000 * DOLLARS),
 						(x.clone(), CurrencyId::DOT, 10000 * DOLLARS),
 					]
 				})
@@ -215,15 +215,15 @@ fn testnet_genesis(
     clover_incentives: Some(IncentivesConfig{
       dex_rewards: vec![
         (CurrencyId::CLV, CurrencyId::DOT, 1 * DOLLARS),
-        (CurrencyId::CLV, CurrencyId::CUSD, 2 * DOLLARS),
-        (CurrencyId::CETH, CurrencyId::CUSD, 3 * DOLLARS),
+        (CurrencyId::CLV, CurrencyId::CUSDT, 2 * DOLLARS),
+        (CurrencyId::CETH, CurrencyId::CUSDT, 3 * DOLLARS),
       ],
     }),
     bithumbdex: Some(BithumbDexConfig {
 		    initial_pairs: vec![
-			    (CurrencyId::CUSD, CurrencyId::CETH, Some(1000 * DOLLARS), Some(500 * DOLLARS)),
-			    (CurrencyId::CUSD, CurrencyId::DOT, Some(700 * DOLLARS), Some(250 * DOLLARS)),
-			    (CurrencyId::CUSD, CurrencyId::CLV, Some(300 * DOLLARS), Some(600 * DOLLARS)),
+			    (CurrencyId::CUSDT, CurrencyId::CETH, Some(1000 * DOLLARS), Some(500 * DOLLARS)),
+			    (CurrencyId::CUSDT, CurrencyId::DOT, Some(700 * DOLLARS), Some(250 * DOLLARS)),
+			    (CurrencyId::CUSDT, CurrencyId::CLV, Some(300 * DOLLARS), Some(600 * DOLLARS)),
 		    ],
 		}),
 		pallet_collective_Instance1: Some(Default::default()),

@@ -69,7 +69,7 @@ pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, strum_macros::EnumIter, strum_macros::Display, int_enum::IntEnum))]
 pub enum CurrencyId {
 	  CLV = 0,
-	  CUSD = 1,
+	  CUSDT = 1,
 	  DOT = 2,
 	  CETH = 3,
 }
