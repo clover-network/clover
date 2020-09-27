@@ -18,19 +18,19 @@ pub struct ExchangeInfo<CurrencyId> {
 
 #[rpc]
 pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance, Rate, Share> {
-  #[rpc(name = "bitdex_target_amount_available")]
+  #[rpc(name = "bitdex_targetAmountAvailable")]
   fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
-  #[rpc(name = "bitdex_supply_amount_needed")]
+  #[rpc(name = "bitdex_supplyAmountNeeded")]
   fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
-  #[rpc(name = "bitdex_get_liquidity")]
+  #[rpc(name = "bitdex_getLiquidity")]
   fn get_liquidity(&self, account: Option<AccountId>, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String, String)>>;
 
-  #[rpc(name = "bitdex_get_exchange_rate")]
+  #[rpc(name = "bitdex_getExchangeRate")]
   fn get_exchange_rate(&self, at: Option<BlockHash>) -> Result<Rate>;
 
-  #[rpc(name = "bitdex_to_add_liquidity")]
+  #[rpc(name = "bitdex_toAddLiquidity")]
   fn to_add_liquidity(&self, source: CurrencyId, target: CurrencyId, source_amount: Balance, target_amount: Balance, at: Option<BlockHash>) -> Result<(String, String)>;
 }
 
