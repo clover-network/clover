@@ -150,7 +150,7 @@ thread_local! {
 
 pub struct IncentiveOpsHandler;
 
-impl IncentiveOps<AccountId, CurrencyId, Share> for IncentiveOpsHandler {
+impl IncentiveOps<AccountId, CurrencyId, Share, Balance> for IncentiveOpsHandler {
   fn add_share(who: &AccountId, left: &CurrencyId, right: &CurrencyId, amount: &Share) -> Result<Share, DispatchError> {
     let t = SHARES_STAKED.with(|v| {
       let total;

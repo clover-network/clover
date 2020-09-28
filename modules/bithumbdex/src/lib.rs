@@ -62,7 +62,7 @@ pub trait Trait: system::Trait {
 	type ModuleId: Get<ModuleId>;
 
   /// incentive ops
-  type IncentiveOps:  IncentiveOps<Self::AccountId, CurrencyId, Self::Share>;
+  type IncentiveOps:  IncentiveOps<Self::AccountId, CurrencyId, Self::Share, Balance>;
 	/// Event handler which calls when add liquidity.
 	type OnAddLiquidity: Happened<(Self::AccountId, CurrencyId, CurrencyId, Self::Share)>;
 

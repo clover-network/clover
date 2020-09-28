@@ -32,6 +32,13 @@ pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance, Rate, S
 
   #[rpc(name = "bitdex_toAddLiquidity")]
   fn to_add_liquidity(&self, source: CurrencyId, target: CurrencyId, source_amount: Balance, target_amount: Balance, at: Option<BlockHash>) -> Result<(String, String)>;
+
+  #[rpc(name="bitdex_getAccountStakingInfo")]
+  fn get_account_staking_info(&self,
+                              account: AccountId,
+                              currency_first: CurrencyId,
+                              currency_second: CurrencyId,
+                              at: Option<BlockHash>) -> Result<(String, String)>;
 }
 
 pub struct CurrencyExchange<C, M> {
@@ -132,4 +139,21 @@ where
 		})
     }
 
+  fn get_account_staking_info(&self, account: AccountId,
+                              currency_left: CurrencyId,
+                              currency_right: CurrencyId,
+                              at: Option<<Block as BlockT>::Hash>) -> Result<(String, String)> {
+    let api = self.client.runtime_api();
+    let at = BlockId::hash(at.unwrap_or_else(||
+                                             // If the block hash is not supplied assume the best block.
+                                             self.client.info().best_hash));
+
+    api.get_staking_info(&at, account, currency_left, currency_right).map_err(|e| RpcError {
+      code: ErrorCode::ServerError(Error::RuntimeError.into()),
+      message: "Unable to get value.".into(),
+      data: Some(format!("{:?}", e).into()),
+    }).map(|(s1, s2)| {
+      (format!("{}", s1), format!("{}", s2))
+    })
+  }
 }
