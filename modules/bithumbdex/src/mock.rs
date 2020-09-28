@@ -6,7 +6,7 @@ use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
 use sp_std::cell::RefCell;
 use std::collections::HashMap;
 pub use pallet_balances::Call as BalancesCall;
-use clover_traits::IncentiveOps;
+use clover_traits::{IncentiveOps, IncentivePoolAccountInfo, };
 
 pub use primitives::{
 	AccountId, AccountIndex, Amount, Balance,
@@ -192,6 +192,15 @@ impl IncentiveOps<AccountId, CurrencyId, Share, Balance> for IncentiveOpsHandler
       let key = BithumbDexModule::get_pair_key(left, right);
       v.borrow().get(&(who.clone(), key)).unwrap_or(&0).clone()
     })
+  }
+
+  // todo implement it
+  fn get_accumlated_rewards(_who: &AccountId, _left: &CurrencyId, _right: &CurrencyId) -> Balance {
+    0
+  }
+
+  fn get_account_info(_who: &AccountId, _left: &CurrencyId, _right: &CurrencyId) -> IncentivePoolAccountInfo<Share, Balance> {
+    IncentivePoolAccountInfo { shares: 0, accumlated_rewards: 0 }
   }
 }
 
