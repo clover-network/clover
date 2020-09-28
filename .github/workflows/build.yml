@@ -1,0 +1,45 @@
+name: Clover chain deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - run: rustup install nightly && rustup default nightly && rustup target add wasm32-unknown-unknown --toolchain nightly
+      - run: cargo build --release
+
+      - name: Rsync deployments
+        uses: AEnterprise/rsync-deploy@v1.0
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          ARGS: -avz --delete
+          SERVER_PORT: 22
+          FOLDER: ./target/release/bitdex
+          SERVER_IP: ${{ secrets.SSH_HOST }}
+          USERNAME: ${{ secrets.SSH_USER }}
+          SERVER_DESTINATION: ${{ secrets.DEPLOY_TARGET }}
+
+      - name: Restart system
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          command: ${{ secrets.CMD }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          privateKey: ${{ secrets.DEPLOY_KEY}}
