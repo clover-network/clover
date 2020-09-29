@@ -16,6 +16,7 @@ enum-iterator = "0.6.0"
 clover-traits = { path = "../modules/traits", default-features = false }
 reward-pool= { path = "../modules/reward-pool", default-features = false }
 clover-incentives = { path = "../modules/incentives", default-features = false }
+clover-prices = { path = "../modules/prices", default-features = false }
 
 [dependencies.bitdex-rpc-runtime-api]
 default-features = false
@@ -56,6 +57,11 @@ git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
 rev = '12c5cdc297'
 
 [dependencies.orml-traits]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-oracle]
 default-features = false
 git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
 rev = '12c5cdc297'
@@ -222,6 +228,7 @@ std = [
     'orml-currencies/std',
     'orml-tokens/std',
     'orml-traits/std',
+    'orml-oracle/std',
     'pallet-authorship/std',
     'pallet-babe/std',
     'pallet-balances/std',

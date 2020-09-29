@@ -8,9 +8,9 @@ use frame_support::{
 use frame_system::{self as system};
 use orml_traits::{DataFeeder, DataProvider};
 use orml_utilities::with_transaction_result;
-use primitives::CurrencyId;
-use sp_runtime::traits::{CheckedDiv, CheckedMul};
-use support::{ExchangeRateProvider, Price, PriceProvider};
+use primitives::{CurrencyId, Price};
+use sp_runtime::traits::CheckedDiv;
+use clover_traits::PriceProvider;
 
 // mod mock;
 // mod tests;
@@ -42,12 +42,12 @@ decl_module! {
 
 		const GetStableCurrencyId: CurrencyId = T::GetStableCurrencyId::get();
 		const StableCurrencyFixedPrice: Price = T::StableCurrencyFixedPrice::get();
-.
+
 		#[weight = (10_000, DispatchClass::Operational)]
 		fn lock_price(origin, currency_id: CurrencyId) {
 			with_transaction_result(|| {
 				T::LockOrigin::ensure_origin(origin)?;
-				<Module<T> as PriceProvider<CurrencyId>>::lock_price(currency_id);
+				<Module<T> as PriceProvider<CurrencyId, Price>>::lock_price(currency_id);
 				Ok(())
 			})?;
 		}
@@ -56,7 +56,7 @@ decl_module! {
 		fn unlock_price(origin, currency_id: CurrencyId) {
 			with_transaction_result(|| {
 				T::LockOrigin::ensure_origin(origin)?;
-				<Module<T> as PriceProvider<CurrencyId>>::unlock_price(currency_id);
+				<Module<T> as PriceProvider<CurrencyId, Price>>::unlock_price(currency_id);
 				Ok(())
 			})?;
 		}
@@ -65,7 +65,7 @@ decl_module! {
 
 impl<T: Trait> Module<T> {}
 
-impl<T: Trait> PriceProvider<CurrencyId> for Module<T> {
+impl<T: Trait> PriceProvider<CurrencyId, Price> for Module<T> {
 	fn get_relative_price(base_currency_id: CurrencyId, quote_currency_id: CurrencyId) -> Option<Price> {
 		if let (Some(base_price), Some(quote_price)) =
 			(Self::get_price(base_currency_id), Self::get_price(quote_currency_id))
