@@ -202,6 +202,10 @@ impl IncentiveOps<AccountId, CurrencyId, Share, Balance> for IncentiveOpsHandler
   fn get_account_info(_who: &AccountId, _left: &CurrencyId, _right: &CurrencyId) -> IncentivePoolAccountInfo<Share, Balance> {
     IncentivePoolAccountInfo { shares: 0, accumlated_rewards: 0 }
   }
+
+  fn claim_rewards(_who: &AccountId, _left: &CurrencyId, _right: &CurrencyId) -> Result<Balance, DispatchError> {
+    Ok(Zero::zero())
+  }
 }
 
 pub struct ExtBuilder {

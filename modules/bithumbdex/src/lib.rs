@@ -102,6 +102,7 @@ decl_event!(
     /// Share unstaked
     /// account, currency left/right, amount unstaked, total staked amount
     UnStakeShare(AccountId, CurrencyId, CurrencyId, Share, Share),
+    RewardsClaimed(AccountId, CurrencyId, CurrencyId, Balance),
 	}
 );
 
@@ -436,6 +437,19 @@ decl_module! {
         let total_share = Self::remove_stake_from_reward_pool(&who, currency_id_first, currency_id_second, amount)?;
 
         Self::deposit_event(RawEvent::UnStakeShare(who, currency_id_first, currency_id_second, amount, total_share));
+        Ok(())
+      })?;
+    }
+
+    /// withdraw all rewards from reward pool
+    #[weight = 206 * WEIGHT_PER_MICROS + T::DbWeight::get().reads_writes(8, 5)]
+    pub fn withdraw_rewards(origin,
+                            currency_id_first: CurrencyId,
+                            currency_id_second: CurrencyId) {
+      with_transaction_result(|| {
+        let who = ensure_signed(origin)?;
+        let reward = T::IncentiveOps::claim_rewards(&who, &currency_id_first, &currency_id_second)?;
+        Self::deposit_event(RawEvent::RewardsClaimed(who, currency_id_first, currency_id_second, reward));
         Ok(())
       })?;
     }
