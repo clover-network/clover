@@ -52,6 +52,4 @@ Distributed under the GPL V3 License. See `LICENSE` for more information.
 [issues-shield]: https://img.shields.io/github/issues/clover-network/clover.svg?style=flat-square
 [issues-url]: https://github.com/clover-network/clover/issues
 [license-shield]: https://img.shields.io/github/license/clover-network/clover.svg?style=flat-square
-[license-url]: https://github.com/clover-network/clover/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=flat-square&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/clover-network
+[license-url]: https://github.com/clover-network/clover/blob/master/LICENSE
