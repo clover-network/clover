@@ -18,7 +18,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 use primitives::{Balance, CurrencyId, Share, };
-use clover_traits::{RewardPoolOps, IncentiveOps};
+use clover_traits::{RewardPoolOps, IncentiveOps, IncentivePoolAccountInfo, };
 use reward_pool::traits::RewardHandler;
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
@@ -47,7 +47,7 @@ pub enum PoolId {
 }
 
 pub trait Trait: frame_system::Trait {
-  type RewardPool:  RewardPoolOps<Self::AccountId, PoolId, Share>;
+  type RewardPool:  RewardPoolOps<Self::AccountId, PoolId, Share, Balance>;
 }
 
 decl_storage! {
@@ -143,7 +143,7 @@ where T::BlockNumber: SaturatedConversion, {
   }
 }
 
-impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
+impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share, Balance> for Module<T> {
   fn add_share(who: &T::AccountId,
                currency_first: &CurrencyId,
                currency_second: &CurrencyId,
@@ -163,7 +163,29 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
   }
 
   fn get_account_shares(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
-    let pair_key = PairKey::try_from(*left, *right).unwrap();
-    T::RewardPool::get_account_shares(who, &PoolId::Dex(pair_key))
+    if let Some(pair_key) = PairKey::try_from(*left, *right) {
+      T::RewardPool::get_account_shares(who, &PoolId::Dex(pair_key))
+    } else {
+      Zero::zero()
+    }
+  }
+
+  fn get_accumlated_rewards(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
+    if let Some(pair_key) = PairKey::try_from(*left, *right) {
+      T::RewardPool::get_accumlated_rewards(who, &PoolId::Dex(pair_key))
+    } else {
+      Zero::zero()
+    }
+  }
+
+  fn get_account_info(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> IncentivePoolAccountInfo<Share, Balance> {
+    if let Some(pair_key) = PairKey::try_from(*left, *right) {
+      let pool_id = PoolId::Dex(pair_key);
+      let shares = T::RewardPool::get_account_shares(who, &pool_id);
+      let accumlated_rewards = T::RewardPool::get_accumlated_rewards(who, &pool_id);
+      IncentivePoolAccountInfo { shares, accumlated_rewards, }
+    } else {
+      IncentivePoolAccountInfo { shares: Zero::zero(), accumlated_rewards: Zero::zero(), }
+    }
   }
 }

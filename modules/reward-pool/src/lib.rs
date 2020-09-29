@@ -261,7 +261,7 @@ impl<T: Trait> Module<T> {
   }
 }
 
-impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
+impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share, Balance> for Module<T> {
   /// add shares to the reward pool
   /// note: should call this function insdie a storage transaction
   /// steps:
@@ -341,6 +341,30 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share> for Module<T> {
   fn get_account_shares(who: &T::AccountId, pool: &T::PoolId)  -> Share {
     let PoolAccountInfo { shares, ..} = Self::get_pool_account_info(&pool, who);
     shares
+  }
+
+  /// calculate accumlated rewards which haven't been claimed
+  /// this is a readonly api and should not write the storage
+  fn get_accumlated_rewards(who: &T::AccountId, pool: &T::PoolId) -> Balance {
+    let account_info  = Self::get_pool_account_info(&pool, who);
+    if account_info.shares.is_zero() {
+      return 0;
+    }
+
+    let calc_reward = || -> Result<Balance, DispatchError> {
+      // update the pool info to now
+      let (pool_info, _) = Self::calc_pool_reward(pool)?;
+      let shares = account_info.shares.clone();
+      let (_, _, reward) = Self::get_rewards_by_account_shares(pool_info, account_info, shares)?;
+      Ok(reward)
+    };
+    match calc_reward() {
+      Ok(reward) => reward,
+      Err(e) => {
+        debug::error!("failed to calculate reward for account: {:?}, pool: {:?}, error: {:?}", who, pool, e);
+        Zero::zero()
+      }
+    }
   }
 }
 
