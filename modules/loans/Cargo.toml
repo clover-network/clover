@@ -14,16 +14,37 @@ sp-runtime = { version = "2.0.0-rc6", default-features = false }
 frame-support = { version = "2.0.0-rc6", default-features = false }
 frame-system = { version = "2.0.0-rc6", default-features = false }
 sp-std = { version = "2.0.0-rc6", default-features = false }
-orml-traits = { version = "2.0.0-rc6", default-features = false }
-orml-utilities = { version = "2.0.0-rc6", default-features = false }
-orml-rewards = { version = "2.0.0-rc6", default-features = false }
+
+[dependencies.orml-utilities]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-traits]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-tokens]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.orml-rewards]
+default-features = false
+git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
+rev = '12c5cdc297'
+
+[dependencies.primitives]
+  default-features = false
+  package = 'bitdex-primitives'
+  path = '../../primitives'
+  version = '2.0.0-rc6'
 
 [dev-dependencies]
 sp-core = { version = "2.0.0-rc6", default-features = false }
 sp-io = { version = "2.0.0-rc6", default-features = false }
 pallet-balances = { version = "2.0.0-rc6", default-features = false }
-orml-tokens = { version = "2.0.0-rc6", default-features = false }
-orml-rewards = { version = "2.0.0-rc6", default-features = false }
 
 [features]
 default = ["std"]
@@ -36,5 +57,6 @@ std = [
 	"sp-std/std",
 	"orml-traits/std",
 	"orml-utilities/std",
+	"orml-tokens/std",
 	"orml-rewards/std",
 ]

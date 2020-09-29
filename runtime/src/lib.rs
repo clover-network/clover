@@ -704,7 +704,17 @@ impl bithumbdex::Trait for Runtime {
 	type ModuleId = BithumbDexModuleId;
 	type OnAddLiquidity = ();
 	type OnRemoveLiquidity = ();
-  type IncentiveOps = Incentives;
+  	type IncentiveOps = Incentives;
+}
+
+parameter_types! {
+	pub const LoansModuleId: ModuleId = ModuleId(*b"clv/loan");
+}
+
+impl clover_loans::Trait for Runtime {
+	type Event = Event;
+	type Currency = Currencies;
+	type ModuleId = LoansModuleId;
 }
 
 type CloverDataProvider = orml_oracle::Instance1;
@@ -811,6 +821,7 @@ construct_runtime!(
 		RewardPool: reward_pool::{Module, Storage, Call, Event<T>,},
 		Incentives: clover_incentives::{Module, Storage, Call, Config},
 		Prices: clover_prices::{Module, Storage, Call, Event},
+		Loans: clover_loans::{Module, Storage, Call, Event<T>},
 
 		// oracle
 		CloverOracle: orml_oracle::<Instance1>::{Module, Storage, Call, Config<T>, Event<T>},

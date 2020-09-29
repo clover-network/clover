@@ -3,14 +3,14 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage,
-	traits::{Get, Happened},
+	traits::Get,
 };
 use frame_system::{self as system};
 use orml_traits::{MultiCurrency, MultiCurrencyExtended};
 use orml_utilities::with_transaction_result;
 use primitives::{Amount, Balance, CurrencyId};
 use sp_runtime::{
-	traits::{AccountIdConversion, Convert, Zero},
+	traits::{AccountIdConversion, Zero},
 	DispatchResult, ModuleId, RuntimeDebug,
 };
 use sp_std::{convert::TryInto, result};
@@ -21,10 +21,6 @@ use sp_std::{convert::TryInto, result};
 pub trait Trait: system::Trait {
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 
-	/// Convert debit amount under specific collateral type to debit
-	/// value(stable currency)
-	type Convert: Convert<(CurrencyId, Balance), Balance>;
-
 	/// Currency type for deposit/withdraw collateral assets to/from loans
 	/// module
 	type Currency: MultiCurrencyExtended<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance, Amount = Amount>;
@@ -32,8 +28,8 @@ pub trait Trait: system::Trait {
 	/// The loan's module id, keep all collaterals of CDPs.
 	type ModuleId: Get<ModuleId>;
 
-	/// Event handler which calls when update loan.
-	type OnUpdateLoan: Happened<(Self::AccountId, CurrencyId, Amount, Balance)>;
+	// Event handler which calls when update loan.
+	// type OnUpdateLoan: Happened<(Self::AccountId, CurrencyId, Amount, Balance)>;
 }
 
 /// A collateralized debit position.
@@ -112,7 +108,6 @@ impl<T: Trait> Module<T> {
 			Self::update_loan(who, currency_id, collateral_adjustment, debit_adjustment)?;
 
 			let collateral_balance_adjustment = Self::balance_try_from_amount_abs(collateral_adjustment)?;
-			let debit_balance_adjustment = Self::balance_try_from_amount_abs(debit_adjustment)?;
 			let module_account = Self::account_id();
 
 			if collateral_adjustment.is_positive() {
@@ -135,17 +130,6 @@ impl<T: Trait> Module<T> {
 	pub fn transfer_loan(from: &T::AccountId, to: &T::AccountId, currency_id: CurrencyId) -> DispatchResult {
 		// get `from` position data
 		let Position { collateral, debit } = Self::positions(currency_id, from);
-
-		let Position {
-			collateral: to_collateral,
-			debit: to_debit,
-		} = Self::positions(currency_id, to);
-		let new_to_collateral_balance = to_collateral
-			.checked_add(collateral)
-			.expect("existing collateral balance cannot overflow; qed");
-		let new_to_debit_balance = to_debit
-			.checked_add(debit)
-			.expect("existing debit balance cannot overflow; qed");
 
 		// balance -> amount
 		let collateral_adjustment = Self::amount_try_from_balance(collateral)?;
@@ -197,7 +181,7 @@ impl<T: Trait> Module<T> {
 
 			p.collateral = new_collateral;
 
-			T::OnUpdateLoan::happened(&(who.clone(), currency_id, debit_adjustment, p.debit));
+			// T::OnUpdateLoan::happened(&(who.clone(), currency_id, debit_adjustment, p.debit));
 			p.debit = new_debit;
 
 			if p.collateral.is_zero() && p.debit.is_zero() {

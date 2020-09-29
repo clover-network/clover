@@ -17,6 +17,7 @@ clover-traits = { path = "../modules/traits", default-features = false }
 reward-pool= { path = "../modules/reward-pool", default-features = false }
 clover-incentives = { path = "../modules/incentives", default-features = false }
 clover-prices = { path = "../modules/prices", default-features = false }
+clover-loans = { path = "../modules/loans", default-features = false }
 
 [dependencies.bitdex-rpc-runtime-api]
 default-features = false
