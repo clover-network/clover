@@ -420,15 +420,16 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share, Balance> for Module
     let total_rewards_useable = total_rewards_useable.checked_sub(actual_reward)
       .ok_or(Error::<T>::RewardCaculationError)?;
 
+    // another check, total rewards should be greater than borrowed amount
+    if borrowed_amount > reward_with_virtual {
+      return Err(Error::<T>::RewardCaculationError.into());
+    }
     // since we've claimed all available rewards, we should borrow the reward from the pool, the claimable rewards is zero
     let borrowed_amount = reward_with_virtual;
 
-    let total_rewards_useable = total_rewards_useable.checked_sub(actual_reward)
-      .ok_or(Error::<T>::RewardCaculationError)?;
-
     let sub_account = Self::sub_account_id(pool.clone());
 
-    T::Currency::update_balance(T::GetNativeCurrencyId::get(), &sub_account, actual_reward.unique_saturated_into())?;
+    T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, actual_reward.unique_saturated_into())?;
 
     <Pools<T>>::mutate(pool, |info| {
       info.total_rewards_useable = total_rewards_useable;
