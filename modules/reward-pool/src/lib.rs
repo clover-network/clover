@@ -27,6 +27,7 @@ use sp_runtime::{
 use sp_std::{
   cmp::{Eq, PartialEq},
 };
+use sp_std::vec;
 
 use primitives::{Balance, CurrencyId, Price, Share, Ratio};
 
@@ -264,18 +265,26 @@ impl<T: Trait> Module<T> {
     pool: &T::PoolId,
   ) -> Result<(PoolInfo<Share, Balance, T::BlockNumber>, Balance), DispatchError> {
     let pool_info = Self::get_pool(pool);
-    let last_update_block  = pool_info.last_update_block;
     let cur_block = <frame_system::Module<T>>::block_number();
-    if cur_block <= last_update_block {
+    Self::calc_pool_reward_at_block(pool, &pool_info, &cur_block)
+  }
+
+  fn calc_pool_reward_at_block(
+    pool: &T::PoolId,
+    pool_info: &PoolInfo<Share, Balance, T::BlockNumber>,
+    cur_block: &T::BlockNumber
+  ) -> Result<(PoolInfo<Share, Balance, T::BlockNumber>, Balance), DispatchError> {
+    let last_update_block  = pool_info.last_update_block;
+    if cur_block <= &last_update_block {
       debug::info!("ignore update pool reward: {:?} at block: {:?}, already updated at: {:?}", pool, cur_block, last_update_block);
 
       return Ok((pool_info.clone(), 0));
     }
 
-    let reward = T::Handler::caculate_reward(pool, &pool_info.total_shares, last_update_block, cur_block);
+    let reward = T::Handler::caculate_reward(pool, &pool_info.total_shares, last_update_block, cur_block.clone());
 
     let mut new_info = pool_info.clone();
-    new_info.last_update_block = cur_block;
+    new_info.last_update_block = cur_block.clone();
 
     // reward is zero, this is a valid case
     // it's not necessary to update the storage in this case
@@ -440,6 +449,21 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share, Balance> for Module
     });
 
     Ok(actual_reward)
+  }
+
+  fn get_all_pools() -> vec::Vec<(T::PoolId, Share, Balance)> {
+    let cur_block = <frame_system::Module<T>>::block_number();
+    <Pools<T>>::iter()
+      .map(|(pool_id, info)| {
+        let result = Self::calc_pool_reward_at_block(&pool_id, &info, &cur_block);
+        match result {
+          Ok((new_info, _)) => (pool_id, new_info.total_shares, new_info.total_rewards_useable),
+          Err(e) => {
+            debug::error!("failed to get pool info for {:?}, error: {:?}", pool_id, e);
+            (pool_id, info.total_shares, Zero::zero())
+          },
+        }
+      }).collect()
   }
 }
 

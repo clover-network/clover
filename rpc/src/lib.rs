@@ -10,6 +10,7 @@ pub mod currency;
 pub mod pair;
 pub mod balance;
 pub mod exchange;
+pub mod incentive_pool;
 
 pub enum Error {
 	RuntimeError,
