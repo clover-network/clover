@@ -2,7 +2,7 @@ name: Clover chain deploy
 on:
   push:
     branches:
-      - master
+      - yiqun/build
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -22,7 +22,7 @@ jobs:
         with:
           toolchain: stable
 
-      - run: rustup install nightly && rustup default nightly && rustup target add wasm32-unknown-unknown --toolchain nightly
+      - run: rustup install nightly-2020-09-25 && rustup default nightly-2020-09-25 && rustup target add wasm32-unknown-unknown --toolchain nightly
       - run: cargo build --release
 
       - name: Rsync deployments
