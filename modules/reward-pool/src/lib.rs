@@ -108,6 +108,7 @@ decl_error! {
     RewardCaculationError,
     InsufficientShares,
     InvalidAmount,
+    InvalidRewards,
   }
 }
 
@@ -152,18 +153,17 @@ impl<T: Trait> Module<T> {
        PoolAccountInfo<Share, Balance>,
        Balance),
     DispatchError> {
-    let PoolInfo { total_shares, total_rewards, total_rewards_useable, ..} = pool_info;
-    let PoolAccountInfo { shares, borrowed_amount } = account_info;
 
     // amount > 0 and user has sufficient shares to remove
-    if amount <= Zero::zero() || total_shares < amount || shares < amount {
+    if amount <= Zero::zero() || pool_info.total_shares < amount || account_info.shares < amount {
       return Err(Error::<T>::InsufficientShares.into());
     }
 
     // total rewards should send to account per shares including some amount 'borrowed'
-    let reward_with_virtual = Ratio::checked_from_rational::<Balance, _>(amount.into(), total_shares.clone())
-      .and_then(|n| n.checked_mul_int(total_rewards))
-      .ok_or(Error::<T>::RewardCaculationError)?;
+    let reward_with_virtual = Self::calc_reward_by_shares(&pool_info, &amount)?;
+
+    let PoolInfo { total_shares, total_rewards, total_rewards_useable, ..} = pool_info;
+    let PoolAccountInfo { shares, borrowed_amount } = account_info;
 
     // remove the balance from reward pool account
     let account_balance_to_remove = Ratio::checked_from_rational(amount, shares)
@@ -206,7 +206,37 @@ impl<T: Trait> Module<T> {
       ..account_info
     };
 
+
     Ok((pool_info, account_info, reward))
+  }
+
+  // returns (actual_reward, total_rewards_in_pool, total_rewards_useable_in_pool)
+  fn calc_reward_by_shares(pool_info: &PoolInfo<Share, Balance, T::BlockNumber>,
+                           amount: &Share) -> Result<Balance, DispatchError> {
+    let PoolInfo { total_shares, total_rewards, ..} = pool_info;
+
+    if total_shares.is_zero() || amount.is_zero() {
+      return Ok(Zero::zero());
+    }
+
+    // should not happen
+    if amount > total_shares {
+      return Err(Error::<T>::InsufficientShares.into());
+    }
+
+    // total rewards should send to account per shares including some amount 'borrowed'
+    let reward_with_virtual = Ratio::checked_from_rational::<Balance, _>(amount.clone().into(), total_shares.clone())
+      .and_then(|n| n.checked_mul_int(total_rewards.clone()))
+      .ok_or(Error::<T>::RewardCaculationError)?;
+
+
+    // should not happen, but it's nice to have a check
+    if &reward_with_virtual > total_rewards {
+      debug::error!("got wrong reward for pool info: {:?}, shares: {:?}", pool_info, amount);
+      return Err(Error::<T>::RewardCaculationError.into());
+    }
+
+    Ok(reward_with_virtual.clone())
   }
 
   /// update the pool reward and releated storage
@@ -365,6 +395,51 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share, Balance> for Module
         Zero::zero()
       }
     }
+  }
+
+  fn claim_rewards(who: &T::AccountId, pool: &T::PoolId) -> Result<Balance, DispatchError> {
+    // update accumlated rewards for the pool
+    let pool_info = Self::update_pool_reward(&pool)?;
+    let account_info  = Self::get_pool_account_info(&pool, who);
+
+    if account_info.shares.is_zero() {
+      return Ok(Zero::zero());
+    }
+
+    let reward_with_virtual = Self::calc_reward_by_shares(&pool_info, &account_info.shares)?;
+
+    let PoolInfo { total_rewards_useable, ..} = pool_info;
+    let PoolAccountInfo { borrowed_amount, ..} = account_info;
+
+    let actual_reward = reward_with_virtual.checked_sub(borrowed_amount)
+      .ok_or(Error::<T>::RewardCaculationError)?;
+    // don't have enough rewards to claim
+    if actual_reward < T::ExistentialReward::get() {
+      return Ok(Zero::zero());
+    }
+    let total_rewards_useable = total_rewards_useable.checked_sub(actual_reward)
+      .ok_or(Error::<T>::RewardCaculationError)?;
+
+    // another check, total rewards should be greater than borrowed amount
+    if borrowed_amount > reward_with_virtual {
+      return Err(Error::<T>::RewardCaculationError.into());
+    }
+    // since we've claimed all available rewards, we should borrow the reward from the pool, the claimable rewards is zero
+    let borrowed_amount = reward_with_virtual;
+
+    let sub_account = Self::sub_account_id(pool.clone());
+
+    T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, actual_reward.unique_saturated_into())?;
+
+    <Pools<T>>::mutate(pool, |info| {
+      info.total_rewards_useable = total_rewards_useable;
+    });
+
+    <PoolAccountData<T>>::mutate(pool, who, |data| {
+      data.borrowed_amount = borrowed_amount;
+    });
+
+    Ok(actual_reward)
   }
 }
 
