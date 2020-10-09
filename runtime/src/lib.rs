@@ -63,6 +63,8 @@ pub use primitives::{
 
 pub use constants::{time::*, };
 
+use clover_traits::incentive_ops::IncentiveOps;
+
 mod constants;
 mod mock;
 mod tests;
@@ -1064,5 +1066,10 @@ impl_runtime_apis! {
 			let result = BithumbDex::to_add_liquidity(source, target, source_amount, target_amount);
 			result
 		}
+
+    fn get_staking_info(account: AccountId, currency_first: CurrencyId, currency_second: CurrencyId) -> (Share, Balance) {
+      let result = Incentives::get_account_info(&account, &currency_first, &currency_second);
+      (result.shares, result.accumlated_rewards)
+    }
 	}
 }

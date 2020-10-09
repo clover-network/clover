@@ -18,7 +18,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 use primitives::{Balance, CurrencyId, Share, };
-use clover_traits::{RewardPoolOps, IncentiveOps};
+use clover_traits::{RewardPoolOps, IncentiveOps, IncentivePoolAccountInfo, };
 use reward_pool::traits::RewardHandler;
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RuntimeDebug)]
@@ -47,7 +47,7 @@ pub enum PoolId {
 }
 
 pub trait Trait: frame_system::Trait {
-  type RewardPool:  RewardPoolOps<Self::AccountId, PoolId, Share>;
+  type RewardPool:  RewardPoolOps<Self::AccountId, PoolId, Share, Balance>;
 }
 
 decl_storage! {
@@ -125,6 +125,14 @@ decl_module! {
 // }
 
 
+impl <T: Trait> Module<T> {
+  fn get_dex_id(first: &CurrencyId, second: &CurrencyId) -> Result<PoolId, DispatchError> {
+    let pair_key = PairKey::try_from(*first, *second)
+      .ok_or(Error::<T>::InvalidCurrencyPair)?;
+    Ok(PoolId::Dex(pair_key))
+  }
+}
+
 impl <T: Trait> RewardHandler<T::AccountId, T::BlockNumber, Balance, Share, PoolId> for Module<T>
 where T::BlockNumber: SaturatedConversion, {
   fn caculate_reward(pool_id: &PoolId,
@@ -143,7 +151,8 @@ where T::BlockNumber: SaturatedConversion, {
   }
 }
 
-impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
+impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share, Balance> for Module<T> {
+
   fn add_share(who: &T::AccountId,
                currency_first: &CurrencyId,
                currency_second: &CurrencyId,
@@ -163,7 +172,33 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share> for Module<T> {
   }
 
   fn get_account_shares(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
-    let pair_key = PairKey::try_from(*left, *right).unwrap();
-    T::RewardPool::get_account_shares(who, &PoolId::Dex(pair_key))
+    if let Ok(id) = Self::get_dex_id(left, right) {
+      T::RewardPool::get_account_shares(who, &id)
+    } else {
+      Zero::zero()
+    }
+  }
+
+  fn get_accumlated_rewards(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
+    if let Ok(id) = Self::get_dex_id(left, right) {
+      T::RewardPool::get_accumlated_rewards(who, &id)
+    } else {
+      Zero::zero()
+    }
+  }
+
+  fn get_account_info(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> IncentivePoolAccountInfo<Share, Balance> {
+    if let Ok(pool_id) = Self::get_dex_id(left, right) {
+      let shares = T::RewardPool::get_account_shares(who, &pool_id);
+      let accumlated_rewards = T::RewardPool::get_accumlated_rewards(who, &pool_id);
+      IncentivePoolAccountInfo { shares, accumlated_rewards, }
+    } else {
+      IncentivePoolAccountInfo { shares: Zero::zero(), accumlated_rewards: Zero::zero(), }
+    }
+  }
+
+  fn claim_rewards(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Result<Balance, DispatchError> {
+    Self::get_dex_id(left, right)
+      .and_then(|pool_id| T::RewardPool::claim_rewards(who, &pool_id))
   }
 }
