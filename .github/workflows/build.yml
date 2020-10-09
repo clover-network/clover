@@ -2,7 +2,7 @@ name: Clover chain deploy
 on:
   push:
     branches:
-      - yiqun/build
+      - master
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
