@@ -14,6 +14,7 @@ use sp_core::{
 use sp_runtime::{
 	ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
 	ModuleId, transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
+	DispatchResult,
 };
 use sp_runtime::traits::{
 	BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion, Saturating,
@@ -35,7 +36,7 @@ use sp_core::{u32_trait::{_1, _2, _4, _5}};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-use orml_traits::{MultiCurrency};
+use orml_traits::{create_median_value_data_provider, MultiCurrency, DataFeeder};
 use orml_currencies::{BasicCurrencyAdapter};
 
 pub use pallet_staking::StakerStatus;
@@ -43,7 +44,7 @@ pub use pallet_staking::StakerStatus;
 pub use pallet_timestamp::Call as TimestampCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use sp_runtime::{Permill, Perbill};
-use frame_system::{EnsureRoot};
+use frame_system::{EnsureRoot, EnsureOneOf};
 pub use frame_support::{
 	construct_runtime, debug, parameter_types, StorageValue,
 	traits::{KeyOwnerProofSystem, Randomness, LockIdentifier},
@@ -56,8 +57,8 @@ use codec::{Encode};
 
 pub use primitives::{
 	AccountId, AccountIndex, Amount, Balance, BlockNumber, CurrencyId, EraIndex, Hash, Index,
-	Moment, Rate, Share, Signature,
-  currency::*,
+	Moment, Rate, Share, Signature, Price,
+  	currency::*,
 };
 
 pub use constants::{time::*, };
@@ -684,7 +685,7 @@ impl reward_pool::Trait for Runtime {
   type ModuleId = RewardModuleId;
   type Currency = Currencies;
   type GetNativeCurrencyId = GetNativeCurrencyId;
-	type ExistentialReward = ExistentialReward;
+  type ExistentialReward = ExistentialReward;
   type Handler = Incentives;
 }
 
@@ -705,7 +706,76 @@ impl bithumbdex::Trait for Runtime {
 	type ModuleId = BithumbDexModuleId;
 	type OnAddLiquidity = ();
 	type OnRemoveLiquidity = ();
-  type IncentiveOps = Incentives;
+  	type IncentiveOps = Incentives;
+}
+
+parameter_types! {
+	pub const LoansModuleId: ModuleId = ModuleId(*b"clv/loan");
+}
+
+impl clover_loans::Trait for Runtime {
+	type Event = Event;
+	type Currency = Currencies;
+	type ModuleId = LoansModuleId;
+}
+
+type CloverDataProvider = orml_oracle::Instance1;
+impl orml_oracle::Trait<CloverDataProvider> for Runtime {
+	type Event = Event;
+	type OnNewData = ();
+	type CombineData = orml_oracle::DefaultCombineData<Runtime, MinimumCount, ExpiresIn, CloverDataProvider>;
+	type Time = Timestamp;
+	type OracleKey = CurrencyId;
+	type OracleValue = Price;
+	type RootOperatorAccountId = ZeroAccountId;
+}
+
+type BandDataProvider = orml_oracle::Instance2;
+impl orml_oracle::Trait<BandDataProvider> for Runtime {
+	type Event = Event;
+	type OnNewData = ();
+	type CombineData = orml_oracle::DefaultCombineData<Runtime, MinimumCount, ExpiresIn, BandDataProvider>;
+	type Time = Timestamp;
+	type OracleKey = CurrencyId;
+	type OracleValue = Price;
+	type RootOperatorAccountId = ZeroAccountId;
+}
+
+type TimeStampedPrice = orml_oracle::TimestampedValue<Price, primitives::Moment>;
+create_median_value_data_provider!(
+	AggregatedDataProvider,
+	CurrencyId,
+	Price,
+	TimeStampedPrice,
+	[CloverOracle, BandOracle]
+);
+// Aggregated data provider cannot feed.
+impl DataFeeder<CurrencyId, Price, AccountId> for AggregatedDataProvider {
+	fn feed_value(_: AccountId, _: CurrencyId, _: Price) -> DispatchResult {
+		Err("Not supported".into())
+	}
+}
+
+parameter_types! {
+	pub const GetStableCurrencyId: CurrencyId = CurrencyId::CUSDT;
+	pub StableCurrencyFixedPrice: Price = Price::saturating_from_rational(1, 1);
+	pub const MinimumCount: u32 = 1;
+	pub const ExpiresIn: Moment = 1000 * 60 * 60; // 60 mins
+	pub ZeroAccountId: AccountId = AccountId::from([0u8; 32]);
+}
+
+type EnsureRootOrHalfGeneralCouncil = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
+>;
+
+impl clover_prices::Trait for Runtime {
+	type Event = Event;
+	type Source = AggregatedDataProvider;
+	type GetStableCurrencyId = GetStableCurrencyId;
+	type StableCurrencyFixedPrice = StableCurrencyFixedPrice;
+	type LockOrigin = EnsureRootOrHalfGeneralCouncil;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -747,9 +817,17 @@ construct_runtime!(
 		// Utility module.
 		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
 		Utility: pallet_utility::{Module, Call, Event},
+
+		// Clover module
 		BithumbDex: bithumbdex::{Module, Storage, Call, Event<T>, Config},
 		RewardPool: reward_pool::{Module, Storage, Call, Event<T>,},
 		Incentives: clover_incentives::{Module, Storage, Call, Config},
+		Prices: clover_prices::{Module, Storage, Call, Event},
+		Loans: clover_loans::{Module, Storage, Call, Event<T>},
+
+		// oracle
+		CloverOracle: orml_oracle::<Instance1>::{Module, Storage, Call, Config<T>, Event<T>},
+		BandOracle: orml_oracle::<Instance2>::{Module, Storage, Call, Config<T>, Event<T>},
 	}
 );
 

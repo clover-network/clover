@@ -3,7 +3,8 @@ use sp_core::{Pair, Public, sr25519};
 use bitdex_runtime::{
   AccountId, BabeConfig, Balance, BalancesConfig, CurrencyId, IndicesConfig, GenesisConfig,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
-  Signature, StakerStatus, TokensConfig, IncentivesConfig, BithumbDexConfig
+  Signature, StakerStatus, TokensConfig, IncentivesConfig, BithumbDexConfig, BandOracleConfig,
+  CloverOracleConfig
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -199,6 +200,14 @@ fn testnet_genesis(
 		pallet_sudo: Some(SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
+		}),
+		orml_oracle_Instance1: Some(CloverOracleConfig {
+			members: Default::default(), // initialized by OperatorMembership
+			phantom: Default::default(),
+		}),
+		orml_oracle_Instance2: Some(BandOracleConfig {
+			members: Default::default(), // initialized by OperatorMembership
+			phantom: Default::default(),
 		}),
     	orml_tokens: Some(TokensConfig {
 			endowed_accounts: endowed_accounts
