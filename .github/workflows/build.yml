@@ -22,7 +22,7 @@ jobs:
         with:
           toolchain: stable
 
-      - run: rustup install nightly-2020-09-25 && rustup default nightly-2020-09-25 && rustup target add wasm32-unknown-unknown --toolchain nightly
+      - run: rustup install nightly-2020-09-25 && rustup default nightly-2020-09-25 && rustup target add wasm32-unknown-unknown --toolchain nightly-2020-09-25
       - run: cargo build --release
 
       - name: Rsync deployments
