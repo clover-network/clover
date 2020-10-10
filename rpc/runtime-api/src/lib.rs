@@ -27,4 +27,12 @@ sp_api::decl_runtime_apis! {
 		fn to_add_liquidity(source: CurrencyId, target: CurrencyId, source_amount: Balance, target_amount: Balance) -> (Share, Share);
     fn get_staking_info(account: AccountId, currency_first: CurrencyId, currency_second: CurrencyId) -> (Share, Balance);
 	}
+
+  pub trait IncentivePoolApi<AccountId, CurrencyId, Balance, Share> where
+    AccountId: codec::Codec,
+    CurrencyId: codec::Codec,
+    Balance: codec::Codec,
+    Share: codec::Codec, {
+    fn get_all_incentive_pools() -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Share, Balance)>;
+  }
 }

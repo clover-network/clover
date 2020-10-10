@@ -706,7 +706,7 @@ impl bithumbdex::Trait for Runtime {
 	type ModuleId = BithumbDexModuleId;
 	type OnAddLiquidity = ();
 	type OnRemoveLiquidity = ();
-  	type IncentiveOps = Incentives;
+  type IncentiveOps = Incentives;
 }
 
 parameter_types! {
@@ -1072,4 +1072,10 @@ impl_runtime_apis! {
       (result.shares, result.accumlated_rewards)
     }
 	}
+
+  impl bitdex_rpc_runtime_api::IncentivePoolApi<Block, AccountId, CurrencyId, Balance, Share> for Runtime {
+    fn get_all_incentive_pools() -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Share, Balance)> {
+      Incentives::get_all_incentive_pools()
+    }
+  }
 }

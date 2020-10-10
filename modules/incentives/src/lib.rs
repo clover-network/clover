@@ -17,6 +17,7 @@ use sp_runtime::{
   }
 };
 use sp_std::prelude::*;
+use sp_std::vec;
 use primitives::{Balance, CurrencyId, Share, };
 use clover_traits::{RewardPoolOps, IncentiveOps, IncentivePoolAccountInfo, };
 use reward_pool::traits::RewardHandler;
@@ -200,5 +201,17 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share, Balance> for Module
   fn claim_rewards(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Result<Balance, DispatchError> {
     Self::get_dex_id(left, right)
       .and_then(|pool_id| T::RewardPool::claim_rewards(who, &pool_id))
+  }
+
+  fn get_all_incentive_pools() -> vec::Vec<(CurrencyId, CurrencyId, Share, Balance)>{
+    T::RewardPool::get_all_pools()
+      .iter()
+      .filter(|(pool_id, _, _)| match pool_id {
+        PoolId::Dex(_) => true,
+      })
+      .map(|(pool_id, shares, balance)| match pool_id {
+        PoolId::Dex(k) => (k.left, k.right, shares.clone(), balance.clone()),
+      })
+      .collect()
   }
 }
