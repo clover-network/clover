@@ -206,6 +206,10 @@ impl IncentiveOps<AccountId, CurrencyId, Share, Balance> for IncentiveOpsHandler
   fn claim_rewards(_who: &AccountId, _left: &CurrencyId, _right: &CurrencyId) -> Result<Balance, DispatchError> {
     Ok(Zero::zero())
   }
+
+  fn get_all_incentive_pools() -> Vec<(CurrencyId, CurrencyId, Share, Balance)> {
+    vec![]
+  }
 }
 
 pub struct ExtBuilder {

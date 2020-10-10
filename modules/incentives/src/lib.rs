@@ -137,9 +137,14 @@ impl <T: Trait> Module<T> {
 impl <T: Trait> RewardHandler<T::AccountId, T::BlockNumber, Balance, Share, PoolId> for Module<T>
 where T::BlockNumber: SaturatedConversion, {
   fn caculate_reward(pool_id: &PoolId,
-                     _total_share: &Share,
+                     total_share: &Share,
                      last_update_block: T::BlockNumber,
                      now: T::BlockNumber) -> Balance {
+    // no shares in the pool, should not pay the reward
+    if total_share.is_zero() {
+      return Balance::zero();
+    }
+
     if !DexIncentiveRewards::contains_key(pool_id) || last_update_block >= now {
       return Balance::zero();
     }

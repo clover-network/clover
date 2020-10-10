@@ -245,7 +245,6 @@ impl<T: Trait> Module<T> {
                         -> Result<PoolInfo<Share, Balance, T::BlockNumber>, DispatchError> {
     let (pool_info, balance_change) = Self::calc_pool_reward(pool)?;
 
-
     if !balance_change.is_zero() {
       let sub_account = Self::sub_account_id(pool.clone());
       debug::info!("updating reward pool {:?}, account {:?} balance by: {:?}", pool, sub_account, balance_change);
