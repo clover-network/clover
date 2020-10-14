@@ -94,8 +94,8 @@ impl_opaque_keys! {
 }
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("bitdex"),
-	impl_name: create_runtime_str!("bitdex"),
+	spec_name: create_runtime_str!("clover"),
+	impl_name: create_runtime_str!("clover"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,
@@ -675,7 +675,7 @@ impl orml_currencies::Trait for Runtime {
 }
 
 parameter_types! {
-	pub const RewardModuleId: ModuleId = ModuleId(*b"bxb/repm");
+	pub const RewardModuleId: ModuleId = ModuleId(*b"clv/repm");
 	pub const ExistentialReward: u128 = 100;
 }
 
@@ -695,15 +695,15 @@ impl clover_incentives::Trait for Runtime {
 
 parameter_types! {
 	pub GetExchangeFee: Rate = Rate::saturating_from_rational(1, 1000);
-	pub const BithumbDexModuleId: ModuleId = ModuleId(*b"bxb/dexm");
+	pub const CloverdexModuleId: ModuleId = ModuleId(*b"clv/dexm");
 }
 
-impl bithumbdex::Trait for Runtime {
+impl cloverdex::Trait for Runtime {
 	type Event = Event;
 	type Currency = Currencies;
 	type Share = Share;
 	type GetExchangeFee = GetExchangeFee;
-	type ModuleId = BithumbDexModuleId;
+	type ModuleId = CloverdexModuleId;
 	type OnAddLiquidity = ();
 	type OnRemoveLiquidity = ();
   type IncentiveOps = Incentives;
@@ -819,7 +819,7 @@ construct_runtime!(
 		Utility: pallet_utility::{Module, Call, Event},
 
 		// Clover module
-		BithumbDex: bithumbdex::{Module, Storage, Call, Event<T>, Config},
+		CloverDex: cloverdex::{Module, Storage, Call, Event<T>, Config},
 		RewardPool: reward_pool::{Module, Storage, Call, Event<T>,},
 		Incentives: clover_incentives::{Module, Storage, Call, Config},
 		Prices: clover_prices::{Module, Storage, Call, Event},
@@ -1019,7 +1019,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl bitdex_rpc_runtime_api::CurrencyBalanceApi<Block, AccountId, CurrencyId, Balance> for Runtime {
+	impl clover_rpc_runtime_api::CurrencyBalanceApi<Block, AccountId, CurrencyId, Balance> for Runtime {
 		fn account_balance(account: AccountId, currency_id: Option<CurrencyId>) -> sp_std::vec::Vec<(CurrencyId, Balance)> {
 			let mut balances = sp_std::vec::Vec::new();
 			match currency_id {
@@ -1034,36 +1034,36 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl bitdex_rpc_runtime_api::CurrencyPairApi<Block> for Runtime {
+	impl clover_rpc_runtime_api::CurrencyPairApi<Block> for Runtime {
 		fn currency_pair() -> sp_std::vec::Vec<(CurrencyId, CurrencyId)> {
-		 	let pair = BithumbDex::get_existing_currency_pairs().0;
+		 	let pair = CloverDex::get_existing_currency_pairs().0;
 		 	pair
 		}
 	}
 
-	impl bitdex_rpc_runtime_api::CurrencyExchangeApi<Block, AccountId, CurrencyId, Balance, Rate, Share> for Runtime {
+	impl clover_rpc_runtime_api::CurrencyExchangeApi<Block, AccountId, CurrencyId, Balance, Rate, Share> for Runtime {
 		fn target_amount_available(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
-			let balance = BithumbDex::get_target_amount_available(source, target, amount);
+			let balance = CloverDex::get_target_amount_available(source, target, amount);
 			balance
 		}
 
 		fn supply_amount_needed(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>) {
-			let balance = BithumbDex::get_supply_amount_needed(source, target, amount);
+			let balance = CloverDex::get_supply_amount_needed(source, target, amount);
 			balance
 		}
 
 		fn get_liquidity(account: Option<AccountId>) -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Balance, Balance, Balance, Balance, Balance)> {
-			let result = BithumbDex::get_liquidity(account);
+			let result = CloverDex::get_liquidity(account);
 			result
 		}
 
 		fn get_exchange_rate() -> Rate {
-			let result = BithumbDex::get_exchange_fee();
+			let result = CloverDex::get_exchange_fee();
 			result
 		}
 
 		fn to_add_liquidity(source: CurrencyId, target: CurrencyId, source_amount: Balance, target_amount: Balance) -> (Share, Share) {
-			let result = BithumbDex::to_add_liquidity(source, target, source_amount, target_amount);
+			let result = CloverDex::to_add_liquidity(source, target, source_amount, target_amount);
 			result
 		}
 
@@ -1073,7 +1073,7 @@ impl_runtime_apis! {
     }
 	}
 
-  impl bitdex_rpc_runtime_api::IncentivePoolApi<Block, AccountId, CurrencyId, Balance, Share> for Runtime {
+  impl clover_rpc_runtime_api::IncentivePoolApi<Block, AccountId, CurrencyId, Balance, Share> for Runtime {
     fn get_all_incentive_pools() -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Share, Balance)> {
       Incentives::get_all_incentive_pools()
     }

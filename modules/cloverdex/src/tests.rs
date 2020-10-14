@@ -3,12 +3,12 @@
 use super::*;
 use frame_support::assert_ok;
 use mock::{
-	BithumbDexModule, ExtBuilder, Origin, CLV, ALICE, CUSDT, BOB, DOT, CETH,
+	CloverdexModule, ExtBuilder, Origin, CLV, ALICE, CUSDT, BOB, DOT, CETH,
 };
 
 pub use primitives::{ AccountId, currency::*, };
 
-use BithumbDexModule as BDM;
+use CloverdexModule as BDM;
 
 fn format_routes<T>(routes: &vec::Vec<T>) -> String
 where
@@ -40,8 +40,8 @@ fn test_compound_rote() {
 			4000000000000
 		));
 
-	  	let source_amount_bxb = 90000000;
-		let (_, route) = BDM::get_target_amount_available(CLV, DOT, source_amount_bxb);
+	  	let source_amount_clv = 90000000;
+		let (_, route) = BDM::get_target_amount_available(CLV, DOT, source_amount_clv);
 		assert_eq!(route, [CETH, DOT]);
 	});
 }

@@ -2,16 +2,16 @@ version: "3.2"
 
 services:
   dev:
-    container_name: bitdex
+    container_name: clover
     image: paritytech/ci-linux:production
-    working_dir: /var/www/bitdex
+    working_dir: /var/www/clover
     ports:
       - "9944:9944"
     environment:
-      - CARGO_HOME=/var/www/bitdex/.cargo
+      - CARGO_HOME=/var/www/clover/.cargo
     volumes:
-      - .:/var/www/bitdex
+      - .:/var/www/clover
       - type: bind
         source: ./.local
         target: /root/.local
-    command: bash -c "cargo build --release && ./target/release/bitdex --dev --ws-external"
+    command: bash -c "cargo build --release && ./target/release/clover --dev --ws-external"

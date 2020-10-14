@@ -1,9 +1,9 @@
 use serde_json::json;
 use sp_core::{Pair, Public, sr25519};
-use bitdex_runtime::{
+use clover_runtime::{
   AccountId, BabeConfig, Balance, BalancesConfig, CurrencyId, IndicesConfig, GenesisConfig,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
-  Signature, StakerStatus, TokensConfig, IncentivesConfig, BithumbDexConfig, BandOracleConfig,
+  Signature, StakerStatus, TokensConfig, IncentivesConfig, CloverDexConfig, BandOracleConfig,
   CloverOracleConfig
 };
 use sp_consensus_babe::AuthorityId as BabeId;
@@ -82,7 +82,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("bitdexlocal"),
+		Some("cloverlocal"),
 		// Properties
 		Some(json!({
 			"tokenDecimals": 12,
@@ -133,7 +133,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("bitdexlocal"),
+		Some("cloverlocal"),
 		// Properties
 		Some(json!({
 			"tokenDecimals": 12,
@@ -152,7 +152,7 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
 ) -> GenesisConfig {
-	use bitdex_runtime::{DOLLARS};
+	use clover_runtime::{DOLLARS};
 
 	const ENDOWMENT: Balance = 10_000 * DOLLARS;
 	const STASH: Balance = 100 * DOLLARS;
@@ -228,7 +228,7 @@ fn testnet_genesis(
         (CurrencyId::CETH, CurrencyId::CUSDT, 3 * DOLLARS),
       ],
     }),
-    bithumbdex: Some(BithumbDexConfig {
+    cloverdex: Some(CloverDexConfig {
 		    initial_pairs: vec![
 			    (CurrencyId::CUSDT, CurrencyId::CETH, Some(1000 * DOLLARS), Some(500 * DOLLARS)),
 			    (CurrencyId::CUSDT, CurrencyId::DOT, Some(700 * DOLLARS), Some(250 * DOLLARS)),

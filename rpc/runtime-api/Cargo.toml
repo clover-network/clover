@@ -1,12 +1,11 @@
 [package]
-name = "bitdex-rpc-runtime-api"
-version = "2.0.0-rc6"
-authors = ["pangwa <pangwa@gmail.com>"]
+name = "clover-rpc-runtime-api"
+authors = ['Clover Network <https://github.com/clover-network>']
 edition = "2018"
-license = "Apache-2.0"
-homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/substrate/"
-description = "Runtime API definition required by System RPC extensions."
+license = 'GPL-3.0'
+homepage = 'https://cloverdefi.com'
+repository = 'https://github.com/clover-network/clover'
+version = '0.9.0'
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -18,9 +17,9 @@ codec = { package = "parity-scale-codec", version = "1.3.4", default-features = 
 
 [dependencies.primitives]
   default-features = false
-  package = 'bitdex-primitives'
+  package = 'clover-primitives'
   path = '../../primitives'
-  version = '2.0.0-rc6'
+  version = '0.9.0'
 
 [features]
 default = ["std"]

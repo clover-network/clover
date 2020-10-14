@@ -23,14 +23,14 @@ pub type BlockNumber = u64;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
-mod bithumbdex {
+mod cloverdex {
 	pub use super::super::*;
 }
 
 impl_outer_event! {
 	pub enum TestEvent for TestRuntime {
 		frame_system<T>,
-		bithumbdex<T>,
+		cloverdex<T>,
 		orml_tokens<T>,
 		orml_currencies<T>,
 		pallet_balances<T>,
@@ -121,7 +121,7 @@ pub type Currencies = orml_currencies::Module<TestRuntime>;
 
 parameter_types! {
 	pub GetExchangeFee: Rate = Rate::saturating_from_rational(1, 100);
-	pub const BithumbDexModuleId: ModuleId = ModuleId(*b"bxb/dexm");
+	pub const CloverdexModuleId: ModuleId = ModuleId(*b"clv/dexm");
 }
 
 impl Trait for TestRuntime {
@@ -129,13 +129,13 @@ impl Trait for TestRuntime {
 	type Currency = Currencies;
 	type Share = Share;
 	type GetExchangeFee = GetExchangeFee;
-	type ModuleId = BithumbDexModuleId;
+	type ModuleId = CloverdexModuleId;
 	type OnAddLiquidity = ();
 	type OnRemoveLiquidity = ();
   type IncentiveOps = IncentiveOpsHandler;
 }
 
-pub type BithumbDexModule = Module<TestRuntime>;
+pub type CloverdexModule = Module<TestRuntime>;
 
 pub const ALICE: [u8; 32] = [0u8; 32];
 pub const BOB: [u8; 32] = [1u8; 32];
@@ -155,7 +155,7 @@ impl IncentiveOps<AccountId, CurrencyId, Share, Balance> for IncentiveOpsHandler
     let t = SHARES_STAKED.with(|v| {
       let total;
       let mut old_map = v.borrow().clone();
-      let key = BithumbDexModule::get_pair_key(left, right);
+      let key = CloverdexModule::get_pair_key(left, right);
       if let Some(before) = old_map.get_mut(&(who.clone(), key)) {
         *before += amount;
         total = before.clone();
@@ -173,7 +173,7 @@ impl IncentiveOps<AccountId, CurrencyId, Share, Balance> for IncentiveOpsHandler
     let total = SHARES_STAKED.with(|v| {
       let total;
       let mut old_map = v.borrow().clone();
-      let key = BithumbDexModule::get_pair_key(left, right);
+      let key = CloverdexModule::get_pair_key(left, right);
       if let Some(before) = old_map.get_mut(&(who.clone(), key)) {
         *before -= amount;
         total = before.clone();
@@ -189,7 +189,7 @@ impl IncentiveOps<AccountId, CurrencyId, Share, Balance> for IncentiveOpsHandler
 
   fn get_account_shares(who: &AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
     SHARES_STAKED.with(|v| {
-      let key = BithumbDexModule::get_pair_key(left, right);
+      let key = CloverdexModule::get_pair_key(left, right);
       v.borrow().get(&(who.clone(), key)).unwrap_or(&0).clone()
     })
   }
@@ -264,7 +264,7 @@ impl ExtBuilder {
 		}
 		.assimilate_storage(&mut t).unwrap();
 
-    // bithumbdex::GenesisConfig {
+    // cloverdex::GenesisConfig {
     //   initial_pairs: vec![
     //     (CLV, CETH, Some(0), Some(0)),
     //     (CUSDT, CETH, Some(0), Some(0)),

@@ -1,7 +1,7 @@
-//! Bithumb Dex moudule
+//! Clover Dex moudule
 //!
 //! ##Overview
-//! Decentralized exchange module in bitdex network, supports
+//! Decentralized exchange module in clover network, supports
 //! create trading pairs in any supported currencies.
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -129,7 +129,7 @@ decl_error! {
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as BithumbDex {
+	trait Store for Module<T: Trait> as CloverDex {
 		/// Liquidity pool, which is the trading pair for specific currency type to base currency type.
 		/// CurrencyType -> (OtherCurrencyAmount, BaseCurrencyAmount)
 		LiquidityPool get(fn liquidity_pool): map hasher(blake2_128_concat) PairKey => (Balance, Balance);

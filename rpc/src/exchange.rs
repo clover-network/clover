@@ -7,7 +7,7 @@ use codec::{Codec, Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-pub use bitdex_rpc_runtime_api::CurrencyExchangeApi as CurrencyExchangeRuntimeApi;
+pub use clover_rpc_runtime_api::CurrencyExchangeApi as CurrencyExchangeRuntimeApi;
 
 #[derive(Encode, Decode, Eq, PartialEq, Clone, PartialOrd, Ord)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -18,22 +18,22 @@ pub struct ExchangeInfo<CurrencyId> {
 
 #[rpc]
 pub trait CurrencyExchangeRpc<BlockHash, AccountId, CurrencyId, Balance, Rate, Share> {
-  #[rpc(name = "bitdex_targetAmountAvailable")]
+  #[rpc(name = "clover_targetAmountAvailable")]
   fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
-  #[rpc(name = "bitdex_supplyAmountNeeded")]
+  #[rpc(name = "clover_supplyAmountNeeded")]
   fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<BlockHash>) -> Result<ExchangeInfo<CurrencyId>>;
 
-  #[rpc(name = "bitdex_getLiquidity")]
+  #[rpc(name = "clover_getLiquidity")]
   fn get_liquidity(&self, account: Option<AccountId>, at: Option<BlockHash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String, String)>>;
 
-  #[rpc(name = "bitdex_getExchangeRate")]
+  #[rpc(name = "clover_getExchangeRate")]
   fn get_exchange_rate(&self, at: Option<BlockHash>) -> Result<Rate>;
 
-  #[rpc(name = "bitdex_toAddLiquidity")]
+  #[rpc(name = "clover_toAddLiquidity")]
   fn to_add_liquidity(&self, source: CurrencyId, target: CurrencyId, source_amount: Balance, target_amount: Balance, at: Option<BlockHash>) -> Result<(String, String)>;
 
-  #[rpc(name="bitdex_getAccountStakingInfo")]
+  #[rpc(name="clover_getAccountStakingInfo")]
   fn get_account_staking_info(&self,
                               account: AccountId,
                               currency_first: CurrencyId,

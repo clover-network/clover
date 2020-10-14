@@ -84,10 +84,10 @@ pub fn create_full<C, P, SC>(
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-	C::Api: bitdex_rpc::balance::CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
-	C::Api: bitdex_rpc::pair::CurrencyPairRuntimeApi<Block>,
-	C::Api: bitdex_rpc::incentive_pool::IncentivePoolRuntimeApi<Block, AccountId, CurrencyId, Share, Balance>,
-	C::Api: bitdex_rpc::exchange::CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance, Rate, Share>,
+	C::Api: clover_rpc::balance::CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
+	C::Api: clover_rpc::pair::CurrencyPairRuntimeApi<Block>,
+	C::Api: clover_rpc::incentive_pool::IncentivePoolRuntimeApi<Block, AccountId, CurrencyId, Share, Balance>,
+	C::Api: clover_rpc::exchange::CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance, Rate, Share>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
@@ -147,24 +147,24 @@ pub fn create_full<C, P, SC>(
 		)
 	);
 
-	io.extend_with(bitdex_rpc::balance::CurrencyBalanceRpc::to_delegate(
-		bitdex_rpc::balance::CurrencyBalance::new(client.clone()),
+	io.extend_with(clover_rpc::balance::CurrencyBalanceRpc::to_delegate(
+		clover_rpc::balance::CurrencyBalance::new(client.clone()),
 	));
 
-	io.extend_with(bitdex_rpc::currency::CurrencyRpc::to_delegate(
-        bitdex_rpc::currency::Currency {},
+	io.extend_with(clover_rpc::currency::CurrencyRpc::to_delegate(
+        clover_rpc::currency::Currency {},
     ));
 
-	io.extend_with(bitdex_rpc::pair::CurrencyPairRpc::to_delegate(
-		bitdex_rpc::pair::CurrencyPair::new(client.clone()),
+	io.extend_with(clover_rpc::pair::CurrencyPairRpc::to_delegate(
+		clover_rpc::pair::CurrencyPair::new(client.clone()),
 	));
 
-	io.extend_with(bitdex_rpc::exchange::CurrencyExchangeRpc::to_delegate(
-		bitdex_rpc::exchange::CurrencyExchange::new(client.clone()),
+	io.extend_with(clover_rpc::exchange::CurrencyExchangeRpc::to_delegate(
+		clover_rpc::exchange::CurrencyExchange::new(client.clone()),
   ));
 
-  io.extend_with(bitdex_rpc::incentive_pool::IncentivePoolRpc::to_delegate(
-		bitdex_rpc::incentive_pool::IncentivePool::new(client.clone()),
+  io.extend_with(clover_rpc::incentive_pool::IncentivePoolRpc::to_delegate(
+		clover_rpc::incentive_pool::IncentivePool::new(client.clone()),
 	));
 
 	io

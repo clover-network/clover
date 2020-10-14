@@ -8,11 +8,11 @@ use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
-pub use bitdex_rpc_runtime_api::CurrencyBalanceApi as CurrencyBalanceRuntimeApi;
+pub use clover_rpc_runtime_api::CurrencyBalanceApi as CurrencyBalanceRuntimeApi;
 
 #[rpc]
 pub trait CurrencyBalanceRpc<BlockHash, AccountId, CurrencyId, Balance> {
-  #[rpc(name = "bitdex_getBalance")]
+  #[rpc(name = "clover_getBalance")]
   fn account_balance(&self, account: AccountId, currency_id: Option<CurrencyId>, at: Option<BlockHash>) -> Result<sp_std::vec::Vec<(CurrencyId, String)>>;
 }
 
