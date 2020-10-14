@@ -3,7 +3,7 @@ use super::*;
 use codec::{Codec, };
 use std::fmt::Display;
 
-pub use bitdex_rpc_runtime_api::IncentivePoolApi as IncentivePoolRuntimeApi;
+pub use clover_rpc_runtime_api::IncentivePoolApi as IncentivePoolRuntimeApi;
 
 pub struct IncentivePool<C, B> {
 	client: Arc<C>,

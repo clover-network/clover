@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
-use bitdex_runtime::{self, opaque::Block, RuntimeApi};
+use clover_runtime::{self, opaque::Block, RuntimeApi};
 use sc_service::{error::Error as ServiceError, Configuration, RpcHandlers, TaskManager};
 use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
@@ -14,8 +14,8 @@ use sc_finality_grandpa::{self, FinalityProofProvider as GrandpaFinalityProofPro
 // Our native executor instance.
 native_executor_instance!(
 	pub Executor,
-	bitdex_runtime::api::dispatch,
-	bitdex_runtime::native_version,
+	clover_runtime::api::dispatch,
+	clover_runtime::native_version,
 );
 
 type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;

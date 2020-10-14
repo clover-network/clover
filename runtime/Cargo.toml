@@ -1,17 +1,17 @@
 [package]
-authors = ['pangwa <pangwa@gmail.com>']
+name = 'clover-runtime'
+authors = ['Clover Network <https://github.com/clover-network>']
 edition = '2018'
-homepage = 'https://substrate.dev'
-license = 'Unlicense'
-name = 'bitdex-runtime'
-repository = 'https://github.com/pangwa/bitdex/'
-version = '2.0.0-rc6'
+license = 'GPL-3.0'
+homepage = 'https://cloverdefi.com'
+repository = 'https://github.com/clover-network/clover'
+version = '0.9.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-bithumbdex = { path = "../modules/bithumbdex", default-features = false }
+cloverdex = { path = "../modules/cloverdex", default-features = false }
 enum-iterator = "0.6.0"
 clover-traits = { path = "../modules/traits", default-features = false }
 reward-pool= { path = "../modules/reward-pool", default-features = false }
@@ -19,10 +19,10 @@ clover-incentives = { path = "../modules/incentives", default-features = false }
 clover-prices = { path = "../modules/prices", default-features = false }
 clover-loans = { path = "../modules/loans", default-features = false }
 
-[dependencies.bitdex-rpc-runtime-api]
+[dependencies.clover-rpc-runtime-api]
 default-features = false
-version = '2.0.0-rc6'
-package = 'bitdex-rpc-runtime-api'
+version = '0.9.0'
+package = 'clover-rpc-runtime-api'
 path = '../rpc/runtime-api'
 
 [dependencies.codec]
@@ -183,9 +183,9 @@ version = '2.0.0-rc6'
 
 [dependencies.primitives]
   default-features = false
-  package = 'bitdex-primitives'
+  package = 'clover-primitives'
   path = '../primitives'
-  version = '2.0.0-rc6'
+  version = '0.9.0'
 
 [dependencies.pallet-democracy]
 default-features = false
@@ -218,8 +218,8 @@ version = '2.0.0-rc6'
 [features]
 default = ['std']
 std = [
-    'bitdex-rpc-runtime-api/std',
-    'bithumbdex/std',
+    'clover-rpc-runtime-api/std',
+    'cloverdex/std',
     'codec/std',
     "frame-benchmarking/std",
     'frame-executive/std',

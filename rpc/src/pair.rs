@@ -1,12 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 use super::*;
-use bitdex_primitives::CurrencyId;
+use clover_primitives::CurrencyId;
 
-pub use bitdex_rpc_runtime_api::CurrencyPairApi as CurrencyPairRuntimeApi;
+pub use clover_rpc_runtime_api::CurrencyPairApi as CurrencyPairRuntimeApi;
 
 #[rpc]
 pub trait CurrencyPairRpc<BlockHash> {
-  #[rpc(name = "bitdex_currencyPair")]
+  #[rpc(name = "clover_currencyPair")]
   fn currency_pair(&self, at: Option<BlockHash>) -> Result<sp_std::vec::Vec<(CurrencyId, CurrencyId)>>;
 }
 

@@ -3,7 +3,7 @@ use codec::{Decode, Encode};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use bitdex_primitives::CurrencyId;
+use clover_primitives::CurrencyId;
 use strum::IntoEnumIterator;
 use std::string::ToString;
 use int_enum::IntEnum;
@@ -19,7 +19,7 @@ pub struct CurrencyInfo {
 
 #[rpc]
 pub trait CurrencyRpc {
-    #[rpc(name = "bitdex_getCurrencies")]
+    #[rpc(name = "clover_getCurrencies")]
     fn get_currencies(&self) -> Result<Vec<CurrencyInfo>>;
 }
 

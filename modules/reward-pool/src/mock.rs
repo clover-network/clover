@@ -122,7 +122,7 @@ impl orml_currencies::Trait for TestRuntime {
 pub type Currencies = orml_currencies::Module<TestRuntime>;
 
 parameter_types! {
-	pub const RewardPoolModuleId: ModuleId = ModuleId(*b"bxb/repm");
+	pub const RewardPoolModuleId: ModuleId = ModuleId(*b"clv/repm");
 }
 
 #[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, Ord, PartialOrd)]

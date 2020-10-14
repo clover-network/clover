@@ -1,28 +1,28 @@
 [package]
-authors = ['DevHub <https://github.com/substrate-developer-hub>']
+name = 'clover'
+authors = ['Clover Network <https://github.com/clover-network>']
 build = 'build.rs'
-description = 'A fresh FRAME-based Substrate node, ready for hacking.'
+description = 'Clover node'
 edition = '2018'
-homepage = 'https://substrate.dev'
-license = 'Unlicense'
-name = 'bitdex'
-repository = 'https://github.com/substrate-developer-hub/substrate-bitdex/'
-version = '2.0.0-rc6'
+license = 'GPL-3.0'
+homepage = 'https://cloverdefi.com'
+repository = 'https://github.com/clover-network/clover'
+version = '0.9.0'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [[bin]]
-name = 'bitdex'
+name = 'clover'
 
-[dependencies.bitdex-runtime]
+[dependencies.clover-runtime]
 path = '../runtime'
-version = '2.0.0-rc6'
+version = '0.9.0'
 
-[dependencies.bitdex-rpc]
+[dependencies.clover-rpc]
 default-features = false
-version = '2.0.0-rc6'
-package = 'bitdex-rpc'
+version = '0.9.0'
+package = 'clover-rpc'
 path = '../rpc'
 
 [dependencies.pallet-transaction-payment-rpc]
@@ -104,9 +104,9 @@ version = '2.0.0-rc6'
 version = '2.0.0-rc6'
 
 [dependencies.primitives]
-  package = 'bitdex-primitives'
+  package = 'clover-primitives'
   path = '../primitives'
-  version = '2.0.0-rc6'
+  version = '0.9.0'
 
 [dependencies]
 jsonrpc-core = '14.0.3'
