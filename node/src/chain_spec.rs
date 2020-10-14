@@ -137,7 +137,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		// Properties
 		Some(json!({
 			"tokenDecimals": 12,
-			"tokenSymbol": "CLVD"
+			"tokenSymbol": "CLV"
 		}).as_object().expect("Created an object").clone()),
 		// Extensions
 		None,
