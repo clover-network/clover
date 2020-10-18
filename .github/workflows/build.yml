@@ -24,8 +24,7 @@ jobs:
 
       - run: rustup install nightly-2020-09-25 && rustup default nightly-2020-09-25 && rustup target add wasm32-unknown-unknown --toolchain nightly-2020-09-25
       - run: cargo build --release && cp -f target/release/clover docker/
-
-     - name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
         with:
           driver: docker
