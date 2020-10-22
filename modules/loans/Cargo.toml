@@ -10,30 +10,30 @@ version = '0.9.0'
 [dependencies]
 serde = { version = "1.0.101", optional = true }
 codec = { package = "parity-scale-codec", version = "1.3.4", default-features = false }
-sp-runtime = { version = "2.0.0-rc6", default-features = false }
-frame-support = { version = "2.0.0-rc6", default-features = false }
-frame-system = { version = "2.0.0-rc6", default-features = false }
-sp-std = { version = "2.0.0-rc6", default-features = false }
+sp-runtime = { version = "2.0.0", default-features = false }
+frame-support = { version = "2.0.0", default-features = false }
+frame-system = { version = "2.0.0", default-features = false }
+sp-std = { version = "2.0.0", default-features = false }
 
 [dependencies.orml-utilities]
 default-features = false
 git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
-rev = '12c5cdc297'
+rev = '616e6858ec'
 
 [dependencies.orml-traits]
 default-features = false
 git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
-rev = '12c5cdc297'
+rev = '616e6858ec'
 
 [dependencies.orml-tokens]
 default-features = false
 git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
-rev = '12c5cdc297'
+rev = '616e6858ec'
 
 [dependencies.orml-rewards]
 default-features = false
 git = 'https://github.com/open-web3-stack/open-runtime-module-library.git'
-rev = '12c5cdc297'
+rev = '616e6858ec'
 
 [dependencies.primitives]
   default-features = false
@@ -42,9 +42,9 @@ rev = '12c5cdc297'
   version = '0.9.0'
 
 [dev-dependencies]
-sp-core = { version = "2.0.0-rc6", default-features = false }
-sp-io = { version = "2.0.0-rc6", default-features = false }
-pallet-balances = { version = "2.0.0-rc6", default-features = false }
+sp-core = { version = "2.0.0", default-features = false }
+sp-io = { version = "2.0.0", default-features = false }
+pallet-balances = { version = "2.0.0", default-features = false }
 
 [features]
 default = ["std"]
