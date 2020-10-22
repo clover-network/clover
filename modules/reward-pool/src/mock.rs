@@ -47,7 +47,6 @@ parameter_types! {
 	pub const MaximumBlockWeight: u32 = 1024;
 	pub const MaximumBlockLength: u32 = 2 * 1024;
 	pub const AvailableBlockRatio: Perbill = Perbill::one();
-	pub const Version: RuntimeVersion = VERSION;
 }
 
 impl frame_system::Trait for TestRuntime {
@@ -82,6 +81,7 @@ pub type System = frame_system::Module<TestRuntime>;
 
 parameter_types! {
 	pub const ExistentialDeposit: u128 = 500;
+	pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Trait for TestRuntime {
@@ -92,6 +92,7 @@ impl pallet_balances::Trait for TestRuntime {
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
+	type MaxLocks = MaxLocks;
 	type WeightInfo = ();
 }
 
@@ -115,7 +116,7 @@ parameter_types! {
 impl orml_currencies::Trait for TestRuntime {
 	type Event = TestEvent;
 	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Runtime, Balance, Amount, BlockNumber>;
+	type NativeCurrency = BasicCurrencyAdapter<TestRuntime, Balances, Amount, BlockNumber>;
 	type GetNativeCurrencyId = GetNativeCurrencyId;
 	type WeightInfo = ();
 }
