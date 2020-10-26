@@ -63,7 +63,7 @@ impl frame_system::Trait for TestRuntime {
 	type MaximumBlockLength = MaximumBlockLength;
 	type AvailableBlockRatio = AvailableBlockRatio;
 	type Version = ();
-	type ModuleToIndex = ();
+	type PalletInfo = ();
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
@@ -79,6 +79,7 @@ pub type System = frame_system::Module<TestRuntime>;
 
 parameter_types! {
 	pub const ExistentialDeposit: u128 = 500;
+	pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Trait for TestRuntime {
@@ -89,6 +90,7 @@ impl pallet_balances::Trait for TestRuntime {
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
+	type MaxLocks = MaxLocks;
 	type WeightInfo = ();
 }
 
@@ -112,7 +114,7 @@ parameter_types! {
 impl orml_currencies::Trait for TestRuntime {
 	type Event = TestEvent;
 	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Balances, Balance, Balance, Amount, BlockNumber>;
+	type NativeCurrency = BasicCurrencyAdapter<TestRuntime, Balances, Amount, BlockNumber>;
 	type GetNativeCurrencyId = GetNativeCurrencyId;
 	type WeightInfo = ();
 }

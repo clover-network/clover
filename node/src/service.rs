@@ -32,14 +32,17 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 	(
 		impl Fn(
 			crate::rpc::DenyUnsafe,
-			jsonrpc_pubsub::manager::SubscriptionManager
+			crate::rpc::SubscriptionTaskExecutor
 		) -> crate::rpc::IoHandler,
 		(
 			sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
 			sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
 			sc_consensus_babe::BabeLink<Block>,
 		),
-		SharedVoterState,
+    (
+			sc_finality_grandpa::SharedVoterState,
+			Arc<GrandpaFinalityProofProvider<FullBackend, Block>>,
+		),
 	)
 >, ServiceError> {
 	let inherent_data_providers = sp_inherents::InherentDataProviders::new();
@@ -90,8 +93,9 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 		let justification_stream = grandpa_link.justification_stream();
 		let shared_authority_set = grandpa_link.shared_authority_set().clone();
 		let shared_voter_state = SharedVoterState::empty();
+	  let finality_proof_provider = GrandpaFinalityProofProvider::new_for_service(backend.clone(), client.clone());
 
-		let rpc_setup = shared_voter_state.clone();
+	  let rpc_setup = (shared_voter_state.clone(), finality_proof_provider.clone());
 
 		let babe_config = babe_link.config().clone();
 		let shared_epoch_changes = babe_link.epoch_changes().clone();
@@ -101,7 +105,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 		let select_chain = select_chain.clone();
 		let keystore = keystore.clone();
 
-		let rpc_extensions_builder = move |deny_unsafe, subscriptions| {
+		let rpc_extensions_builder = move |deny_unsafe, subscription_executor| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
@@ -116,7 +120,8 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 					shared_voter_state: shared_voter_state.clone(),
 					shared_authority_set: shared_authority_set.clone(),
 					justification_stream: justification_stream.clone(),
-					subscriptions,
+					subscription_executor,
+          finality_provider: finality_proof_provider.clone(),
 				},
 			};
 
