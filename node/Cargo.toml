@@ -15,107 +15,44 @@ targets = ['x86_64-unknown-linux-gnu']
 [[bin]]
 name = 'clover'
 
-[dependencies.clover-runtime]
-path = '../runtime'
-version = '0.9.0'
-
-[dependencies.clover-rpc]
-default-features = false
-version = '0.9.0'
-package = 'clover-rpc'
-path = '../rpc'
-
-[dependencies.pallet-transaction-payment-rpc]
-version = '2.0.0'
-
-[dependencies.sc-basic-authorship]
-version = '0.8.0-rc6'
-
-[dependencies.sc-cli]
-features = ['wasmtime']
-version = '0.8.0-rc6'
-
-[dependencies.sc-client-api]
-version = '2.0.0'
-
-[dependencies.sc-consensus]
-version = '0.8.0-rc6'
-
-[dependencies.sc-consensus-babe]
-version = '0.8.0-rc6'
-
-[dependencies.sc-consensus-babe-rpc]
-version = '0.8.0-rc6'
-
-[dependencies.sc-executor]
-features = ['wasmtime']
-version = '0.8.0-rc6'
-
-[dependencies.sc-finality-grandpa]
-version = '0.8.0-rc6'
-
-[dependencies.sc-network]
-version = '0.8.0-rc6'
-
-[dependencies.sc-rpc]
-version = '2.0.0'
-
-[dependencies.sc-rpc-api]
-version = '0.8.0-rc6'
-
-[dependencies.sc-service]
-features = ['wasmtime']
-version = '0.8.0-rc6'
-
-[dependencies.sc-transaction-pool]
-version = '2.0.0'
-
-[dependencies.sp-api]
-version = '2.0.0'
-
-[dependencies.sp-block-builder]
-version = '2.0.0'
-
-[dependencies.sp-blockchain]
-version = '2.0.0'
-
-[dependencies.sp-consensus]
-version = '0.8.0-rc6'
-
-[dependencies.sp-consensus-babe]
-version = '0.8.0-rc6'
-
-[dependencies.sp-core]
-version = '2.0.0'
-
-[dependencies.sp-finality-grandpa]
-version = '2.0.0'
-
-[dependencies.sp-inherents]
-version = '2.0.0'
-
-[dependencies.sp-runtime]
-version = '2.0.0'
-
-[dependencies.sp-transaction-pool]
-version = '2.0.0'
-
-[dependencies.substrate-frame-rpc-system]
-version = '2.0.0'
-
-[dependencies.primitives]
-  package = 'clover-primitives'
-  path = '../primitives'
-  version = '0.9.0'
-
 [dependencies]
+primitives = { package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
+clover-runtime = {path = '../runtime', version = '0.9.0' }
+clover-rpc = {default-features = false, version = '0.9.0', package = 'clover-rpc', path = '../rpc' }
+
 jsonrpc-core = '15.0.0'
 jsonrpc-pubsub = "15.0.0"
 structopt = '0.3.8'
-sc-consensus-epochs = { version = "0.8.0-rc6" }
-sc-keystore = { version = "2.0.0" }
-sc-finality-grandpa-rpc = { version = "0.8.0-rc6" }
 serde_json = "1.0"
+
+pallet-transaction-payment-rpc = { version = '2.0.0' }
+sc-basic-authorship = { version = '0.8.0-rc6' }
+sc-cli = { features = ['wasmtime'], version = '0.8.0-rc6' }
+sc-client-api = { version = '2.0.0' }
+sc-consensus = { version = '0.8.0-rc6' }
+sc-consensus-babe = { version = '0.8.0-rc6' }
+sc-consensus-babe-rpc = { version = '0.8.0-rc6' }
+sc-consensus-epochs = { version = "0.8.0-rc6" }
+sc-finality-grandpa-rpc = { version = "0.8.0-rc6" }
+sc-finality-grandpa = { version = '0.8.0-rc6' }
+sc-executor = {features = ['wasmtime'], version = '0.8.0-rc6' }
+sc-keystore = { version = "2.0.0" }
+sc-network = { version = '0.8.0-rc6' }
+sc-rpc = { version = '2.0.0' }
+sc-rpc-api = { version = '0.8.0-rc6' }
+sc-service = { features = ['wasmtime'], version = "0.8.0-rc6" }
+sc-transaction-pool = { version = '2.0.0' }
+sp-api = { version = '2.0.0' }
+sp-block-builder = { version = '2.0.0' }
+sp-blockchain = { version = '2.0.0' }
+sp-consensus = { version = '0.8.0-rc6' }
+sp-consensus-babe = { version = '0.8.0-rc6' }
+sp-core = { version = '2.0.0' }
+sp-finality-grandpa = { version = '2.0.0' }
+sp-inherents = { version = '2.0.0' }
+sp-runtime = { version = '2.0.0' }
+sp-transaction-pool = { version = '2.0.0' }
+substrate-frame-rpc-system = { version = '2.0.0' }
 
 [build-dependencies.substrate-build-script-utils]
 version = '2.0.0'
