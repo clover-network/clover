@@ -752,6 +752,8 @@ dependencies = [
  "clover-runtime",
  "jsonrpc-core",
  "jsonrpc-pubsub",
+ "pallet-contracts",
+ "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
  "sc-cli",
@@ -920,6 +922,9 @@ dependencies = [
  "pallet-babe",
  "pallet-balances",
  "pallet-collective",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
  "pallet-democracy",
  "pallet-elections-phragmen",
  "pallet-grandpa",
@@ -3997,6 +4002,72 @@ dependencies = [
  "serde",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-contracts"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "908b373ca40975c48f79a95e8cd134c039ef1120abe4633465c5f690924c79c4"
+dependencies = [
+ "bitflags",
+ "frame-support",
+ "frame-system",
+ "pallet-contracts-primitives",
+ "parity-scale-codec",
+ "parity-wasm",
+ "pwasm-utils",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-sandbox",
+ "sp-std",
+ "wasmi-validation",
+]
+
+[[package]]
+name = "pallet-contracts-primitives"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e088e1deefd6ae4ceb104666e9c76d699cb975dad8114b4bc7182b07a4745ed9"
+dependencies = [
+ "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-contracts-rpc"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d3fa6317927f11d47c78263fd6363cbd7dda913fa9eb11c182fe2d13b5c6e8a"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-contracts-rpc-runtime-api"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a7694e78c94d8fbf93386b199f41f378292f5379494b3af3a5f7c820bfc4392"
+dependencies = [
+ "pallet-contracts-primitives",
+ "parity-scale-codec",
+ "sp-api",
  "sp-runtime",
  "sp-std",
 ]
@@ -7113,6 +7184,20 @@ dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.7",
  "syn 1.0.46",
+]
+
+[[package]]
+name = "sp-sandbox"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "604cd03208c68ebfe14d5a293bff0fef2d612380eba38cb39d606ae977add72e"
+dependencies = [
+ "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+ "sp-wasm-interface",
+ "wasmi",
 ]
 
 [[package]]

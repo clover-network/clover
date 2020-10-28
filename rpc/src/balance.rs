@@ -17,39 +17,39 @@ pub trait CurrencyBalanceRpc<BlockHash, AccountId, CurrencyId, Balance> {
 }
 
 pub struct CurrencyBalance<C, B> {
-	client: Arc<C>,
-	_marker: std::marker::PhantomData<B>,
+  client: Arc<C>,
+  _marker: std::marker::PhantomData<B>,
 }
 
 impl<C, B> CurrencyBalance<C, B> {
-	pub fn new(client: Arc<C>) -> Self {
-		CurrencyBalance{
-			client,
-			_marker: Default::default(),
-		}
-	}
+  pub fn new(client: Arc<C>) -> Self {
+    CurrencyBalance{
+      client,
+      _marker: Default::default(),
+    }
+  }
 }
 
 pub enum Error {
-	RuntimeError,
+  RuntimeError,
 }
 
 impl From<Error> for i64 {
-	fn from(e: Error) -> i64 {
-		match e {
-			Error::RuntimeError => 1,
-		}
-	}
+  fn from(e: Error) -> i64 {
+    match e {
+      Error::RuntimeError => 1,
+    }
+  }
 }
 
 impl<C, Block, AccountId, CurrencyId, Balance> CurrencyBalanceRpc<<Block as BlockT>::Hash, AccountId, CurrencyId, Balance> for CurrencyBalance<C, Block>
 where
-	Block: BlockT,
-	C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
-	C::Api: CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
-	AccountId: Codec,
-	CurrencyId: Codec,
-	Balance: Codec + Display,
+  Block: BlockT,
+  C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,
+  C::Api: CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
+  AccountId: Codec,
+  CurrencyId: Codec,
+  Balance: Codec + Display,
 {
 
   fn account_balance(&self,
@@ -57,17 +57,17 @@ where
     currency_id: Option<CurrencyId>,
     at: Option<<Block as BlockT>::Hash>
   ) -> Result<sp_std::vec::Vec<(CurrencyId, String)>> {
-		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(||
-			// If the block hash is not supplied assume the best block.
-			self.client.info().best_hash));
-		let balances = api.account_balance(&at, account, currency_id).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(Error::RuntimeError.into()),
-			message: "Unable to get value.".into(),
-			data: Some(format!("{:?}", e).into()),
-		}).unwrap().into_iter().map(|(cid, balance)| {
-			(cid, format!("{}", balance))
-		}).collect();
-	  	Ok(balances)
+    let api = self.client.runtime_api();
+    let at = BlockId::hash(at.unwrap_or_else(||
+      // If the block hash is not supplied assume the best block.
+      self.client.info().best_hash));
+    let balances = api.account_balance(&at, account, currency_id).map_err(|e| RpcError {
+      code: ErrorCode::ServerError(Error::RuntimeError.into()),
+      message: "Unable to get value.".into(),
+      data: Some(format!("{:?}", e).into()),
+    }).unwrap().into_iter().map(|(cid, balance)| {
+      (cid, format!("{}", balance))
+    }).collect();
+      Ok(balances)
   }
 }

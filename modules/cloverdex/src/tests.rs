@@ -3,7 +3,7 @@
 use super::*;
 use frame_support::assert_ok;
 use mock::{
-	CloverdexModule, ExtBuilder, Origin, CLV, ALICE, CUSDT, BOB, DOT, CETH,
+  CloverdexModule, ExtBuilder, Origin, CLV, ALICE, CUSDT, BOB, DOT, CETH,
 };
 
 pub use primitives::{ AccountId, currency::*, };
@@ -24,55 +24,55 @@ where
 
 #[test]
 fn test_compound_rote() {
-	ExtBuilder::default().build().execute_with(|| {
-		assert_ok!(BDM::add_liquidity(
-			Origin::signed(AccountId::from(ALICE)),
-			CLV,
-			CETH,
-			500000000000,
-			100000000000000000
-		));
-		assert_ok!(BDM::add_liquidity(
-			Origin::signed(AccountId::from(BOB)),
-			CETH,
-			DOT,
-			80000000000,
-			4000000000000
-		));
+  ExtBuilder::default().build().execute_with(|| {
+    assert_ok!(BDM::add_liquidity(
+      Origin::signed(AccountId::from(ALICE)),
+      CLV,
+      CETH,
+      500000000000,
+      100000000000000000
+    ));
+    assert_ok!(BDM::add_liquidity(
+      Origin::signed(AccountId::from(BOB)),
+      CETH,
+      DOT,
+      80000000000,
+      4000000000000
+    ));
 
-	  	let source_amount_clv = 90000000;
-		let (_, route) = BDM::get_target_amount_available(CLV, DOT, source_amount_clv);
-		assert_eq!(route, [CETH, DOT]);
-	});
+      let source_amount_clv = 90000000;
+    let (_, route) = BDM::get_target_amount_available(CLV, DOT, source_amount_clv);
+    assert_eq!(route, [CETH, DOT]);
+  });
 }
 
 #[test]
 fn test_exchange_rate() {
-	ExtBuilder::default().build().execute_with(|| {
-		let supply_pool = 1000000000000000;
-		let target_pool = 2000000000000000;
-		assert_ok!(BDM::add_liquidity(
-			Origin::signed(AccountId::from(ALICE)),
-			CUSDT,
-			DOT,
-			supply_pool,
-			target_pool
-		));
+  ExtBuilder::default().build().execute_with(|| {
+    let supply_pool = 1000000000000000;
+    let target_pool = 2000000000000000;
+    assert_ok!(BDM::add_liquidity(
+      Origin::signed(AccountId::from(ALICE)),
+      CUSDT,
+      DOT,
+      supply_pool,
+      target_pool
+    ));
 
-	  	let source_amount = 1000000000000000;
-		let (amount, _) = BDM::get_target_amount_available(DOT, CUSDT, source_amount);
-		// 1000 / (2000 + 1000) * 1000 * (1 - 0.01) = 330
-		assert_eq!(amount, 330000000000000);
-		// suppose we want to exchange CUSDT > 1, then we at least need DOT:
-		// 1000 * X / (2000 + X) * (1 - 0.01) > 1,  then X > 2.02
+      let source_amount = 1000000000000000;
+    let (amount, _) = BDM::get_target_amount_available(DOT, CUSDT, source_amount);
+    // 1000 / (2000 + 1000) * 1000 * (1 - 0.01) = 330
+    assert_eq!(amount, 330000000000000);
+    // suppose we want to exchange CUSDT > 1, then we at least need DOT:
+    // 1000 * X / (2000 + X) * (1 - 0.01) > 1,  then X > 2.02
 
-		let (amount, _) = BDM::get_target_amount_available(DOT, CUSDT, 2);
-		assert_eq!(amount, 0);
+    let (amount, _) = BDM::get_target_amount_available(DOT, CUSDT, 2);
+    assert_eq!(amount, 0);
 
-		let (amount, _) = BDM::get_supply_amount_needed(CUSDT, DOT, 1000000);
-		// supply_amount = (10^15 * 10^6) / (0.99 * 2 * 10^15 - 10^6) ~ 505050
-		assert_eq!(amount, 505052);
-	});
+    let (amount, _) = BDM::get_supply_amount_needed(CUSDT, DOT, 1000000);
+    // supply_amount = (10^15 * 10^6) / (0.99 * 2 * 10^15 - 10^6) ~ 505050
+    assert_eq!(amount, 505052);
+  });
 }
 
 #[test]
@@ -106,16 +106,16 @@ fn pair_id_encoding() {
 
 #[test]
 fn target_and_supply_amount_calculation() {
-	// target pool is drain
-	assert_eq!(
-		BDM::calculate_swap_target_amount(
-			1_000_000_000_000_000_000,
-			0,
-			1_000_000_000_000_000_000,
-			Rate::zero()
-		),
-		0
-	);
+  // target pool is drain
+  assert_eq!(
+    BDM::calculate_swap_target_amount(
+      1_000_000_000_000_000_000,
+      0,
+      1_000_000_000_000_000_000,
+      Rate::zero()
+    ),
+    0
+  );
   // supply pool is drain
   assert_eq!(
     BDM::calculate_swap_target_amount(
@@ -127,58 +127,58 @@ fn target_and_supply_amount_calculation() {
     0
   );
 
-	// supply amount is zero
-	assert_eq!(
-		BDM::calculate_swap_target_amount(
-			1_000_000_000_000_000_000,
-			1_000_000_000_000_000_000,
-			0,
-			Rate::zero()
-		),
-		0
-	);
+  // supply amount is zero
+  assert_eq!(
+    BDM::calculate_swap_target_amount(
+      1_000_000_000_000_000_000,
+      1_000_000_000_000_000_000,
+      0,
+      Rate::zero()
+    ),
+    0
+  );
 
   // fee rate >= 100%
-	assert_eq!(
-		BDM::calculate_swap_target_amount(
-			1_000_000_000_000_000_000,
-			1_000_000_000_000_000_000,
-			1_000_000_000_000_000_000,
-			Rate::one()
-		),
-		0
-	);
+  assert_eq!(
+    BDM::calculate_swap_target_amount(
+      1_000_000_000_000_000_000,
+      1_000_000_000_000_000_000,
+      1_000_000_000_000_000_000,
+      Rate::one()
+    ),
+    0
+  );
 
   // target pool <= target amount
-	assert_eq!(
-		BDM::calculate_swap_supply_amount(
-			1_000_000_000_000_000_000,
-			1_000_000_000_000_000_000,
-			1_000_000_000_000_000_000,
-			Rate::zero()
-		),
-		0
-	);
-	assert_eq!(
-		BDM::calculate_swap_supply_amount(
-			0,
-			1_000_000_000_000_000_000,
-			1_000_000_000_000_000_000,
-			Rate::zero()
-		),
-		0
-	);
+  assert_eq!(
+    BDM::calculate_swap_supply_amount(
+      1_000_000_000_000_000_000,
+      1_000_000_000_000_000_000,
+      1_000_000_000_000_000_000,
+      Rate::zero()
+    ),
+    0
+  );
+  assert_eq!(
+    BDM::calculate_swap_supply_amount(
+      0,
+      1_000_000_000_000_000_000,
+      1_000_000_000_000_000_000,
+      Rate::zero()
+    ),
+    0
+  );
 
-	// fee rate >= 100%
-	assert_eq!(
-		BDM::calculate_swap_supply_amount(
-			1_000_000_000_000_000_000,
-			1_000_000_000_000_000_000,
-			1_000_000_000_000,
-			Rate::one()
-		),
-		0
-	);
+  // fee rate >= 100%
+  assert_eq!(
+    BDM::calculate_swap_supply_amount(
+      1_000_000_000_000_000_000,
+      1_000_000_000_000_000_000,
+      1_000_000_000_000,
+      Rate::one()
+    ),
+    0
+  );
 
   let supply_pool = 1_000_000_000_000_000_000_000_000;
   let target_pool = 1_000_000_000_000_000_000_000_000;
@@ -211,31 +211,31 @@ fn target_and_supply_amount_calculation() {
 
 #[test]
 fn make_sure_get_supply_amount_needed_can_affort_target() {
-	ExtBuilder::default().build().execute_with(|| {
+  ExtBuilder::default().build().execute_with(|| {
     assert_ok!(BDM::add_liquidity(
-			Origin::signed(AccountId::from(ALICE)),
-			CLV,
-			CETH,
-			500000000000,
-			100000000000000000
-		));
+      Origin::signed(AccountId::from(ALICE)),
+      CLV,
+      CETH,
+      500000000000,
+      100000000000000000
+    ));
 
-		assert_ok!(BDM::add_liquidity(
-			Origin::signed(AccountId::from(ALICE)),
-			CUSDT,
-			CETH,
-			500000000000,
-			100000000000000000
-		));
-		assert_ok!(BDM::add_liquidity(
-			Origin::signed(AccountId::from(BOB)),
-			CUSDT,
-			DOT,
-			80000000000,
-			4000000000000
-		));
+    assert_ok!(BDM::add_liquidity(
+      Origin::signed(AccountId::from(ALICE)),
+      CUSDT,
+      CETH,
+      500000000000,
+      100000000000000000
+    ));
+    assert_ok!(BDM::add_liquidity(
+      Origin::signed(AccountId::from(BOB)),
+      CUSDT,
+      DOT,
+      80000000000,
+      4000000000000
+    ));
 
-	  let target_amount_busd_beth = 90000000;
+    let target_amount_busd_beth = 90000000;
     // supply: 80000000000
     // target: 4000000000000
     // new target_pool = 4000000000000 - 90000000 / (1 - 0.01)
@@ -243,7 +243,7 @@ fn make_sure_get_supply_amount_needed_can_affort_target() {
     //                 = 3999909090909
     // supply_amount = (4000000000000 * 80000000000 ) / 3999909090909- 80000000000
     //               = 1818223.14326 ~ 1818224
-		let (amount, route)= BDM::get_supply_amount_needed(CUSDT, DOT, target_amount_busd_beth);
+    let (amount, route)= BDM::get_supply_amount_needed(CUSDT, DOT, target_amount_busd_beth);
     assert_eq!(format_routes(&route), "CurrencyId::DOT,");
     assert_eq!(amount, 1818224, "supply amount should match expected");
 
@@ -251,10 +251,10 @@ fn make_sure_get_supply_amount_needed_can_affort_target() {
     //                 = 3999909090866.165 ~ 3999909090867
     // target_amount = (4000000000000 - 3999909090867) * 0.99
     //               = 90000041.67 ~ 90000042
-		let (target_amount, _)= BDM::get_target_amount_available(CUSDT, DOT, amount);
+    let (target_amount, _)= BDM::get_target_amount_available(CUSDT, DOT, amount);
     assert_eq!(target_amount, 90000042);
-		assert!(target_amount >= amount);
-	});
+    assert!(target_amount >= amount);
+  });
 }
 
 #[test]

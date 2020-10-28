@@ -52,9 +52,9 @@ pub trait Trait: frame_system::Trait {
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as Incentives {
+  trait Store for Module<T: Trait> as Incentives {
     // mapping from pool id to its incentive reward per block
-		pub DexIncentiveRewards get(fn dex_incentive_rewards): map hasher(twox_64_concat) PoolId => Balance;
+    pub DexIncentiveRewards get(fn dex_incentive_rewards): map hasher(twox_64_concat) PoolId => Balance;
   }
 
   add_extra_genesis {

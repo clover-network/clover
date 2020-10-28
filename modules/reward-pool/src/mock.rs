@@ -9,9 +9,9 @@ use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
 pub use pallet_balances::Call as BalancesCall;
 
 pub use primitives::{
-	AccountId, AccountIndex, Amount, Balance,
+  AccountId, AccountIndex, Amount, Balance,
   CurrencyId,
-	EraIndex, Hash, Index, Moment,
+  EraIndex, Hash, Index, Moment,
   Rate, Share,
   Signature,
   currency::*,
@@ -25,106 +25,106 @@ pub type BlockNumber = u64;
 pub struct TestRuntime;
 
 mod reward_pool{
-	pub use super::super::*;
+  pub use super::super::*;
 }
 
 impl_outer_event! {
-	pub enum TestEvent for TestRuntime {
-		frame_system<T>,
-		reward_pool<T>,
-		orml_tokens<T>,
-		orml_currencies<T>,
-		pallet_balances<T>,
-	}
+  pub enum TestEvent for TestRuntime {
+    frame_system<T>,
+    reward_pool<T>,
+    orml_tokens<T>,
+    orml_currencies<T>,
+    pallet_balances<T>,
+  }
 }
 
 impl_outer_origin! {
-	pub enum Origin for TestRuntime {}
+  pub enum Origin for TestRuntime {}
 }
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-	pub const MaximumBlockWeight: u32 = 1024;
-	pub const MaximumBlockLength: u32 = 2 * 1024;
-	pub const AvailableBlockRatio: Perbill = Perbill::one();
+  pub const BlockHashCount: u64 = 250;
+  pub const MaximumBlockWeight: u32 = 1024;
+  pub const MaximumBlockLength: u32 = 2 * 1024;
+  pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
 
 impl frame_system::Trait for TestRuntime {
   type Origin = Origin;
-	type Index = u64;
-	type BlockNumber = BlockNumber;
-	type Call = ();
-	type Hash = H256;
-	type Hashing = ::sp_runtime::traits::BlakeTwo256;
-	type AccountId = AccountId;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type Event = TestEvent;
-	type BlockHashCount = BlockHashCount;
-	type MaximumBlockWeight = MaximumBlockWeight;
-	type MaximumBlockLength = MaximumBlockLength;
-	type AvailableBlockRatio = AvailableBlockRatio;
-	type Version = ();
-	type PalletInfo = ();
-	type AccountData = pallet_balances::AccountData<Balance>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type DbWeight = ();
-	type BlockExecutionWeight = ();
-	type ExtrinsicBaseWeight = ();
-	type MaximumExtrinsicWeight = ();
-	type BaseCallFilter = ();
-	type SystemWeightInfo = ();
+  type Index = u64;
+  type BlockNumber = BlockNumber;
+  type Call = ();
+  type Hash = H256;
+  type Hashing = ::sp_runtime::traits::BlakeTwo256;
+  type AccountId = AccountId;
+  type Lookup = IdentityLookup<Self::AccountId>;
+  type Header = Header;
+  type Event = TestEvent;
+  type BlockHashCount = BlockHashCount;
+  type MaximumBlockWeight = MaximumBlockWeight;
+  type MaximumBlockLength = MaximumBlockLength;
+  type AvailableBlockRatio = AvailableBlockRatio;
+  type Version = ();
+  type PalletInfo = ();
+  type AccountData = pallet_balances::AccountData<Balance>;
+  type OnNewAccount = ();
+  type OnKilledAccount = ();
+  type DbWeight = ();
+  type BlockExecutionWeight = ();
+  type ExtrinsicBaseWeight = ();
+  type MaximumExtrinsicWeight = ();
+  type BaseCallFilter = ();
+  type SystemWeightInfo = ();
 }
 
 pub type System = frame_system::Module<TestRuntime>;
 
 parameter_types! {
-	pub const ExistentialDeposit: u128 = 500;
-	pub const MaxLocks: u32 = 50;
+  pub const ExistentialDeposit: u128 = 500;
+  pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Trait for TestRuntime {
-	/// The type for recording an account's balance.
-	type Balance = Balance;
-	/// The ubiquitous event type.
-	type Event = TestEvent;
-	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
-	type MaxLocks = MaxLocks;
-	type WeightInfo = ();
+  /// The type for recording an account's balance.
+  type Balance = Balance;
+  /// The ubiquitous event type.
+  type Event = TestEvent;
+  type DustRemoval = ();
+  type ExistentialDeposit = ExistentialDeposit;
+  type AccountStore = System;
+  type MaxLocks = MaxLocks;
+  type WeightInfo = ();
 }
 
 pub type Balances = pallet_balances::Module<TestRuntime>;
 
 impl orml_tokens::Trait for TestRuntime {
-	type Event = TestEvent;
-	type Balance = Balance;
-	type Amount = Amount;
-	type CurrencyId = CurrencyId;
-	type OnReceived = ();
-	type WeightInfo = ();
+  type Event = TestEvent;
+  type Balance = Balance;
+  type Amount = Amount;
+  type CurrencyId = CurrencyId;
+  type OnReceived = ();
+  type WeightInfo = ();
 }
 
 pub type Tokens = orml_tokens::Module<TestRuntime>;
 
 parameter_types! {
-	pub const GetNativeCurrencyId: CurrencyId = CurrencyId::CLV;
+  pub const GetNativeCurrencyId: CurrencyId = CurrencyId::CLV;
 }
 
 impl orml_currencies::Trait for TestRuntime {
-	type Event = TestEvent;
-	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<TestRuntime, Balances, Amount, BlockNumber>;
-	type GetNativeCurrencyId = GetNativeCurrencyId;
-	type WeightInfo = ();
+  type Event = TestEvent;
+  type MultiCurrency = Tokens;
+  type NativeCurrency = BasicCurrencyAdapter<TestRuntime, Balances, Amount, BlockNumber>;
+  type GetNativeCurrencyId = GetNativeCurrencyId;
+  type WeightInfo = ();
 }
 
 pub type Currencies = orml_currencies::Module<TestRuntime>;
 
 parameter_types! {
-	pub const RewardPoolModuleId: ModuleId = ModuleId(*b"clv/repm");
+  pub const RewardPoolModuleId: ModuleId = ModuleId(*b"clv/repm");
 }
 
 #[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, Ord, PartialOrd)]
@@ -148,13 +148,13 @@ impl RewardHandler<AccountId, BlockNumber, Balance, Share, PoolId> for Handler {
 }
 
 impl Trait for TestRuntime {
-	type Event = TestEvent;
-	type Currency = Currencies;
-	type ModuleId = RewardPoolModuleId;
-	type GetNativeCurrencyId = GetNativeCurrencyId;
+  type Event = TestEvent;
+  type Currency = Currencies;
+  type ModuleId = RewardPoolModuleId;
+  type GetNativeCurrencyId = GetNativeCurrencyId;
   type PoolId = PoolId;
   type Handler = Handler;
-	type ExistentialReward = ExistentialDeposit;
+  type ExistentialReward = ExistentialDeposit;
 }
 
 pub type RewardPoolModule = Module<TestRuntime>;
@@ -168,16 +168,16 @@ pub const DOT: CurrencyId = CurrencyId::DOT;
 pub const CETH: CurrencyId = CurrencyId::CETH;
 
 pub struct ExtBuilder {
-	endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>,
+  endowed_accounts: Vec<(AccountId, CurrencyId, Balance)>,
 }
 
 impl Default for ExtBuilder {
-	fn default() -> Self {
+  fn default() -> Self {
     let alice = AccountId::from(ALICE);
     let bob = AccountId::from(BOB);
 
-		Self {
-			endowed_accounts: vec![
+    Self {
+      endowed_accounts: vec![
         (alice.clone(), CLV, 1_000_000_000_000_000_000u128),
         (bob.clone(), CLV, 1_000_000_000_000_000_000u128),
         (alice.clone(), CUSDT, 1_000_000_000_000_000_000u128),
@@ -188,14 +188,14 @@ impl Default for ExtBuilder {
         (bob.clone(), CETH, 1_000_000_000_000_000_000u128),
       ],
     }
-	}
+  }
 }
 
 impl ExtBuilder {
-	pub fn build(self) -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default()
-			.build_storage::<TestRuntime>()
-			.unwrap();
+  pub fn build(self) -> sp_io::TestExternalities {
+    let mut t = frame_system::GenesisConfig::default()
+      .build_storage::<TestRuntime>()
+      .unwrap();
 
     pallet_balances::GenesisConfig::<TestRuntime> {
       balances: self
@@ -210,13 +210,13 @@ impl ExtBuilder {
       .unwrap();
 
     orml_tokens::GenesisConfig::<TestRuntime> {
-			endowed_accounts: self
-				.endowed_accounts
-				.into_iter()
-				.filter(|(_, currency_id, _)| *currency_id != CLV)
-				.collect::<Vec<_>>(),
-		}
-		.assimilate_storage(&mut t).unwrap();
+      endowed_accounts: self
+        .endowed_accounts
+        .into_iter()
+        .filter(|(_, currency_id, _)| *currency_id != CLV)
+        .collect::<Vec<_>>(),
+    }
+    .assimilate_storage(&mut t).unwrap();
 
     t.into()
   }
