@@ -76,29 +76,29 @@ pub trait Trait: frame_system::Trait {
   /// The reward pool ID type.
   type PoolId: Parameter + Member + Copy + FullCodec;
 
-	/// The reward  module id, keep all assets in DEX sub account.
-	type ModuleId: Get<ModuleId>;
+  /// The reward  module id, keep all assets in DEX sub account.
+  type ModuleId: Get<ModuleId>;
 
   type Handler: RewardHandler<Self::AccountId, Self::BlockNumber, Balance, Share, Self::PoolId>;
 
-	/// Currency for transfer currencies
-	type Currency: MultiCurrencyExtended<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
+  /// Currency for transfer currencies
+  type Currency: MultiCurrencyExtended<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
 
   type GetNativeCurrencyId: Get<CurrencyId>;
 
   /// minimum amount that reward could be sent to account
-	type ExistentialReward: Get<Balance>;
+  type ExistentialReward: Get<Balance>;
 }
 
 decl_event!(
-	pub enum Event<T> where
+  pub enum Event<T> where
     <T as frame_system::Trait>::AccountId,
     <T as Trait>::PoolId,
     Share = Share,
     Balance = Balance,
   {
-		RewardUpdated(PoolId, Balance),
-		ShareRemoved(PoolId, AccountId, Share),
+    RewardUpdated(PoolId, Balance),
+    ShareRemoved(PoolId, AccountId, Share),
   }
 );
 
@@ -126,10 +126,10 @@ decl_storage! {
 decl_module! {
   pub struct Module<T: Trait> for enum Call where origin: T::Origin {
     type Error = Error<T>;
-		fn deposit_event() = default;
+    fn deposit_event() = default;
 
     const GetNativeCurrencyId: CurrencyId = T::GetNativeCurrencyId::get();
-		const ExistentialReward: Balance = T::ExistentialReward::get();
+    const ExistentialReward: Balance = T::ExistentialReward::get();
   }
 }
 
@@ -370,7 +370,7 @@ impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share, Balance> for Module
     });
 
     let sub_account = Self::sub_account_id(pool);
-		T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, reward)?;
+    T::Currency::transfer(T::GetNativeCurrencyId::get(), &sub_account, &who, reward)?;
 
     Ok(account_info.shares)
   }

@@ -13,13 +13,13 @@ pub mod exchange;
 pub mod incentive_pool;
 
 pub enum Error {
-	RuntimeError,
+  RuntimeError,
 }
 
 impl From<Error> for i64 {
-	fn from(e: Error) -> i64 {
-		match e {
-			Error::RuntimeError => 1,
-		}
-	}
+  fn from(e: Error) -> i64 {
+    match e {
+      Error::RuntimeError => 1,
+    }
+  }
 }

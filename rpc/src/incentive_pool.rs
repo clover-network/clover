@@ -6,8 +6,8 @@ use std::fmt::Display;
 pub use clover_rpc_runtime_api::IncentivePoolApi as IncentivePoolRuntimeApi;
 
 pub struct IncentivePool<C, B> {
-	client: Arc<C>,
-	_marker: std::marker::PhantomData<B>,
+  client: Arc<C>,
+  _marker: std::marker::PhantomData<B>,
 }
 
 impl<C, B> IncentivePool<C, B> {
@@ -37,12 +37,12 @@ where
   fn get_all_incentive_pools(&self,
                              at: Option<<Block as BlockT>::Hash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String)>> {
     let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+    let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		api.get_all_incentive_pools(&at).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(Error::RuntimeError.into()),
-			message: "Unable to get value.".into(),
-			data: Some(format!("{:?}", e).into()),
+    api.get_all_incentive_pools(&at).map_err(|e| RpcError {
+      code: ErrorCode::ServerError(Error::RuntimeError.into()),
+      message: "Unable to get value.".into(),
+      data: Some(format!("{:?}", e).into()),
     }).map(|data|
            data.into_iter().map(|(c1, c2, share, balance)| {
              (c1, c2, format!("{}", share), format!("{}", balance))

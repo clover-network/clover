@@ -2,7 +2,7 @@
 
 use super::*;
 use mock::{
-	ALICE, BOB, DAVE, Currencies, PoolId, RewardPoolModule,
+  ALICE, BOB, DAVE, Currencies, PoolId, RewardPoolModule,
   run_to_block,
   ExtBuilder,
 };
