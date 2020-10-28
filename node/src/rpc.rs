@@ -86,6 +86,7 @@ pub fn create_full<C, P, SC, B>(
 	C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError> + 'static,
 	C: Send + Sync + 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+	C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: clover_rpc::balance::CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
 	C::Api: clover_rpc::pair::CurrencyPairRuntimeApi<Block>,
@@ -99,6 +100,7 @@ pub fn create_full<C, P, SC, B>(
 	B::State: sc_client_api::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
+	use pallet_contracts_rpc::{Contracts, ContractsApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 
 	let mut io = jsonrpc_core::IoHandler::default();
@@ -130,6 +132,7 @@ pub fn create_full<C, P, SC, B>(
 	io.extend_with(
 		TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone()))
 	);
+  io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
 	io.extend_with(
 		sc_consensus_babe_rpc::BabeApi::to_delegate(
 			BabeRpcHandler::new(

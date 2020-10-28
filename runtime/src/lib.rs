@@ -26,6 +26,7 @@ use enum_iterator::IntoEnumIterator;
 use sp_api::impl_runtime_apis;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_grandpa::fg_primitives;
+use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_session::historical as pallet_session_historical;
 use sp_version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -784,6 +785,32 @@ impl DataFeeder<CurrencyId, Price, AccountId> for AggregatedDataProvider {
 }
 
 parameter_types! {
+	pub const TombstoneDeposit: Balance = 16 * MILLICENTS;
+	pub const RentByteFee: Balance = 4 * MILLICENTS;
+	pub const RentDepositOffset: Balance = 1000 * MILLICENTS;
+	pub const SurchargeReward: Balance = 150 * MILLICENTS;
+}
+
+impl pallet_contracts::Trait for Runtime {
+	type Time = Timestamp;
+	type Randomness = RandomnessCollectiveFlip;
+	type Currency = Balances;
+	type Event = Event;
+	type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Runtime>;
+	type TrieIdGenerator = pallet_contracts::TrieIdFromParentCounter<Runtime>;
+	type RentPayment = ();
+	type SignedClaimHandicap = pallet_contracts::DefaultSignedClaimHandicap;
+	type TombstoneDeposit = TombstoneDeposit;
+	type StorageSizeOffset = pallet_contracts::DefaultStorageSizeOffset;
+	type RentByteFee = RentByteFee;
+	type RentDepositOffset = RentDepositOffset;
+	type SurchargeReward = SurchargeReward;
+	type MaxDepth = pallet_contracts::DefaultMaxDepth;
+	type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
+	type WeightPrice = pallet_transaction_payment::Module<Self>;
+}
+
+parameter_types! {
 	pub const GetStableCurrencyId: CurrencyId = CurrencyId::CUSDT;
 	pub StableCurrencyFixedPrice: Price = Price::saturating_from_rational(1, 1);
 	pub const MinimumCount: u32 = 1;
@@ -824,8 +851,6 @@ construct_runtime!(
 		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Module, Storage},
 
-		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
-
 		Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
 		Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
 		Historical: pallet_session_historical::{Module},
@@ -855,6 +880,10 @@ construct_runtime!(
 		// oracle
 		CloverOracle: orml_oracle::<Instance1>::{Module, Storage, Call, Config<T>, Event<T>},
 		BandOracle: orml_oracle::<Instance2>::{Module, Storage, Call, Config<T>, Event<T>},
+
+    Contracts: pallet_contracts::{Module, Call, Config, Storage, Event<T>},
+
+		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 	}
 );
 
@@ -1034,6 +1063,42 @@ impl_runtime_apis! {
 	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
 		fn account_nonce(account: AccountId) -> Index {
 			System::account_nonce(account)
+		}
+	}
+
+  impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber>
+		for Runtime
+	{
+		fn call(
+			origin: AccountId,
+			dest: AccountId,
+			value: Balance,
+			gas_limit: u64,
+			input_data: Vec<u8>,
+		) -> ContractExecResult {
+			let (exec_result, gas_consumed) =
+				Contracts::bare_call(origin, dest.into(), value, gas_limit, input_data);
+			match exec_result {
+				Ok(v) => ContractExecResult::Success {
+					flags: v.flags.bits(),
+					data: v.data,
+					gas_consumed: gas_consumed,
+				},
+				Err(_) => ContractExecResult::Error,
+			}
+		}
+
+		fn get_storage(
+			address: AccountId,
+			key: [u8; 32],
+		) -> pallet_contracts_primitives::GetStorageResult {
+			Contracts::get_storage(address, key)
+		}
+
+		fn rent_projection(
+			address: AccountId,
+		) -> pallet_contracts_primitives::RentProjectionResult<BlockNumber> {
+			Contracts::rent_projection(address)
 		}
 	}
 

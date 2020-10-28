@@ -1,7 +1,7 @@
 use serde_json::json;
 use sp_core::{Pair, Public, sr25519};
 use clover_runtime::{
-  AccountId, BabeConfig, Balance, BalancesConfig, CurrencyId, IndicesConfig, GenesisConfig,
+  AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
   Signature, StakerStatus, TokensConfig, IncentivesConfig, CloverDexConfig, BandOracleConfig,
   CloverOracleConfig
@@ -154,6 +154,8 @@ fn testnet_genesis(
 ) -> GenesisConfig {
 	use clover_runtime::{DOLLARS};
 
+	let enable_println = true;
+
 	const ENDOWMENT: Balance = 10_000 * DOLLARS;
 	const STASH: Balance = 100 * DOLLARS;
 
@@ -169,6 +171,12 @@ fn testnet_genesis(
 						.map(|k| (k, ENDOWMENT))
 						.chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
 						.collect(),
+		}),
+		pallet_contracts: Some(ContractsConfig {
+			current_schedule: pallet_contracts::Schedule {
+				enable_println, // this should only be enabled on development chains
+				..Default::default()
+			},
 		}),
 		pallet_indices: Some(IndicesConfig {
 			indices: vec![],
