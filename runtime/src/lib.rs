@@ -9,7 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_std::prelude::*;
 use sp_core::{
   crypto::KeyTypeId,
-  OpaqueMetadata,
+  OpaqueMetadata, U256,
 };
 use sp_runtime::{
   ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
@@ -27,6 +27,7 @@ use sp_api::impl_runtime_apis;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_grandpa::fg_primitives;
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
+use pallet_evm::{EnsureAddressTruncated, FeeCalculator, HashedAddressMapping};
 use pallet_session::historical as pallet_session_historical;
 use sp_version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -810,6 +811,31 @@ impl pallet_contracts::Trait for Runtime {
   type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
+/// Fixed gas price of `1`.
+pub struct FixedGasPrice;
+
+impl FeeCalculator for FixedGasPrice {
+	fn min_gas_price() -> U256 {
+		// Gas price is always one token per gas.
+		1.into()
+	}
+}
+
+parameter_types! {
+	pub const ChainId: u64 = 42; // etherthum testnet kovan id
+}
+
+impl pallet_evm::Trait for Runtime {
+	type FeeCalculator = FixedGasPrice;
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+	type Currency = Balances;
+	type Event = Event;
+	type Precompiles = ();
+	type ChainId = ChainId;
+}
+
 parameter_types! {
   pub const GetStableCurrencyId: CurrencyId = CurrencyId::CUSDT;
   pub StableCurrencyFixedPrice: Price = Price::saturating_from_rational(1, 1);
@@ -881,7 +907,9 @@ construct_runtime!(
     CloverOracle: orml_oracle::<Instance1>::{Module, Storage, Call, Config<T>, Event<T>},
     BandOracle: orml_oracle::<Instance2>::{Module, Storage, Call, Config<T>, Event<T>},
 
+    // Smart contracts modules
     Contracts: pallet_contracts::{Module, Call, Config, Storage, Event<T>},
+    EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
 
     Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
   }
