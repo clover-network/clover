@@ -178,6 +178,7 @@ fn testnet_genesis(
         ..Default::default()
       },
     }),
+		pallet_evm: Some(Default::default()),
     pallet_indices: Some(IndicesConfig {
       indices: vec![],
     }),
