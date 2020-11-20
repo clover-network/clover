@@ -55,6 +55,8 @@ sp-inherents = { version = '2.0.0' }
 sp-runtime = { version = '2.0.0' }
 sp-transaction-pool = { version = '2.0.0' }
 substrate-frame-rpc-system = { version = '2.0.0' }
+hex-literal = { version = '0.3.1' }
+sc-telemetry = { version = '2.0.0' }
 
 [build-dependencies.substrate-build-script-utils]
 version = '2.0.0'
