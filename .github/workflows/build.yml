@@ -44,17 +44,6 @@ jobs:
           push: true
           tags: cloverio/clover-nightly:latest
 
-      - name: Rsync deployments
-        uses: AEnterprise/rsync-deploy@v1.0
-        env:
-          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-          ARGS: -avz --delete
-          SERVER_PORT: 22
-          FOLDER: ./target/release/clover
-          SERVER_IP: ${{ secrets.SSH_HOST }}
-          USERNAME: ${{ secrets.SSH_USER }}
-          SERVER_DESTINATION: ${{ secrets.DEPLOY_TARGET }}
-
       - name: Restart system
         uses: garygrossgarten/github-action-ssh@release
         with:

@@ -173,20 +173,32 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
           hex!["80a3099c09a963dee18fc99f1455ba6666ab8efc6576e64b1330e33b994cfd4a"].unchecked_into(),
           hex!["9ae3442373c948b8ae442e4de4633a9ce4a3d06b8d1cf3ca11916586ef46f4a6"].unchecked_into(),
         ),
+        // 5DLTV9Dp1sCKdBVp8iBYi1LSFze8iv7A8EVvh9zsAs4ouRag
+        (
+          hex!["383fc84801261040d7a0feef51d64a06a02033b6887fdcf1f031b6f4deaba447"].into(),
+          hex!["383fc84801261040d7a0feef51d64a06a02033b6887fdcf1f031b6f4deaba447"].into(),
+          hex!["cc3a0b74e4a61e41ac64a0e18c22bc3bf0f0e6c9ded3c08def8b9d3f1c37d324"].unchecked_into(),
+          hex!["a0be89588eefd7129641edcff28c8fcb1054fc981b27aee3e88668beee9d0d4d"].unchecked_into(),
+        ),
       ],
-      // 5FErVqdraDMVVHRYHzFVubtvaMaaySxtgFpmdX9WEpx6zwai
-      hex!["8c723dff02c2e2e578609e5caa0eda0572913f73b1c330ad7a2aa3819453762e"].into(),
+      // 5Cwo46bWWxaZCJQYkwH62nChaiEDKY9Kh4oo8kfbS9SNesMf
+      hex!["26f702ab9792cbb2ea9c23b9f7982b6f6d6e9c3561e701175f9df919cf75f01f"].into(),
       // Pre-funded accounts
       vec![
-        // 5FErVqdraDMVVHRYHzFVubtvaMaaySxtgFpmdX9WEpx6zwai
-        hex!["8c723dff02c2e2e578609e5caa0eda0572913f73b1c330ad7a2aa3819453762e"].into(),
-        // 5F6Qp4EEbg8KQdpaE1E4dQBuRPk5WRc9imvbEgCYMfruxwDz
-        hex!["8601cffcc5836815e60092831cb79b9242b995bcf5cd90589c21092811e3e859"].into(),
+        // 5Cwo46bWWxaZCJQYkwH62nChaiEDKY9Kh4oo8kfbS9SNesMf
+        hex!["26f702ab9792cbb2ea9c23b9f7982b6f6d6e9c3561e701175f9df919cf75f01f"].into(),
       ],
       true,
     ),
     // Bootnodes
-    vec![],
+    vec![
+      "/ip4/124.156.157.168/tcp/30333/p2p/12D3KooWF9dXRyooKqXCJWPyvQx2Am2Tg1Wq2pqBdgbor57g2cFQ"
+        .parse()
+        .unwrap(),
+      "/ip4/124.156.138.226/tcp/30333/p2p/12D3KooWPrKZgyxGniSna9yigFrqhR2nA4ZcBWH4qwUAoGsc6PSp"
+        .parse()
+        .unwrap(),
+    ],
     // Telemetry
     TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
     // Protocol ID
