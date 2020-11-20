@@ -10,10 +10,12 @@ use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::{traits::{IdentifyAccount, Verify}, Perbill};
 use sc_service::ChainType;
-
+use hex_literal::hex;
+use sc_telemetry::TelemetryEndpoints;
+use sp_core::crypto::UncheckedInto;
 
 // The URL for the telemetry server.
-// const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
@@ -134,6 +136,61 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
     None,
     // Protocol ID
     Some("cloverlocal"),
+    // Properties
+    Some(json!({
+      "tokenDecimals": 12,
+      "tokenSymbol": "CLV"
+    }).as_object().expect("Created an object").clone()),
+    // Extensions
+    None,
+  ))
+}
+
+pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
+  let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+
+  Ok(ChainSpec::from_genesis(
+    // Name
+    "Clover",
+    // ID
+    "rose",
+    ChainType::Custom(String::from("rose")),
+    move || testnet_genesis(
+      wasm_binary,
+      // Initial PoA authorities
+      vec![
+        // 5FErVqdraDMVVHRYHzFVubtvaMaaySxtgFpmdX9WEpx6zwai
+        (
+          hex!["8c723dff02c2e2e578609e5caa0eda0572913f73b1c330ad7a2aa3819453762e"].into(),
+          hex!["8c723dff02c2e2e578609e5caa0eda0572913f73b1c330ad7a2aa3819453762e"].into(),
+          hex!["3210617311f52ac55feead02772acb048234d16e04c33ada32d3faa6c3eecc44"].unchecked_into(),
+          hex!["3d145911dd713e50f7cea8f65eec1dec5e7cba466b4a16ad6b75ce3c11b1ad0b"].unchecked_into(),
+        ),
+        // 5F6Qp4EEbg8KQdpaE1E4dQBuRPk5WRc9imvbEgCYMfruxwDz
+        (
+          hex!["8601cffcc5836815e60092831cb79b9242b995bcf5cd90589c21092811e3e859"].into(),
+          hex!["8601cffcc5836815e60092831cb79b9242b995bcf5cd90589c21092811e3e859"].into(),
+          hex!["80a3099c09a963dee18fc99f1455ba6666ab8efc6576e64b1330e33b994cfd4a"].unchecked_into(),
+          hex!["9ae3442373c948b8ae442e4de4633a9ce4a3d06b8d1cf3ca11916586ef46f4a6"].unchecked_into(),
+        ),
+      ],
+      // 5FErVqdraDMVVHRYHzFVubtvaMaaySxtgFpmdX9WEpx6zwai
+      hex!["8c723dff02c2e2e578609e5caa0eda0572913f73b1c330ad7a2aa3819453762e"].into(),
+      // Pre-funded accounts
+      vec![
+        // 5FErVqdraDMVVHRYHzFVubtvaMaaySxtgFpmdX9WEpx6zwai
+        hex!["8c723dff02c2e2e578609e5caa0eda0572913f73b1c330ad7a2aa3819453762e"].into(),
+        // 5F6Qp4EEbg8KQdpaE1E4dQBuRPk5WRc9imvbEgCYMfruxwDz
+        hex!["8601cffcc5836815e60092831cb79b9242b995bcf5cd90589c21092811e3e859"].into(),
+      ],
+      true,
+    ),
+    // Bootnodes
+    vec![],
+    // Telemetry
+    TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
+    // Protocol ID
+    Some("rose"),
     // Properties
     Some(json!({
       "tokenDecimals": 12,
