@@ -192,10 +192,10 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
     ),
     // Bootnodes
     vec![
-      "/ip4/124.156.157.168/tcp/30333/p2p/12D3KooWF9dXRyooKqXCJWPyvQx2Am2Tg1Wq2pqBdgbor57g2cFQ"
+      "/dns/seed1.rose.clovernode.com/tcp/30333/p2p/12D3KooWF9dXRyooKqXCJWPyvQx2Am2Tg1Wq2pqBdgbor57g2cFQ"
         .parse()
         .unwrap(),
-      "/ip4/124.156.138.226/tcp/30333/p2p/12D3KooWPrKZgyxGniSna9yigFrqhR2nA4ZcBWH4qwUAoGsc6PSp"
+      "/dns/seed2.rose.clovernode.com/tcp/30333/p2p/12D3KooWPrKZgyxGniSna9yigFrqhR2nA4ZcBWH4qwUAoGsc6PSp"
         .parse()
         .unwrap(),
     ],
