@@ -1,7 +1,7 @@
 use serde_json::json;
 use sp_core::{Pair, Public, sr25519};
 use clover_runtime::{
-  AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig,
+  AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig, ImOnlineId,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
   Signature, StakerStatus, TokensConfig, IncentivesConfig, CloverDexConfig, BandOracleConfig,
   CloverOracleConfig
@@ -22,9 +22,10 @@ pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
 
 fn session_keys(
   grandpa: GrandpaId,
-  babe: BabeId
+  babe: BabeId,
+  im_online: ImOnlineId,
 ) -> SessionKeys {
-  SessionKeys { grandpa, babe}
+  SessionKeys { grandpa, babe, im_online, }
 }
 
 /// Generate a crypto pair from seed.
@@ -44,12 +45,13 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId where
 }
 
 /// Generate an Babe authority key.
-pub fn authority_keys_from_seed(s: &str) -> (AccountId, AccountId, BabeId, GrandpaId) {
+pub fn authority_keys_from_seed(s: &str) -> (AccountId, AccountId, BabeId, GrandpaId, ImOnlineId) {
   (
     get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", s)),
     get_account_id_from_seed::<sr25519::Public>(s),
     get_from_seed::<BabeId>(s),
     get_from_seed::<GrandpaId>(s),
+    get_from_seed::<ImOnlineId>(s),
   )
 }
 
@@ -163,8 +165,9 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
         (
           hex!["8c723dff02c2e2e578609e5caa0eda0572913f73b1c330ad7a2aa3819453762e"].into(),
           hex!["8c723dff02c2e2e578609e5caa0eda0572913f73b1c330ad7a2aa3819453762e"].into(),
-          hex!["3210617311f52ac55feead02772acb048234d16e04c33ada32d3faa6c3eecc44"].unchecked_into(),
-          hex!["3d145911dd713e50f7cea8f65eec1dec5e7cba466b4a16ad6b75ce3c11b1ad0b"].unchecked_into(),
+          hex!["3210617311f52ac55feead02772acb048234d16e04c33ada32d3faa6c3eecc44"].unchecked_into(), // babe key
+          hex!["3d145911dd713e50f7cea8f65eec1dec5e7cba466b4a16ad6b75ce3c11b1ad0b"].unchecked_into(), // grandpa
+          hex!["fad6e0de3906f2d13a49aa70d7fb757e34e4be24acb68ec98676e363811c6a19"].unchecked_into(), // imonline
         ),
         // 5F6Qp4EEbg8KQdpaE1E4dQBuRPk5WRc9imvbEgCYMfruxwDz
         (
@@ -172,6 +175,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
           hex!["8601cffcc5836815e60092831cb79b9242b995bcf5cd90589c21092811e3e859"].into(),
           hex!["80a3099c09a963dee18fc99f1455ba6666ab8efc6576e64b1330e33b994cfd4a"].unchecked_into(),
           hex!["9ae3442373c948b8ae442e4de4633a9ce4a3d06b8d1cf3ca11916586ef46f4a6"].unchecked_into(),
+          hex!["d297f3c4c76674073f1dfe0f4e1f77f5897cb12f190c6701cc0d97d071058eaf"].unchecked_into(),
         ),
         // 5DLTV9Dp1sCKdBVp8iBYi1LSFze8iv7A8EVvh9zsAs4ouRag
         (
@@ -179,6 +183,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
           hex!["383fc84801261040d7a0feef51d64a06a02033b6887fdcf1f031b6f4deaba447"].into(),
           hex!["cc3a0b74e4a61e41ac64a0e18c22bc3bf0f0e6c9ded3c08def8b9d3f1c37d324"].unchecked_into(),
           hex!["a0be89588eefd7129641edcff28c8fcb1054fc981b27aee3e88668beee9d0d4d"].unchecked_into(),
+          hex!["f1af73f5adcfcc59fd0c142733d70b7f55ae4414c0e2f88c66c91b7780bf1685"].unchecked_into(),
         ),
       ],
       // 5Cwo46bWWxaZCJQYkwH62nChaiEDKY9Kh4oo8kfbS9SNesMf
@@ -216,7 +221,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
   wasm_binary: &[u8],
-  initial_authorities: Vec<(AccountId, AccountId, BabeId, GrandpaId)>,
+  initial_authorities: Vec<(AccountId, AccountId, BabeId, GrandpaId, ImOnlineId)>,
   root_key: AccountId,
   endowed_accounts: Vec<AccountId>,
   _enable_println: bool,
@@ -256,6 +261,7 @@ fn testnet_genesis(
         (x.0.clone(), x.0.clone(), session_keys(
           x.3.clone(),
           x.2.clone(),
+          x.4.clone(),
         ))
       }).collect::<Vec<_>>(),
     }),
@@ -275,6 +281,7 @@ fn testnet_genesis(
     pallet_grandpa: Some(GrandpaConfig {
       authorities: vec![],
     }),
+    pallet_im_online: Some(Default::default()),
     pallet_sudo: Some(SudoConfig {
       // Assign network admin rights.
       key: root_key,
