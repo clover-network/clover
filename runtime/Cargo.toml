@@ -36,7 +36,9 @@ pallet-contracts-primitives = { version = "2.0.0", default-features = false }
 pallet-contracts-rpc-runtime-api = { version = "0.8.0", default-features = false }
 pallet-evm = { version = "2.0.0", default-features = false }
 pallet-grandpa = {default-features = false, version = '2.0.0' }
+pallet-im-online = { default-features = false, version = '2.0.0' }
 pallet-indices = {default-features = false, version = '2.0.0' }
+pallet-offences = { default-features = false, version = '2.0.0' }
 pallet-staking = {default-features = false, version = '2.0.0' }
 pallet-session = {default-features = false, features = ["historical"], version = '2.0.0' }
 pallet-randomness-collective-flip = {default-features = false, version = '2.0.0' }
@@ -97,7 +99,9 @@ std = [
     "pallet-contracts/std",
     "pallet-evm/std",
     'pallet-grandpa/std',
+    'pallet-im-online/std',
     'pallet-indices/std',
+    'pallet-offences/std',
     'pallet-staking/std',
     'pallet-session/std',
     'pallet-randomness-collective-flip/std',

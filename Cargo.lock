@@ -931,8 +931,10 @@ dependencies = [
  "pallet-elections-phragmen",
  "pallet-evm",
  "pallet-grandpa",
+ "pallet-im-online",
  "pallet-indices",
  "pallet-membership",
+ "pallet-offences",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
@@ -4269,6 +4271,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-im-online"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a29b883f805fa2330742b5d99263eab68583e009be1a2420efab1c3237a08e5"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-authorship",
+ "pallet-session",
+ "parity-scale-codec",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-indices"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4297,6 +4319,22 @@ dependencies = [
  "serde",
  "sp-io",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-offences"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59762b04bbe918498789a48b9997702027436c3d75ccd640f2d65e592213e3d8"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "parity-scale-codec",
+ "serde",
+ "sp-runtime",
+ "sp-staking",
  "sp-std",
 ]
 

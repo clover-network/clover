@@ -24,6 +24,7 @@ use sp_runtime::curve::PiecewiseLinear;
 use enum_iterator::IntoEnumIterator;
 
 use sp_api::impl_runtime_apis;
+pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_grandpa::fg_primitives;
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
@@ -92,6 +93,7 @@ impl_opaque_keys! {
   pub struct SessionKeys {
     pub grandpa: Grandpa,
     pub babe: Babe,
+    pub im_online: ImOnline,
   }
 }
 
@@ -229,7 +231,9 @@ impl pallet_grandpa::Trait for Runtime {
     GrandpaId,
   )>>::IdentificationTuple;
 
-  type HandleEquivocation = ();
+  type HandleEquivocation =
+		pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, Offences>;
+
   type WeightInfo = ();
 }
 
@@ -253,7 +257,7 @@ impl pallet_authorship::Trait for Runtime {
   type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
   type UncleGenerations = UncleGenerations;
   type FilterUncle = ();
-  type EventHandler = (Staking, ()); // ImOnline
+  type EventHandler = (Staking, ImOnline);
 }
 
 parameter_types! {
@@ -366,6 +370,31 @@ impl pallet_balances::Trait for Runtime {
   type AccountStore = System;
   type MaxLocks = MaxLocks;
   type WeightInfo = ();
+}
+
+parameter_types! {
+  pub const SessionDuration: BlockNumber = EPOCH_DURATION_IN_BLOCKS as _;
+  pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+}
+
+impl pallet_im_online::Trait for Runtime {
+  type AuthorityId = ImOnlineId;
+  type Event = Event;
+  type SessionDuration = SessionDuration;
+  type ReportUnresponsiveness = Offences;
+  type UnsignedPriority = ImOnlineUnsignedPriority;
+  type WeightInfo = ();
+}
+
+parameter_types! {
+	pub OffencesWeightSoftLimit: Weight = Perbill::from_percent(60) * MaximumBlockWeight::get();
+}
+
+impl pallet_offences::Trait for Runtime {
+	type Event = Event;
+	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+	type OnOffenceHandler = Staking;
+	type WeightSoftLimit = OffencesWeightSoftLimit;
 }
 
 parameter_types! {
@@ -893,10 +922,6 @@ construct_runtime!(
     TechnicalMembership: pallet_membership::<Instance1>::{Module, Call, Storage, Event<T>, Config<T>},
     Treasury: pallet_treasury::{Module, Call, Storage, Event<T>, Config},
 
-    // Utility module.
-    Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
-    Utility: pallet_utility::{Module, Call, Event},
-
     // Clover module
     CloverDex: cloverdex::{Module, Storage, Call, Event<T>, Config},
     RewardPool: reward_pool::{Module, Storage, Call, Event<T>,},
@@ -913,6 +938,13 @@ construct_runtime!(
     EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
 
     Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+
+		ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
+    Offences: pallet_offences::{Module, Call, Storage, Event},
+
+    // Utility module.
+    Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+    Utility: pallet_utility::{Module, Call, Event},
   }
 );
 
