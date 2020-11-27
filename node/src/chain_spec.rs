@@ -230,7 +230,7 @@ fn testnet_genesis(
 
   let enable_println = true;
 
-  const ENDOWMENT: Balance = 10_000 * DOLLARS;
+  const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
   const STASH: Balance = 100 * DOLLARS;
 
   GenesisConfig {
@@ -299,9 +299,9 @@ fn testnet_genesis(
         .iter()
         .flat_map(|x| {
           vec![
-            (x.clone(), CurrencyId::CETH, 10000 * DOLLARS),
-            (x.clone(), CurrencyId::CUSDT, 10000 * DOLLARS),
-            (x.clone(), CurrencyId::DOT, 10000 * DOLLARS),
+            (x.clone(), CurrencyId::CETH, 100000 * DOLLARS),
+            (x.clone(), CurrencyId::CUSDT, 100000 * DOLLARS),
+            (x.clone(), CurrencyId::DOT, 100000 * DOLLARS),
           ]
         })
         .collect(),
