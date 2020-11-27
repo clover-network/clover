@@ -4,7 +4,7 @@ use clover_runtime::{
   AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
   Signature, StakerStatus, TokensConfig, IncentivesConfig, CloverDexConfig, BandOracleConfig,
-  CloverOracleConfig
+  CloverOracleConfig, EVMConfig
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -13,6 +13,7 @@ use sc_service::ChainType;
 use hex_literal::hex;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::UncheckedInto;
+use std::collections::BTreeMap;
 
 // The URL for the telemetry server.
 const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -247,7 +248,9 @@ fn testnet_genesis(
         ..Default::default()
       },
     }),
-		pallet_evm: Some(Default::default()),
+    clover_evm: Some(EVMConfig {
+      accounts: BTreeMap::new(),
+    }),
     pallet_indices: Some(IndicesConfig {
       indices: vec![],
     }),

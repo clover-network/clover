@@ -14,6 +14,16 @@ use sp_runtime::{
   MultiSignature, RuntimeDebug
 };
 
+use sp_runtime::ConsensusEngineId;
+
+use sp_core::{H160, H256, U256};
+use ethereum::{Log as EthereumLog, Block as EthereumBlock};
+use ethereum_types::Bloom;
+use sp_std::vec::Vec;
+use evm::ExitReason;
+
+pub use evm::backend::{Basic as Account, Log};
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -87,4 +97,124 @@ pub mod currency {
   pub const CENTS: Balance = DOLLARS / 100; // 10_000_000_000
   pub const MILLICENTS: Balance = CENTS / 1000; // 10_000_000
   pub const MICROCENTS: Balance = MILLICENTS / 1000; // 10_000
+}
+
+pub const FRONTIER_ENGINE_ID: ConsensusEngineId = [b'f', b'r', b'o', b'n'];
+
+#[derive(Decode, Encode, Clone, PartialEq, Eq)]
+pub enum ConsensusLog {
+    #[codec(index = "1")]
+    EndBlock {
+        /// Ethereum block hash.
+        block_hash: H256,
+        /// Transaction hashes of the Ethereum block.
+        transaction_hashes: Vec<H256>,
+    },
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+/// External input from the transaction.
+pub struct Vicinity {
+    /// Current transaction gas price.
+    pub gas_price: U256,
+    /// Origin of the transaction.
+    pub origin: H160,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub struct ExecutionInfo<T> {
+    pub exit_reason: ExitReason,
+    pub value: T,
+    pub used_gas: U256,
+    pub logs: Vec<Log>,
+}
+
+pub type CallInfo = ExecutionInfo<Vec<u8>>;
+pub type CreateInfo = ExecutionInfo<H160>;
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub enum CallOrCreateInfo {
+    Call(CallInfo),
+    Create(CreateInfo),
+}
+
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+pub struct TransactionStatus {
+    pub transaction_hash: H256,
+    pub transaction_index: u32,
+    pub from: H160,
+    pub to: Option<H160>,
+    pub contract_address: Option<H160>,
+    pub logs: Vec<EthereumLog>,
+    pub logs_bloom: Bloom,
+}
+
+impl Default for TransactionStatus {
+    fn default() -> Self {
+        TransactionStatus {
+            transaction_hash: H256::default(),
+            transaction_index: 0 as u32,
+            from: H160::default(),
+            to: None,
+            contract_address: None,
+            logs: Vec::new(),
+            logs_bloom: Bloom::default(),
+        }
+    }
+}
+
+sp_api::decl_runtime_apis! {
+	/// API necessary for Ethereum-compatibility layer.
+	pub trait EthereumRuntimeRPCApi {
+		/// Returns runtime defined pallet_evm::ChainId.
+		fn chain_id() -> u64;
+		/// Returns pallet_evm::Accounts by address.
+		fn account_basic(address: H160) -> Account;
+		/// Returns FixedGasPrice::min_gas_price
+		fn gas_price() -> U256;
+		/// For a given account address, returns pallet_evm::AccountCodes.
+		fn account_code_at(address: H160) -> Vec<u8>;
+		/// Returns the converted FindAuthor::find_author authority id.
+		fn author() -> H160;
+		/// For a given account address and index, returns pallet_evm::AccountStorages.
+		fn storage_at(address: H160, index: U256) -> H256;
+		/// Returns a frame_ethereum::call response.
+		fn call(
+			from: H160,
+			to: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+		) -> Result<CallInfo, sp_runtime::DispatchError>;
+		/// Returns a frame_ethereum::create response.
+		fn create(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+		) -> Result<CreateInfo, sp_runtime::DispatchError>;
+		/// Return the current block.
+		fn current_block() -> Option<EthereumBlock>;
+		/// Return the current receipt.
+		fn current_receipts() -> Option<Vec<ethereum::Receipt>>;
+		/// Return the current transaction status.
+		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>>;
+		/// Return all the current data for a block in a single runtime call.
+		fn current_all() -> (
+			Option<EthereumBlock>,
+			Option<Vec<ethereum::Receipt>>,
+			Option<Vec<TransactionStatus>>
+		);
+	}
+}
+
+pub trait ConvertTransaction<E> {
+    fn convert_transaction(&self, transaction: ethereum::Transaction) -> E;
 }

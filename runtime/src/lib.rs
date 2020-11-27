@@ -27,7 +27,6 @@ use sp_api::impl_runtime_apis;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_grandpa::fg_primitives;
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
-use pallet_evm::{EnsureAddressTruncated, FeeCalculator, HashedAddressMapping};
 use pallet_session::historical as pallet_session_historical;
 use sp_version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -56,6 +55,10 @@ pub use frame_support::{
   },
 };
 use codec::{Encode};
+use clover_evm::{
+  Account as EVMAccount, FeeCalculator, HashedAddressMapping,
+  EnsureAddressTruncated, Runner,
+};
 
 pub use primitives::{
   AccountId, AccountIndex, Amount, Balance, BlockNumber, CurrencyId, EraIndex, Hash, Index,
@@ -277,6 +280,39 @@ impl pallet_session::historical::Trait for Runtime {
   type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
   type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
 }
+
+/// clover evm
+pub struct FixedGasPrice;
+
+impl FeeCalculator for FixedGasPrice {
+  fn min_gas_price() -> U256 {
+    // Gas price is always one token per gas.
+    1.into()
+  }
+}
+
+parameter_types! {
+	pub const ChainId: u64 = 1337;
+}
+
+impl clover_evm::Trait for Runtime {
+  type FeeCalculator = FixedGasPrice;
+  type GasToWeight = ();
+  type CallOrigin = EnsureAddressTruncated;
+  type WithdrawOrigin = EnsureAddressTruncated;
+  type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+  type Currency = Balances;
+  type Event = Event;
+  type Runner = clover_evm::runner::stack::Runner<Self>;
+  type Precompiles = (
+    clover_evm::precompiles::ECRecover,
+    clover_evm::precompiles::Sha256,
+    clover_evm::precompiles::Ripemd160,
+    clover_evm::precompiles::Identity,
+  );
+  type ChainId = ChainId;
+}
+
 
 /// Struct that handles the conversion of Balance -> `u64`. This is used for
 /// staking's election calculation.
@@ -812,31 +848,6 @@ impl pallet_contracts::Trait for Runtime {
   type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
-/// Fixed gas price of `1`.
-pub struct FixedGasPrice;
-
-impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		// Gas price is always one token per gas.
-		1.into()
-	}
-}
-
-parameter_types! {
-	pub const ChainId: u64 = 42; // etherthum testnet kovan id
-}
-
-impl pallet_evm::Trait for Runtime {
-	type FeeCalculator = FixedGasPrice;
-	type CallOrigin = EnsureAddressTruncated;
-	type WithdrawOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
-	type Currency = Balances;
-	type Event = Event;
-	type Precompiles = ();
-	type ChainId = ChainId;
-}
-
 parameter_types! {
   pub const GetStableCurrencyId: CurrencyId = CurrencyId::CUSDT;
   pub StableCurrencyFixedPrice: Price = Price::saturating_from_rational(1, 1);
@@ -910,7 +921,7 @@ construct_runtime!(
 
     // Smart contracts modules
     Contracts: pallet_contracts::{Module, Call, Config, Storage, Event<T>},
-    EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
+    EVM: clover_evm::{Module, Config, Call, Storage, Event<T>},
 
     Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
   }

@@ -24,7 +24,7 @@ use crate::service::new_partial;
 
 impl SubstrateCli for Cli {
   fn impl_name() -> String {
-    "Clover Testnet".into()
+    "Clover Node".into()
   }
 
   fn impl_version() -> String {
