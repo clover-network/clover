@@ -73,6 +73,8 @@ pub struct FullDeps<C, P, SC, B> {
   pub babe: BabeDeps,
   /// GRANDPA specific dependencies.
   pub grandpa: GrandpaDeps<B>,
+  /// Whether to enable dev signer
+  pub enable_dev_signer: bool,
 }
 
 /// A IO handler that uses all Full RPC extensions.
@@ -83,6 +85,7 @@ pub fn create_full<C, P, SC, B>(
   deps: FullDeps<C, P, SC, B>,
 ) -> jsonrpc_core::IoHandler<sc_rpc_api::Metadata> where
   C: ProvideRuntimeApi<Block>,
+  C: sc_client_api::client::BlockchainEvents<Block>,
   C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError> + 'static,
   C: Send + Sync + 'static,
   C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
@@ -92,6 +95,7 @@ pub fn create_full<C, P, SC, B>(
   C::Api: clover_rpc::pair::CurrencyPairRuntimeApi<Block>,
   C::Api: clover_rpc::incentive_pool::IncentivePoolRuntimeApi<Block, AccountId, CurrencyId, Share, Balance>,
   C::Api: clover_rpc::exchange::CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance, Rate, Share>,
+  C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
   C::Api: BabeApi<Block>,
   C::Api: BlockBuilder<Block>,
   P: TransactionPool + 'static,
@@ -102,6 +106,10 @@ pub fn create_full<C, P, SC, B>(
   use substrate_frame_rpc_system::{FullSystem, SystemApi};
   use pallet_contracts_rpc::{Contracts, ContractsApi};
   use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+  use fc_rpc::{
+    EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
+    Web3Api, Web3ApiServer, EthDevSigner, EthSigner, HexEncodedIdProvider,
+  };
 
   let mut io = jsonrpc_core::IoHandler::default();
   let FullDeps {
@@ -111,6 +119,7 @@ pub fn create_full<C, P, SC, B>(
     deny_unsafe,
     babe,
     grandpa,
+    enable_dev_signer,
   } = deps;
 
   let BabeDeps {
@@ -176,6 +185,21 @@ pub fn create_full<C, P, SC, B>(
   io.extend_with(clover_rpc::incentive_pool::IncentivePoolRpc::to_delegate(
     clover_rpc::incentive_pool::IncentivePool::new(client.clone()),
   ));
+
+  let mut signers = Vec::new();
+  if enable_dev_signer {
+    signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
+  }
+  io.extend_with(
+    EthApiServer::to_delegate(EthApi::new(
+      client.clone(),
+      pool.clone(),
+      clover_runtime::TransactionConverter,
+      network.clone(),
+      signers,
+      is_authority,
+    ))
+  );
 
   io
 }

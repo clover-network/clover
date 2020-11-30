@@ -9,7 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use sp_std::{prelude::*, marker::PhantomData};
 use sp_core::{
   crypto::KeyTypeId, crypto::Public,
-  OpaqueMetadata, U256, H160
+  OpaqueMetadata, U256, H160, H256
 };
 use sp_runtime::{
   ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
@@ -60,6 +60,7 @@ use clover_evm::{
   Account as EVMAccount, FeeCalculator, HashedAddressMapping,
   EnsureAddressTruncated, Runner,
 };
+use fp_rpc::{TransactionStatus};
 
 pub use primitives::{
   AccountId, AccountIndex, Amount, Balance, BlockNumber, CurrencyId, EraIndex, Hash, Index,
@@ -333,6 +334,21 @@ impl clover_ethereum::Trait for Runtime {
   type FindAuthor = EthereumFindAuthor<Babe>;
 }
 
+pub struct TransactionConverter;
+
+impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
+  fn convert_transaction(&self, transaction: clover_ethereum::Transaction) -> UncheckedExtrinsic {
+    UncheckedExtrinsic::new_unsigned(clover_ethereum::Call::<Runtime>::transact(transaction).into())
+  }
+}
+
+impl fp_rpc::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConverter {
+  fn convert_transaction(&self, transaction: clover_ethereum::Transaction) -> opaque::UncheckedExtrinsic {
+    let extrinsic = UncheckedExtrinsic::new_unsigned(clover_ethereum::Call::<Runtime>::transact(transaction).into());
+    let encoded = extrinsic.encode();
+    opaque::UncheckedExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
+  }
+}
 
 /// Struct that handles the conversion of Balance -> `u64`. This is used for
 /// staking's election calculation.
@@ -1229,6 +1245,96 @@ impl_runtime_apis! {
   impl clover_rpc_runtime_api::IncentivePoolApi<Block, AccountId, CurrencyId, Balance, Share> for Runtime {
     fn get_all_incentive_pools() -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Share, Balance)> {
       Incentives::get_all_incentive_pools()
+    }
+  }
+
+  impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
+    fn chain_id() -> u64 {
+        <Runtime as clover_evm::Trait>::ChainId::get()
+    }
+
+    fn account_basic(address: H160) -> EVMAccount {
+        EVM::account_basic(&address)
+    }
+
+    fn gas_price() -> U256 {
+        <Runtime as clover_evm::Trait>::FeeCalculator::min_gas_price()
+    }
+
+    fn account_code_at(address: H160) -> Vec<u8> {
+        EVM::account_codes(address)
+    }
+
+    fn author() -> H160 {
+        <clover_ethereum::Module<Runtime>>::find_author()
+    }
+
+    fn storage_at(address: H160, index: U256) -> H256 {
+        let mut tmp = [0u8; 32];
+        index.to_big_endian(&mut tmp);
+        EVM::account_storages(address, H256::from_slice(&tmp[..]))
+    }
+
+    fn call(
+        from: H160,
+        to: H160,
+        data: Vec<u8>,
+        value: U256,
+        gas_limit: U256,
+        gas_price: Option<U256>,
+        nonce: Option<U256>,
+    ) -> Result<clover_evm::CallInfo, sp_runtime::DispatchError> {
+        <Runtime as clover_evm::Trait>::Runner::call(
+            from,
+            to,
+            data,
+            value,
+            gas_limit.low_u32(),
+            gas_price,
+            nonce,
+        ).map_err(|err| err.into())
+    }
+
+    fn create(
+        from: H160,
+        data: Vec<u8>,
+        value: U256,
+        gas_limit: U256,
+        gas_price: Option<U256>,
+        nonce: Option<U256>,
+    ) -> Result<clover_evm::CreateInfo, sp_runtime::DispatchError> {
+        <Runtime as clover_evm::Trait>::Runner::create(
+            from,
+            data,
+            value,
+            gas_limit.low_u32(),
+            gas_price,
+            nonce,
+        ).map_err(|err| err.into())
+    }
+
+    fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+        Ethereum::current_transaction_statuses()
+    }
+
+    fn current_block() -> Option<clover_ethereum::Block> {
+        Ethereum::current_block()
+    }
+
+    fn current_receipts() -> Option<Vec<clover_ethereum::Receipt>> {
+        Ethereum::current_receipts()
+    }
+
+    fn current_all() -> (
+        Option<clover_ethereum::Block>,
+        Option<Vec<clover_ethereum::Receipt>>,
+        Option<Vec<TransactionStatus>>
+    ) {
+        (
+            Ethereum::current_block(),
+            Ethereum::current_receipts(),
+            Ethereum::current_transaction_statuses()
+        )
     }
   }
 }

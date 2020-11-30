@@ -24,12 +24,6 @@ use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
 pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
-#[cfg(all(feature = "std", test))]
-mod tests;
-
-#[cfg(all(feature = "std", test))]
-mod mock;
-
 #[derive(Eq, PartialEq, Clone, sp_runtime::RuntimeDebug)]
 pub enum ReturnValue {
 	Bytes(Vec<u8>),
