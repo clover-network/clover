@@ -88,44 +88,12 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
   let import_setup = (block_import, grandpa_link, babe_link);
 
   let (rpc_extensions_builder, rpc_setup) = {
-    let (_, grandpa_link, babe_link) = &import_setup;
-
-    let justification_stream = grandpa_link.justification_stream();
-    let shared_authority_set = grandpa_link.shared_authority_set().clone();
     let shared_voter_state = SharedVoterState::empty();
     let finality_proof_provider = GrandpaFinalityProofProvider::new_for_service(backend.clone(), client.clone());
 
     let rpc_setup = (shared_voter_state.clone(), finality_proof_provider.clone());
-
-    let babe_config = babe_link.config().clone();
-    let shared_epoch_changes = babe_link.epoch_changes().clone();
-
-    let client = client.clone();
-    let pool = transaction_pool.clone();
-    let select_chain = select_chain.clone();
-    let keystore = keystore.clone();
-
-    let rpc_extensions_builder = move |deny_unsafe, subscription_executor| {
-      let deps = crate::rpc::FullDeps {
-        client: client.clone(),
-        pool: pool.clone(),
-        select_chain: select_chain.clone(),
-        deny_unsafe,
-        babe: crate::rpc::BabeDeps {
-          babe_config: babe_config.clone(),
-          shared_epoch_changes: shared_epoch_changes.clone(),
-          keystore: keystore.clone(),
-        },
-        grandpa: crate::rpc::GrandpaDeps {
-          shared_voter_state: shared_voter_state.clone(),
-          shared_authority_set: shared_authority_set.clone(),
-          justification_stream: justification_stream.clone(),
-          subscription_executor,
-          finality_provider: finality_proof_provider.clone(),
-        },
-      };
-
-      crate::rpc::create_full(deps)
+    let rpc_extensions_builder = move |_deny_unsafe, _subscription_executor| {
+      jsonrpc_core::IoHandler::default()
     };
 
     (rpc_extensions_builder, rpc_setup)
@@ -153,7 +121,7 @@ pub fn new_full_base(config: Configuration,
   let sc_service::PartialComponents {
     client, backend, mut task_manager, import_queue, keystore, select_chain, transaction_pool,
     inherent_data_providers,
-    other: (rpc_extensions_builder, import_setup, _rpc_setup),
+    other: (_, import_setup, _rpc_setup),
   } = new_partial(&config)?;
 
   let finality_proof_provider =
@@ -186,6 +154,47 @@ pub fn new_full_base(config: Configuration,
   let telemetry_connection_sinks = sc_service::TelemetryConnectionSinks::default();
 
   let (block_import, grandpa_link, babe_link) = import_setup;
+
+  let babe_config = babe_link.config().clone();
+  let shared_epoch_changes = babe_link.epoch_changes().clone();
+
+  let pool = transaction_pool.clone();
+
+  let justification_stream = grandpa_link.justification_stream();
+  let shared_authority_set = grandpa_link.shared_authority_set().clone();
+  let subscription_task_executor = sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
+  let copy_network = network.clone();
+  let copy_client = client.clone();
+  let copy_role = config.role.clone();
+  let copy_keystore = keystore.clone();
+  let copy_select_chain = select_chain.clone();
+  let rpc_extensions_builder = move |_deny_unsafe, _subscription_executor| {
+    let deps = crate::rpc::FullDeps {
+      client: copy_client.clone(),
+      pool: pool.clone(),
+      select_chain: copy_select_chain.clone(),
+      deny_unsafe: _deny_unsafe,
+      babe: crate::rpc::BabeDeps {
+        babe_config: babe_config.clone(),
+        shared_epoch_changes: shared_epoch_changes.clone(),
+        keystore: copy_keystore.clone(),
+      },
+      grandpa: crate::rpc::GrandpaDeps {
+        shared_voter_state: _rpc_setup.0.clone(),
+        shared_authority_set: shared_authority_set.clone(),
+        justification_stream: justification_stream.clone(),
+        subscription_executor: _subscription_executor,
+        finality_provider: finality_proof_provider.clone(),
+      },
+      network: copy_network.clone(),
+      is_authority: copy_role.is_authority()
+    };
+
+    crate::rpc::create_full(
+      deps,
+      subscription_task_executor.clone()
+    )
+  };
 
   sc_service::spawn_tasks(sc_service::SpawnTasksParams {
     network: network.clone(),

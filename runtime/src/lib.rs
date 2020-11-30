@@ -6,6 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use codec::Decode;
 use sp_std::{prelude::*, marker::PhantomData};
 use sp_core::{
   crypto::KeyTypeId, crypto::Public,
@@ -14,7 +15,7 @@ use sp_core::{
 use sp_runtime::{
   ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
   ModuleId, transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
-  DispatchResult,
+  DispatchResult, OpaqueExtrinsic
 };
 use sp_runtime::traits::{
   BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion, Saturating,
@@ -342,11 +343,12 @@ impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
   }
 }
 
-impl fp_rpc::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConverter {
-  fn convert_transaction(&self, transaction: clover_ethereum::Transaction) -> opaque::UncheckedExtrinsic {
-    let extrinsic = UncheckedExtrinsic::new_unsigned(clover_ethereum::Call::<Runtime>::transact(transaction).into());
+impl fp_rpc::ConvertTransaction<OpaqueExtrinsic> for TransactionConverter {
+  fn convert_transaction(&self, transaction: clover_ethereum::Transaction) -> OpaqueExtrinsic {
+    let extrinsic =
+        UncheckedExtrinsic::new_unsigned(clover_ethereum::Call::<Runtime>::transact(transaction).into());
     let encoded = extrinsic.encode();
-    opaque::UncheckedExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
+    OpaqueExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
   }
 }
 
