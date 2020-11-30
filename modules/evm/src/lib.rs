@@ -5,7 +5,7 @@ pub mod precompiles;
 
 pub use crate::precompiles::{Precompile, Precompiles};
 pub use crate::runner::Runner;
-pub use primitives::{Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo};
+pub use fp_evm::{Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo};
 pub use evm::{ExitReason, ExitSucceed, ExitError, ExitRevert, ExitFatal};
 
 use sp_std::vec::Vec;

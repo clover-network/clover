@@ -6,10 +6,10 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use sp_std::prelude::*;
+use sp_std::{prelude::*, marker::PhantomData};
 use sp_core::{
-  crypto::KeyTypeId,
-  OpaqueMetadata, U256,
+  crypto::KeyTypeId, crypto::Public,
+  OpaqueMetadata, U256, H160
 };
 use sp_runtime::{
   ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
@@ -48,11 +48,12 @@ pub use sp_runtime::{Permill, Perbill};
 use frame_system::{EnsureRoot, EnsureOneOf};
 pub use frame_support::{
   construct_runtime, debug, parameter_types, StorageValue,
-  traits::{KeyOwnerProofSystem, Randomness, LockIdentifier},
+  traits::{KeyOwnerProofSystem, Randomness, LockIdentifier, FindAuthor},
   weights::{
     Weight, IdentityFee,
     constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
   },
+  ConsensusEngineId
 };
 use codec::{Encode};
 use clover_evm::{
@@ -311,6 +312,25 @@ impl clover_evm::Trait for Runtime {
     clover_evm::precompiles::Identity,
   );
   type ChainId = ChainId;
+}
+
+pub struct EthereumFindAuthor<F>(PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
+{
+  fn find_author<'a, I>(digests: I) -> Option<H160> where
+      I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+  {
+    if let Some(author_index) = F::find_author(digests) {
+      let authority_id = Babe::authorities()[author_index as usize].clone();
+      return Some(H160::from_slice(&authority_id.0.to_raw_vec()[4..24]));
+    }
+    None
+  }
+}
+
+impl clover_ethereum::Trait for Runtime {
+  type Event = Event;
+  type FindAuthor = EthereumFindAuthor<Babe>;
 }
 
 
@@ -922,6 +942,7 @@ construct_runtime!(
     // Smart contracts modules
     Contracts: pallet_contracts::{Module, Call, Config, Storage, Event<T>},
     EVM: clover_evm::{Module, Config, Call, Storage, Event<T>},
+    Ethereum: clover_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
 
     Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
   }

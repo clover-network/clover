@@ -15,12 +15,20 @@ use sp_runtime::{
 	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
 };
 use evm::ExitReason;
+use fp_evm::CallOrCreateInfo;
 use clover_evm::{Runner, GasToWeight};
 use sha3::{Digest, Keccak256};
 use codec::Encode;
+use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
 
-use primitives::{CallOrCreateInfo, FRONTIER_ENGINE_ID, ConsensusLog, TransactionStatus};
+pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
+
+#[cfg(all(feature = "std", test))]
+mod tests;
+
+#[cfg(all(feature = "std", test))]
+mod mock;
 
 #[derive(Eq, PartialEq, Clone, sp_runtime::RuntimeDebug)]
 pub enum ReturnValue {

@@ -4,7 +4,7 @@ use clover_runtime::{
   AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
   Signature, StakerStatus, TokensConfig, IncentivesConfig, CloverDexConfig, BandOracleConfig,
-  CloverOracleConfig, EVMConfig
+  CloverOracleConfig, EVMConfig, EthereumConfig
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -251,6 +251,7 @@ fn testnet_genesis(
     clover_evm: Some(EVMConfig {
       accounts: BTreeMap::new(),
     }),
+    clover_ethereum: Some(EthereumConfig {}),
     pallet_indices: Some(IndicesConfig {
       indices: vec![],
     }),

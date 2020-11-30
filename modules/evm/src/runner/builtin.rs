@@ -271,7 +271,7 @@ pub struct Handler<'vicinity, 'config, T: Trait> {
 	deleted: BTreeSet<H160>,
 	logs: Vec<Log>,
 	precompile: fn(H160, &[u8], Option<usize>) ->
-		Option<Result<(ExitSucceed, Vec<u8>, usize), ExitError>>,
+	Option<Result<(ExitSucceed, Vec<u8>, usize), ExitError>>,
 	is_static: bool,
 	_marker: PhantomData<T>,
 }
@@ -284,7 +284,7 @@ impl<'vicinity, 'config, T: Trait> Handler<'vicinity, 'config, T> {
 		is_static: bool,
 		config: &'config Config,
 		precompile: fn(H160, &[u8], Option<usize>) ->
-			Option<Result<(ExitSucceed, Vec<u8>, usize), ExitError>>,
+		Option<Result<(ExitSucceed, Vec<u8>, usize), ExitError>>,
 	) -> Self {
 		Self {
 			vicinity,

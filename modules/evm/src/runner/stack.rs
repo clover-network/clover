@@ -1,11 +1,10 @@
-//noinspection ALL
 use sp_std::marker::PhantomData;
 use sp_std::vec::Vec;
 use sp_core::{U256, H256, H160};
 use sp_runtime::traits::UniqueSaturatedInto;
 use frame_support::{debug, ensure, traits::{Get, Currency}, storage::{StorageMap, StorageDoubleMap}};
 use sha3::{Keccak256, Digest};
-use primitives::{ExecutionInfo, CallInfo, CreateInfo, Account, Log, Vicinity};
+use fp_evm::{ExecutionInfo, CallInfo, CreateInfo, Account, Log, Vicinity};
 use evm::ExitReason;
 use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
 use evm::executor::StackExecutor;

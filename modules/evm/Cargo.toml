@@ -30,7 +30,7 @@ evm-gasometer = { version = "0.18", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 impl-trait-for-tuples = "0.1"
 ripemd160 = { version = "0.9", default-features = false }
-primitives = { default-features = false, package = 'clover-primitives', path = '../../primitives', version = '0.9.0'}
+fp-evm = { version = "0.9.0", default-features = false, path = "../../primitives/evm" }
 
 [features]
 default = ["std"]
@@ -53,5 +53,5 @@ std = [
 	"evm-gasometer/std",
 	"pallet-timestamp/std",
 	"ripemd160/std",
-	"primitives/std",
+	"fp-evm/std",
 ]

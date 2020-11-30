@@ -769,6 +769,8 @@ dependencies = [
  "hex-literal",
  "jsonrpc-core",
  "jsonrpc-pubsub",
+ "pallet-contracts",
+ "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
  "sc-basic-authorship",
  "sc-cli",
@@ -808,10 +810,12 @@ name = "clover-ethereum"
 version = "0.9.0"
 dependencies = [
  "clover-evm",
- "clover-primitives",
  "ethereum",
  "ethereum-types",
  "evm",
+ "fp-consensus",
+ "fp-evm",
+ "fp-rpc",
  "frame-support",
  "frame-system",
  "libsecp256k1",
@@ -832,10 +836,10 @@ dependencies = [
 name = "clover-evm"
 version = "0.9.0"
 dependencies = [
- "clover-primitives",
  "evm",
  "evm-gasometer",
  "evm-runtime",
+ "fp-evm",
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
@@ -922,18 +926,13 @@ name = "clover-primitives"
 version = "0.9.0"
 dependencies = [
  "enum-iterator",
- "ethereum",
- "ethereum-types",
- "evm",
  "int-enum",
  "num-derive",
  "num-traits",
  "parity-scale-codec",
  "serde",
- "sp-api",
  "sp-core",
  "sp-runtime",
- "sp-std",
  "strum 0.19.5",
  "strum_macros 0.19.4",
 ]
@@ -1847,6 +1846,41 @@ checksum = "ece68d15c92e84fa4f19d3780f1294e5ca82a78a6d515f1efaabcc144688be00"
 dependencies = [
  "matches",
  "percent-encoding 2.1.0",
+]
+
+[[package]]
+name = "fp-consensus"
+version = "0.9.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-evm"
+version = "0.9.0"
+dependencies = [
+ "evm",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-rpc"
+version = "0.9.0"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -4266,6 +4300,26 @@ dependencies = [
  "parity-scale-codec",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-contracts-rpc"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d3fa6317927f11d47c78263fd6363cbd7dda913fa9eb11c182fe2d13b5c6e8a"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
 ]
 
 [[package]]
