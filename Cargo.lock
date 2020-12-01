@@ -777,6 +777,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-rpc",
  "pallet-transaction-payment-rpc",
+ "primitive-types",
  "sc-basic-authorship",
  "sc-cli",
  "sc-client-api",
