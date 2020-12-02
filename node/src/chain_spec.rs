@@ -83,7 +83,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
       ],
       true,
       {
-        let built_in_evm_account = H160::from_str("e6206C7f064c7d77C6d8e3eD8601c9AA435419cE").unwrap();
+        let built_in_evm_account = H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap();
         let mut evm_accounts = BTreeMap::new();
         evm_accounts.insert(
           built_in_evm_account,
@@ -148,7 +148,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
       ],
       true,
       {
-        let built_in_evm_account = H160::from_str("e6206C7f064c7d77C6d8e3eD8601c9AA435419cE").unwrap();
+        let built_in_evm_account = H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap();
         let mut evm_accounts = BTreeMap::new();
         evm_accounts.insert(
           built_in_evm_account,
@@ -222,7 +222,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
       ],
       true,
       {
-        let built_in_evm_account = H160::from_str("e6206C7f064c7d77C6d8e3eD8601c9AA435419cE").unwrap();
+        let built_in_evm_account = H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap();
         let mut evm_accounts = BTreeMap::new();
         evm_accounts.insert(
           built_in_evm_account,
