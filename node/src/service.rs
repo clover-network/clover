@@ -10,6 +10,7 @@ use sp_runtime::traits::Block as BlockT;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_finality_grandpa::{self, FinalityProofProvider as GrandpaFinalityProofProvider, SharedVoterState};
+use fc_consensus::FrontierBlockImport;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -35,7 +36,12 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
       crate::rpc::SubscriptionTaskExecutor
     ) -> crate::rpc::IoHandler,
     (
-      sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+      sc_consensus_babe::BabeBlockImport<Block, FullClient,
+        FrontierBlockImport<
+          Block,
+          FullGrandpaBlockImport,
+          FullClient,
+        >>,
       sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
       sc_consensus_babe::BabeLink<Block>,
     ),
@@ -65,10 +71,11 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
   )?;
 
   let justification_import = grandpa_block_import.clone();
+  let frontier_block_import = FrontierBlockImport::new(grandpa_block_import.clone(), client.clone(), true);
 
   let (block_import, babe_link) = sc_consensus_babe::block_import(
     sc_consensus_babe::Config::get_or_compute(&*client)?,
-    grandpa_block_import,
+    frontier_block_import,
     client.clone(),
   )?;
 
@@ -110,7 +117,9 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 /// Builds a new service for a full client.
 pub fn new_full_base(config: Configuration,
   with_startup_data: impl FnOnce(
-    &sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+    &sc_consensus_babe::BabeBlockImport<Block, FullClient,
+      FrontierBlockImport<Block, FullGrandpaBlockImport, FullClient>,
+    >,
     &sc_consensus_babe::BabeLink<Block>,
   )
 ) -> Result<(
