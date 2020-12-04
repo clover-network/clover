@@ -14,3 +14,4 @@
 .idea
 ev/
 docker/clover
+node_modules
