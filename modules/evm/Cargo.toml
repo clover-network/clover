@@ -1,57 +1,29 @@
 [package]
-name = "clover-evm"
-authors = ['Clover Network <https://github.com/clover-network>']
-edition = '2018'
-license = 'GPL-3.0'
-homepage = 'https://cloverdefi.com'
-repository = 'https://github.com/clover-network/clover'
-version = '0.9.0'
-
-[package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
+name = "evm"
+version = "0.19.0"
+license = "Apache-2.0"
+authors = ["Wei Tang <hi@that.world>", "Parity Technologies <admin@parity.io>"]
+description = "SputnikVM - a Portable Blockchain Virtual Machine"
+repository = "https://github.com/sorpaas/rust-evm"
+keywords = ["no_std", "ethereum"]
+edition = "2018"
 
 [dependencies]
-serde = { version = "1.0.101", optional = true, features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "1.3.4", default-features = false }
-
-frame-support = { version = "2.0.0", default-features = false }
-frame-system = { version = "2.0.0", default-features = false }
-pallet-timestamp = { version = "2.0.0", default-features = false }
-pallet-balances = { version = "2.0.0", default-features = false }
-sp-core = { version = "2.0.0", default-features = false }
-sp-runtime = { version = "2.0.0", default-features = false }
-sp-std = { version = "2.0.0", default-features = false }
-sp-io = { version = "2.0.0", default-features = false }
-primitive-types = { version = "0.7.0", default-features = false, features = ["rlp", "byteorder"] }
-rlp = { version = "0.4", default-features = false }
-evm = { version = "0.18", default-features = false, features = ["with-codec"] }
-evm-runtime = { version = "0.18", default-features = false }
-evm-gasometer = { version = "0.18", default-features = false }
+log = { version = "0.4", default-features = false }
+evm-core = { version = "0.19", path = "core", default-features = false}
+evm-gasometer = { version = "0.19", path = "gasometer", default-features = false}
+evm-runtime = { version = "0.19", path = "runtime", default-features = false}
 sha3 = { version = "0.8", default-features = false }
-impl-trait-for-tuples = "0.1"
-ripemd160 = { version = "0.9", default-features = false }
-fp-evm = { version = "0.9.0", default-features = false, path = "../../primitives/evm" }
+rlp = { version = "0.4", default-features = false }
+primitive-types = { version = "0.7", default-features = false, features = ["rlp"] }
+serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+codec = { package = "parity-scale-codec", version = "1.3", default-features = false, features = ["derive"], optional = true }
+ethereum = { version = ">=0.4, <0.6", default-features = false , path = "../ethereum"}
+frame-support = { version = "2.0.0", default-features = false }
 
 [features]
 default = ["std"]
-std = [
-	"serde",
-	"codec/std",
-	"sp-core/std",
-	"sp-runtime/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-balances/std",
-	"sp-io/std",
-	"sp-std/std",
-	"sha3/std",
-	"rlp/std",
-	"primitive-types/std",
-	"evm/std",
-	"evm/with-serde",
-	"evm-runtime/std",
-	"evm-gasometer/std",
-	"pallet-timestamp/std",
-	"ripemd160/std",
-	"fp-evm/std",
-]
+with-codec = ["codec", "evm-core/with-codec", "primitive-types/codec", "ethereum/with-codec"]
+with-serde = ["serde", "evm-core/with-serde", "primitive-types/serde", "ethereum/with-serde"]
+std = ["evm-core/std", "evm-gasometer/std", "evm-runtime/std", "sha3/std", "primitive-types/std", "serde/std", "codec/std", "log/std", "ethereum/std", "frame-support/std"]
+

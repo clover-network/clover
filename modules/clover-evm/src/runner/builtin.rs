@@ -11,7 +11,7 @@ use frame_support::{
 use sha3::{Keccak256, Digest};
 use evm::{
 	ExternalOpcode, Opcode, ExitError, ExitReason, Capture, Context, CreateScheme, Stack,
-	Transfer, ExitSucceed, Runtime,
+	Transfer, ExitSucceed, Runtime
 };
 use evm_runtime::{Config, Handler as HandlerT};
 use evm_gasometer::{self as gasometer, Gasometer};
@@ -86,6 +86,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 				value: out,
 				used_gas,
 				logs,
+				internal_txs: Vec::new(),
 			};
 
 			match reason {
@@ -154,6 +155,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 				value: address,
 				used_gas,
 				logs,
+				internal_txs: Vec::new(),
 			};
 
 			match reason {
@@ -237,6 +239,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 				value: address,
 				used_gas,
 				logs,
+				internal_txs: Vec::new(),
 			};
 
 			match reason {

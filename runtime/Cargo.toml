@@ -18,8 +18,8 @@ clover-incentives = { path = "../modules/incentives", default-features = false }
 clover-prices = { path = "../modules/prices", default-features = false }
 clover-loans = { path = "../modules/loans", default-features = false }
 clover-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
-clover-evm = { path = "../modules/evm", default-features = false }
-clover-ethereum = { path = "../modules/ethereum", default-features = false }
+clover-evm = { path = "../modules/clover-evm", default-features = false }
+clover-ethereum = { path = "../modules/clover-ethereum", default-features = false }
 fp-rpc = { path = "../primitives/rpc", default-features = false  }
 primitives = { default-features = false, package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
 

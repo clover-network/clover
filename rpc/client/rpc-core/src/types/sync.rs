@@ -69,7 +69,7 @@ pub struct PeerProtocolsInfo {
 /// Peer Ethereum protocol information
 #[derive(Default, Debug, Serialize)]
 pub struct EthProtocolInfo {
-	/// Negotiated ethereum protocol version
+	/// Negotiated clover-ethereum protocol version
 	pub version: u32,
 	/// Peer total difficulty if known
 	pub difficulty: Option<U256>,

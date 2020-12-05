@@ -15,7 +15,7 @@ async function send(transaction, acc) {
     let options = {
         to  : transaction._parent._address,
         data: transaction.encodeABI(),
-        gas : gas
+        gas : gas * 2
     };
     let signedTransaction = await web3.eth.accounts.signTransaction(options, acc.key);
     return await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
@@ -32,11 +32,12 @@ async function deploy(contractName, contractArgs, acc) {
 
 async function run() {
     let myContract = await deploy("helloWorld", [1000], accounts[0]);
-    let ret = await myContract.methods.test().call();
-    let tx = myContract.methods.setValue(9527);
-    let ret2 = await send(tx, accounts[0]);
-    console.log('result: ', ret);
-    console.log('result2: ', await myContract.methods.getValueSelf().call({from: accounts[0].address }));
+    let storage = await deploy("Storage", [], accounts[0]);
+
+    console.log(myContract._address, storage._address)
+    await send(myContract.methods.setStorage(storage._address), accounts[0]);
+    let ret2 = await send(myContract.methods.setValue(9527), accounts[0]);
+    console.log('result: ', ret2);
 }
 
 run();

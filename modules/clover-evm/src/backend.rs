@@ -33,6 +33,18 @@ pub struct Log {
 	pub data: Vec<u8>,
 }
 
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+/// Ethereum internal transaction log.
+pub struct InternalTxs {
+	/// Caller address of the internal tx.
+	pub from: H160,
+	/// Callee address of the internal tx.
+	pub to: H160,
+	/// Gas used for this internal tx.
+	pub gas_used: U256,
+}
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 /// External input from the transaction.

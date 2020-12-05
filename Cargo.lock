@@ -816,7 +816,7 @@ name = "clover-ethereum"
 version = "0.9.0"
 dependencies = [
  "clover-evm",
- "ethereum",
+ "ethereum 0.5.1",
  "ethereum-types",
  "evm",
  "fp-consensus",
@@ -843,11 +843,13 @@ name = "clover-evm"
 version = "0.9.0"
 dependencies = [
  "evm",
+ "evm-core",
  "evm-gasometer",
  "evm-runtime",
  "fp-evm",
  "frame-support",
  "frame-system",
+ "hex-slice",
  "impl-trait-for-tuples",
  "pallet-balances",
  "pallet-timestamp",
@@ -1627,6 +1629,23 @@ dependencies = [
 [[package]]
 name = "ethereum"
 version = "0.5.1"
+dependencies = [
+ "ethereum-types",
+ "hash-db",
+ "hash256-std-hasher",
+ "hex-literal",
+ "parity-scale-codec",
+ "rand 0.7.3",
+ "rlp",
+ "rlp-derive",
+ "serde",
+ "sha3 0.9.1",
+ "triehash",
+]
+
+[[package]]
+name = "ethereum"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01ea35e1b0845310ade8eb048d401b0b899b8eff05c4d2a3454d29ef4eb1b8af"
 dependencies = [
@@ -1664,14 +1683,13 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 
 [[package]]
 name = "evm"
-version = "0.18.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5286da2277b078e7033491d62e674eeccd01d913a87bb60ec0cabbcf80ec62e9"
+version = "0.19.0"
 dependencies = [
- "ethereum",
+ "ethereum 0.5.1",
  "evm-core",
  "evm-gasometer",
  "evm-runtime",
+ "frame-support",
  "log",
  "parity-scale-codec",
  "primitive-types",
@@ -1682,10 +1700,9 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.18.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63c6c39300d7779427f461408d867426e202ea72ac7ece2455689ff0e4bddb6f"
+version = "0.19.0"
 dependencies = [
+ "hex",
  "parity-scale-codec",
  "primitive-types",
  "serde",
@@ -1693,9 +1710,7 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.18.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "689c481648c3f45b64b1278077c04284ad535e068c9d6872153c7b74da7ccb03"
+version = "0.19.0"
 dependencies = [
  "evm-core",
  "evm-runtime",
@@ -1704,9 +1719,7 @@ dependencies = [
 
 [[package]]
 name = "evm-runtime"
-version = "0.18.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61a148ad1b3e0af31aa03c6c3cc9df3a529e279dad8e29b4ef90dccad32601e4"
+version = "0.19.0"
 dependencies = [
  "evm-core",
  "primitive-types",
@@ -1770,7 +1783,7 @@ name = "fc-consensus"
 version = "0.9.0"
 dependencies = [
  "derive_more",
- "ethereum",
+ "ethereum 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "fp-consensus",
  "futures 0.3.8",
  "log",
@@ -1793,7 +1806,7 @@ version = "0.9.0"
 dependencies = [
  "clover-ethereum",
  "clover-evm",
- "ethereum",
+ "ethereum 0.5.1",
  "ethereum-types",
  "fc-consensus",
  "fc-rpc-core",
@@ -1951,8 +1964,9 @@ dependencies = [
 name = "fp-rpc"
 version = "0.9.0"
 dependencies = [
- "ethereum",
+ "ethereum 0.5.1",
  "ethereum-types",
+ "evm",
  "fp-evm",
  "parity-scale-codec",
  "sp-api",
@@ -2588,6 +2602,12 @@ name = "hex-literal"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5af1f635ef1bc545d78392b136bfe1c9809e029023c84a3638a864a10b8819c8"
+
+[[package]]
+name = "hex-slice"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5491a308e0214554f07a81d8944abe45f552871c12e3c3c6e7e5d354039a6c4c"
 
 [[package]]
 name = "hex_fmt"

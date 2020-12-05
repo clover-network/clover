@@ -21,7 +21,7 @@ use fc_rpc_core::{EthApi as EthApiT, NetApi as NetApiT, Web3Api as Web3ApiT};
 use fc_rpc_core::types::{
 	BlockNumber, Bytes, CallRequest, Filter, FilteredParams, Index, Log, Receipt, RichBlock,
 	SyncStatus, SyncInfo, Transaction, Work, Rich, Block, BlockTransactions, VariadicValue,
-	TransactionRequest,
+	TransactionRequest, InternalTransaction
 };
 use fp_rpc::{EthereumRuntimeRPCApi, ConvertTransaction, TransactionStatus};
 use crate::{internal_err, error_on_execution_failure, EthSigner};
@@ -841,6 +841,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					},
 					gas_used: Some(receipt.used_gas),
 					contract_address: status.contract_address,
+
 					logs: {
 						let mut pre_receipts_log_index = None;
 						if cumulative_receipts.len() > 0 {
@@ -869,6 +870,13 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 					status_code: Some(U64::from(receipt.state_root.to_low_u64_be())),
 					logs_bloom: receipt.logs_bloom,
 					state_root: None,
+					internal_transactions: status.internal_transactions.iter().enumerate().map(|(_i, x)| {
+						InternalTransaction {
+							from: Some(x.parent),
+							to: Some(x.node),
+							gas_used: Some(x.gas_used),
+						}
+					}).collect(),
 				}))
 			}
 			_ => Ok(None),

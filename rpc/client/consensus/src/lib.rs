@@ -140,7 +140,7 @@ fn find_frontier_log<B: BlockT>(
 ) -> Result<ConsensusLog, Error> {
 	let mut frontier_log: Option<_> = None;
 	for log in header.digest().logs() {
-		trace!(target: "frontier-consensus", "Checking log {:?}, looking for ethereum block.", log);
+		trace!(target: "frontier-consensus", "Checking log {:?}, looking for clover-ethereum block.", log);
 		let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
 		match (log, frontier_log.is_some()) {
 			(Some(_), true) =>

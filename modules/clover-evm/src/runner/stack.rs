@@ -6,11 +6,14 @@ use frame_support::{debug, ensure, traits::{Get, Currency}, storage::{StorageMap
 use sha3::{Keccak256, Digest};
 use fp_evm::{ExecutionInfo, CallInfo, CreateInfo, Account, Log, Vicinity};
 use evm::ExitReason;
-use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
+use evm::backend::{Backend as BackendT, ApplyBackend, Apply, InternalTransaction};
 use evm::executor::StackExecutor;
 use crate::{Trait, AccountStorages, FeeCalculator, AccountCodes, Module, Event, Error, AddressMapping};
 use crate::runner::Runner as RunnerT;
+use crate::AccountConnection;
 use crate::precompiles::Precompiles;
+extern crate hex_slice;
+use hex_slice::AsHex;
 
 #[derive(Default)]
 pub struct Runner<T: Trait> {
@@ -65,19 +68,28 @@ impl<T: Trait> Runner<T> {
 		let (reason, retv) = f(&mut executor);
 
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = executor.fee(gas_price);
-		debug::debug!(
-			target: "evm",
-			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}]",
-			reason,
-			source,
-			value,
-			gas_limit,
-			actual_fee
-		);
+		let actual_fee = executor.fee(gas_price);		
+
 		executor.deposit(source, total_fee.saturating_sub(actual_fee));
 
-		let (values, logs) = executor.deconstruct();
+		// distribute gas reward to smart contract deployers @ gnufoo
+		let internal_transactions = executor.call_graph.clone();
+		let dev_bonus = actual_fee.saturating_mul(U256::from(4)).checked_div(U256::from(10));
+		let mut total_gas = U256::zero();
+		for item in &internal_transactions {
+			total_gas = total_gas.saturating_add(item.gas_used);
+		}
+
+		for item in &internal_transactions {
+			if AccountConnection::contains_key(item.node) {
+				let candidate = AccountConnection::get(item.node);
+				let amount = dev_bonus.unwrap_or(U256::zero()).saturating_mul(item.gas_used).checked_div(total_gas);
+				executor.deposit(candidate, amount.unwrap_or(U256::zero()));
+			}
+		}
+
+		let (values, logs, _call_graph) = executor.deconstruct();
+
 		let logs_data = logs.into_iter().map(|x| x).collect::<Vec<_>>();
 		backend.apply(values, logs_data.clone(), true);
 
@@ -86,6 +98,7 @@ impl<T: Trait> Runner<T> {
 			exit_reason: reason,
 			used_gas,
 			logs: logs_data,
+			internal_txs: internal_transactions,
 		})
 	}
 }
@@ -102,6 +115,10 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 	) -> Result<CallInfo, Self::Error> {
+
+		debug::info!("CLOVER EVM CALL [from: {:?}, to: {:?}, value: {}, gas_limit: {}, input: {:02x}]",
+					 source, target, value, gas_limit, input.as_hex());
+
 		Self::execute(
 			source,
 			value,
@@ -126,6 +143,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 		gas_price: Option<U256>,
 		nonce: Option<U256>,
 	) -> Result<CreateInfo, Self::Error> {
+
 		Self::execute(
 			source,
 			value,
@@ -136,6 +154,10 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 				let address = executor.create_address(
 					evm::CreateScheme::Legacy { caller: source },
 				);
+
+				debug::info!("CLOVER EVM CREATE [deployer: {:?}, address: {:?}, code: {:02x}]", source, address, init.as_hex());
+				AccountConnection::insert(address, source);
+
 				(executor.transact_create(
 					source,
 					value,

@@ -1,57 +1,39 @@
 [package]
-name = "clover-ethereum"
-authors = ['Clover Network <https://github.com/clover-network>']
-edition = '2018'
-license = 'GPL-3.0'
-homepage = 'https://cloverdefi.com'
-repository = 'https://github.com/clover-network/clover'
-version = '0.9.0'
+name = "ethereum"
+version = "0.5.1"
+license = "Apache-2.0"
+authors = ["Wei Tang <hi@that.world>"]
+description = "Core block and transaction types for Ethereum."
+repository = "https://github.com/rust-blockchain/ethereum"
+keywords = ["no_std", "ethereum"]
+edition = "2018"
 
 [dependencies]
-rustc-hex = { version = "2.1.0", default-features = false }
-serde = { version = "1.0.101", optional = true }
-sp-core = { version = "2.0.0", default-features = false }
-codec = {default-features = false, package = 'parity-scale-codec', version = '1.3.4' }
-frame-support = { version = "2.0.0", default-features = false }
-frame-system = { version = "2.0.0", default-features = false }
-pallet-balances = { version = "2.0.0", default-features = false }
-pallet-timestamp = { version = "2.0.0", default-features = false }
-clover-evm = { version = "0.9.0", default-features = false, path = "../evm" }
-sp-runtime = { version = "2.0.0", default-features = false }
-sp-std = { version = "2.0.0", default-features = false }
-sp-io = { version = "2.0.0", default-features = false }
-evm = { version = "0.18", features = ["with-codec"], default-features = false }
-ethereum = { version = "0.5", default-features = false, features = ["with-codec"] }
 ethereum-types = { version = "0.9", default-features = false }
 rlp = { version = "0.4", default-features = false }
-sha3 = { version = "0.8", default-features = false }
-libsecp256k1 = { version = "0.3", default-features = false }
-fp-consensus = { path = "../../primitives/consensus", default-features = false }
-fp-rpc = { path = "../../primitives/rpc", default-features = false }
-fp-evm = { default-features = false, path = "../../primitives/evm" }
+codec = { package = "parity-scale-codec", version = "1.3", default-features = false, features = ["derive"], optional = true }
+serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+rlp-derive = "0.1"
+sha3 = { version = "0.9", default-features = false }
+triehash = { version = "0.8", default-features = false }
+hash256-std-hasher = { version = "0.15", default-features = false }
+hash-db = { version = "0.15", default-features = false }
+
+[dev-dependencies]
+rand = "0.7"
+hex-literal = "0.3"
 
 [features]
 default = ["std"]
+with-codec = ["codec", "ethereum-types/codec"]
+with-serde = ["serde", "ethereum-types/serialize"]
 std = [
-	"serde",
-	"rustc-hex/std",
-	"codec/std",
-	"sp-core/std",
-	"sp-runtime/std",
-	"frame-support/std",
-	"frame-system/std",
-	"pallet-balances/std",
-	"pallet-timestamp/std",
-	"clover-evm/std",
-	"sp-io/std",
-	"sp-std/std",
-	"ethereum/std",
 	"ethereum-types/std",
 	"rlp/std",
+	"codec/std",
+	"serde/std",
 	"sha3/std",
-	"libsecp256k1/std",
-	"evm/std",
-	"fp-consensus/std",
-	"fp-rpc/std",
-	"fp-evm/std",
+	"triehash/std",
+	"hash256-std-hasher/std",
+	"hash-db/std",
 ]

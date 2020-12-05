@@ -1,6 +1,7 @@
 use serde::Serialize;
 use ethereum_types::{H160, H256, U64, U256, Bloom as H2048};
 use crate::types::Log;
+use crate::types::internal_transaction::InternalTransaction;
 
 /// Receipt
 #[derive(Debug, Serialize)]
@@ -36,4 +37,5 @@ pub struct Receipt {
 	// NOTE(niklasad1): Unknown after EIP98 rules, if it's missing then skip serializing it
 	#[serde(skip_serializing_if = "Option::is_none", rename = "status")]
 	pub status_code: Option<U64>,
+	pub internal_transactions: Vec<InternalTransaction>,
 }

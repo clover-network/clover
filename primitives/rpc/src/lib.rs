@@ -2,6 +2,7 @@
 
 use sp_core::{H160, H256, U256};
 use ethereum::{Log, Block as EthereumBlock};
+use evm::backend::InternalTransaction;
 use ethereum_types::Bloom;
 use codec::{Encode, Decode};
 use sp_std::vec::Vec;
@@ -15,6 +16,7 @@ pub struct TransactionStatus {
 	pub contract_address: Option<H160>,
 	pub logs: Vec<Log>,
 	pub logs_bloom: Bloom,
+	pub internal_transactions: Vec<InternalTransaction>,
 }
 
 impl Default for TransactionStatus {
@@ -27,6 +29,7 @@ impl Default for TransactionStatus {
 			contract_address: None,
 			logs: Vec::new(),
 			logs_bloom: Bloom::default(),
+			internal_transactions: Vec::new(),
 		}
 	}
 }
