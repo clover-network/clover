@@ -875,6 +875,8 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 							from: Some(x.parent),
 							to: Some(x.node),
 							gas_used: Some(x.gas_used),
+							developer: x.developer,
+							developer_reward: x.developer_reward,
 						}
 					}).collect(),
 				}))

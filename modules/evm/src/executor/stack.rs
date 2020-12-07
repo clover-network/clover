@@ -693,6 +693,8 @@ impl<'backend, 'config, B: Backend> StackExecutor<'backend, 'config, B> {
 			parent: last_context.caller,
 			node: last_context.address,
 			gas_used: From::from(gas_limit - current_gas),
+			developer: None,
+			developer_reward: None
 		};
 
 		debug::info!("========================EVM INTERNAL CALL [caller: {}, address: {}, used_gas: {}]", 

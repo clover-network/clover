@@ -6,7 +6,7 @@ use frame_support::{debug, ensure, traits::{Get, Currency}, storage::{StorageMap
 use sha3::{Keccak256, Digest};
 use fp_evm::{ExecutionInfo, CallInfo, CreateInfo, Account, Log, Vicinity};
 use evm::ExitReason;
-use evm::backend::{Backend as BackendT, ApplyBackend, Apply, InternalTransaction};
+use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
 use evm::executor::StackExecutor;
 use crate::{Trait, AccountStorages, FeeCalculator, AccountCodes, Module, Event, Error, AddressMapping};
 use crate::runner::Runner as RunnerT;
@@ -73,20 +73,23 @@ impl<T: Trait> Runner<T> {
 		executor.deposit(source, total_fee.saturating_sub(actual_fee));
 
 		// distribute gas reward to smart contract deployers @ gnufoo
-		let internal_transactions = executor.call_graph.clone();
+		let mut internal_transactions = executor.call_graph.clone();
 		let dev_bonus = actual_fee.saturating_mul(U256::from(4)).checked_div(U256::from(10));
 		let mut total_gas = U256::zero();
 		for item in &internal_transactions {
 			total_gas = total_gas.saturating_add(item.gas_used);
 		}
 
-		for item in &internal_transactions {
-			if AccountConnection::contains_key(item.node) {
-				let candidate = AccountConnection::get(item.node);
-				let amount = dev_bonus.unwrap_or(U256::zero()).saturating_mul(item.gas_used).checked_div(total_gas);
+		for i in 0..internal_transactions.len() {
+			if AccountConnection::contains_key(internal_transactions[i].node) {
+				let candidate = AccountConnection::get(internal_transactions[i].node);
+				let amount = dev_bonus.unwrap_or(U256::zero()).saturating_mul(internal_transactions[i].gas_used).checked_div(total_gas);
 				executor.deposit(candidate, amount.unwrap_or(U256::zero()));
+				internal_transactions[i].developer = Some(candidate);
+				internal_transactions[i].developer_reward = amount;
 			}
 		}
+
 
 		let (values, logs, _call_graph) = executor.deconstruct();
 

@@ -22,7 +22,7 @@ pub struct Basic {
 
 pub use ethereum::Log;
 
-/// internal transaction  information.
+/// internal transaction information.
 #[derive(Clone, Eq, PartialEq, Debug, Default)]
 #[cfg_attr(feature = "with-codec", derive(codec::Encode, codec::Decode))]
 #[cfg_attr(feature = "with-serde", derive(serde::Serialize, serde::Deserialize))]
@@ -33,6 +33,10 @@ pub struct InternalTransaction {
 	pub node: H160,
 	/// gas used for this transaction
 	pub gas_used: U256,
+	/// contract developers
+	pub developer: Option<H160>,
+	/// gas distributed
+	pub developer_reward: Option<U256>,
 }
 
 /// Apply state operation.
