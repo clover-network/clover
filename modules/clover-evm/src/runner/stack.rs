@@ -6,7 +6,7 @@ use frame_support::{debug, ensure, traits::{Get, Currency}, storage::{StorageMap
 use sha3::{Keccak256, Digest};
 use fp_evm::{ExecutionInfo, CallInfo, CreateInfo, Account, Log, Vicinity};
 use evm::ExitReason;
-use evm::backend::{Backend as BackendT, ApplyBackend, Apply, InternalTransaction};
+use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
 use evm::executor::StackExecutor;
 use crate::{Trait, AccountStorages, FeeCalculator, AccountCodes, Module, Event, Error, AddressMapping};
 use crate::runner::Runner as RunnerT;
