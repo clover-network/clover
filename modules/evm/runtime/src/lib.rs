@@ -240,7 +240,7 @@ impl Config {
 			has_chain_id: false,
 			has_self_balance: false,
 			has_ext_code_hash: false,
-			estimate: false,
+			estimate: true,
 		}
 	}
 
@@ -281,7 +281,7 @@ impl Config {
 			has_chain_id: true,
 			has_self_balance: true,
 			has_ext_code_hash: true,
-			estimate: false,
+			estimate: true,
 		}
 	}
 }
