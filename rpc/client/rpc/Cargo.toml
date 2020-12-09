@@ -27,6 +27,7 @@ sc-service = { version = "0.8.0" }
 sc-client-api = { version = "2.0.0" }
 sc-rpc = { version = "2.0.0" }
 sc-network = { version = "0.8.0" }
+frame-support = { version = "2.0.0", default-features = false }
 clover-evm = { path = "../../../modules/clover-evm" }
 clover-ethereum = { path = "../../../modules/clover-ethereum" }
 ethereum = { version = "0.5.1", features = ["with-codec"] , path ="../../../modules/ethereum"}

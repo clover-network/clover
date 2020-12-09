@@ -1811,6 +1811,7 @@ dependencies = [
  "fc-consensus",
  "fc-rpc-core",
  "fp-rpc",
+ "frame-support",
  "futures 0.3.8",
  "jsonrpc-core 15.1.0",
  "jsonrpc-core-client 14.2.0",

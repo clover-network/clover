@@ -4,6 +4,7 @@ use ethereum::{
 	Block as EthereumBlock, Transaction as EthereumTransaction,
 	TransactionMessage as EthereumTransactionMessage,
 };
+use frame_support::debug;
 use ethereum_types::{H160, H256, H64, U256, U64, H512};
 use jsonrpc_core::{BoxFuture, Result, futures::future::{self, Future}};
 use futures::future::TryFutureExt;
@@ -658,7 +659,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 
 		let gas_limit = gas.unwrap_or(U256::max_value()); // TODO: set a limit
 		let data = data.map(|d| d.0).unwrap_or_default();
-
+		debug::info!("estimate gas hash: {:?}, data: {:?}", hash, data);
 		let used_gas = match to {
 			Some(to) => {
 				let info = self.client.runtime_api()
