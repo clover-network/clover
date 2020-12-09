@@ -1285,7 +1285,16 @@ impl_runtime_apis! {
         gas_limit: U256,
         gas_price: Option<U256>,
         nonce: Option<U256>,
+        estimate: bool,
     ) -> Result<clover_evm::CallInfo, sp_runtime::DispatchError> {
+        let config = if estimate {
+            let mut config = <Runtime as clover_evm::Trait>::config().clone();
+            config.estimate = true;
+            Some(config)
+        } else {
+            None
+        };
+
         <Runtime as clover_evm::Trait>::Runner::call(
             from,
             to,
@@ -1294,6 +1303,7 @@ impl_runtime_apis! {
             gas_limit.low_u32(),
             gas_price,
             nonce,
+            config.as_ref().unwrap_or(<Runtime as clover_evm::Trait>::config()),
         ).map_err(|err| err.into())
     }
 
@@ -1304,7 +1314,16 @@ impl_runtime_apis! {
         gas_limit: U256,
         gas_price: Option<U256>,
         nonce: Option<U256>,
+        estimate: bool,
     ) -> Result<clover_evm::CreateInfo, sp_runtime::DispatchError> {
+        let config = if estimate {
+            let mut config = <Runtime as clover_evm::Trait>::config().clone();
+            config.estimate = true;
+            Some(config)
+        } else {
+            None
+        };
+
         <Runtime as clover_evm::Trait>::Runner::create(
             from,
             data,
@@ -1312,6 +1331,7 @@ impl_runtime_apis! {
             gas_limit.low_u32(),
             gas_price,
             nonce,
+            config.as_ref().unwrap_or(<Runtime as clover_evm::Trait>::config()),
         ).map_err(|err| err.into())
     }
 
