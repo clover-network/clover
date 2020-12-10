@@ -1,0 +1,34 @@
+[package]
+name = "fp-rpc"
+authors = ['Clover Network <https://github.com/clover-network>']
+description = "Clover primitives definitions"
+edition = "2018"
+license = 'GPL-3.0'
+homepage = "https://substrate.dev"
+repository = 'https://github.com/clover-network/clover'
+version = '0.9.0'
+
+[dependencies]
+sp-core = { version = '2.0.0', default-features = false }
+sp-api = { version = "2.0.0", default-features = false }
+fp-evm = { version = "0.9.0", default-features = false, path = "../../primitives/evm" }
+ethereum = { version = "0.5", default-features = false, features = ["with-codec"], path = "../../modules/ethereum" }
+ethereum-types = { version = "0.9", default-features = false }
+codec = { package = "parity-scale-codec", version = "1.3.4", default-features = false }
+sp-runtime = { version = '2.0.0', default-features = false }
+sp-std = { version = "2.0.0", default-features = false }
+evm = { version = "0.19", default-features = false, features = ["with-codec"], path = "../../modules/evm" }
+
+[features]
+default = ["std"]
+std = [
+	"sp-core/std",
+	"sp-api/std",
+	"fp-evm/std",
+	"ethereum/std",
+	"ethereum-types/std",
+	"codec/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"evm/std",
+]

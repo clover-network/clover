@@ -1,0 +1,39 @@
+[package]
+name = "ethereum"
+version = "0.5.1"
+license = "Apache-2.0"
+authors = ["Wei Tang <hi@that.world>"]
+description = "Core block and transaction types for Ethereum."
+repository = "https://github.com/rust-blockchain/ethereum"
+keywords = ["no_std", "ethereum"]
+edition = "2018"
+
+[dependencies]
+ethereum-types = { version = "0.9", default-features = false }
+rlp = { version = "0.4", default-features = false }
+codec = { package = "parity-scale-codec", version = "1.3", default-features = false, features = ["derive"], optional = true }
+serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+rlp-derive = "0.1"
+sha3 = { version = "0.9", default-features = false }
+triehash = { version = "0.8", default-features = false }
+hash256-std-hasher = { version = "0.15", default-features = false }
+hash-db = { version = "0.15", default-features = false }
+
+[dev-dependencies]
+rand = "0.7"
+hex-literal = "0.3"
+
+[features]
+default = ["std"]
+with-codec = ["codec", "ethereum-types/codec"]
+with-serde = ["serde", "ethereum-types/serialize"]
+std = [
+	"ethereum-types/std",
+	"rlp/std",
+	"codec/std",
+	"serde/std",
+	"sha3/std",
+	"triehash/std",
+	"hash256-std-hasher/std",
+	"hash-db/std",
+]

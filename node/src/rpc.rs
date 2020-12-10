@@ -21,6 +21,8 @@ use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
 use sp_transaction_pool::TransactionPool;
+use sc_network::NetworkService;
+use jsonrpc_pubsub::manager::SubscriptionManager;
 
 
 /// Light client extra dependencies.
@@ -73,6 +75,10 @@ pub struct FullDeps<C, P, SC, B> {
   pub babe: BabeDeps,
   /// GRANDPA specific dependencies.
   pub grandpa: GrandpaDeps<B>,
+  /// The Node authority flag
+  pub is_authority: bool,
+  /// Network service
+  pub network: Arc<NetworkService<Block, Hash>>,
 }
 
 /// A IO handler that uses all Full RPC extensions.
@@ -81,8 +87,10 @@ pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 /// Instantiate all Full RPC extensions.
 pub fn create_full<C, P, SC, B>(
   deps: FullDeps<C, P, SC, B>,
+  subscription_task_executor: SubscriptionTaskExecutor
 ) -> jsonrpc_core::IoHandler<sc_rpc_api::Metadata> where
-  C: ProvideRuntimeApi<Block>,
+  C: ProvideRuntimeApi<Block> + sc_client_api::backend::StorageProvider<Block, B> + sc_client_api::AuxStore,
+  C: sc_client_api::client::BlockchainEvents<Block>,
   C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError> + 'static,
   C: Send + Sync + 'static,
   C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
@@ -92,13 +100,18 @@ pub fn create_full<C, P, SC, B>(
   C::Api: clover_rpc::pair::CurrencyPairRuntimeApi<Block>,
   C::Api: clover_rpc::incentive_pool::IncentivePoolRuntimeApi<Block, AccountId, CurrencyId, Share, Balance>,
   C::Api: clover_rpc::exchange::CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance, Rate, Share>,
+  C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
   C::Api: BabeApi<Block>,
   C::Api: BlockBuilder<Block>,
-  P: TransactionPool + 'static,
+  P: TransactionPool<Block=Block> + 'static,
   SC: SelectChain<Block> +'static,
   B: sc_client_api::Backend<Block> + Send + Sync + 'static,
   B::State: sc_client_api::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
+  use fc_rpc::{
+    EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
+    Web3Api, Web3ApiServer, EthDevSigner, EthSigner, HexEncodedIdProvider,
+  };
   use substrate_frame_rpc_system::{FullSystem, SystemApi};
   use pallet_contracts_rpc::{Contracts, ContractsApi};
   use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -111,6 +124,8 @@ pub fn create_full<C, P, SC, B>(
     deny_unsafe,
     babe,
     grandpa,
+    is_authority,
+    network,
   } = deps;
 
   let BabeDeps {
@@ -127,7 +142,7 @@ pub fn create_full<C, P, SC, B>(
   } = grandpa;
 
   io.extend_with(
-    SystemApi::to_delegate(FullSystem::new(client.clone(), pool, deny_unsafe))
+    SystemApi::to_delegate(FullSystem::new(client.clone(), pool.clone(), deny_unsafe))
   );
   io.extend_with(
     TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone()))
@@ -176,6 +191,42 @@ pub fn create_full<C, P, SC, B>(
   io.extend_with(clover_rpc::incentive_pool::IncentivePoolRpc::to_delegate(
     clover_rpc::incentive_pool::IncentivePool::new(client.clone()),
   ));
+
+  let mut signers = Vec::new();
+  signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
+  io.extend_with(EthApiServer::to_delegate(EthApi::new(
+    client.clone(),
+    pool.clone(),
+    clover_runtime::TransactionConverter,
+    network.clone(),
+    signers,
+    is_authority,
+  )));
+
+  io.extend_with(
+    NetApiServer::to_delegate(NetApi::new(
+      client.clone(),
+      network.clone(),
+    ))
+  );
+
+  io.extend_with(
+    Web3ApiServer::to_delegate(Web3Api::new(
+      client.clone(),
+    ))
+  );
+
+  io.extend_with(
+    EthPubSubApiServer::to_delegate(EthPubSubApi::new(
+      pool.clone(),
+      client.clone(),
+      network.clone(),
+      SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
+        HexEncodedIdProvider::default(),
+        Arc::new(subscription_task_executor)
+      ),
+    ))
+  );
 
   io
 }

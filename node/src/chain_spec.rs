@@ -1,10 +1,10 @@
 use serde_json::json;
-use sp_core::{Pair, Public, sr25519};
+use sp_core::{Pair, Public, sr25519, U256};
 use clover_runtime::{
   AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig, ImOnlineId,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
   Signature, StakerStatus, TokensConfig, IncentivesConfig, CloverDexConfig, BandOracleConfig,
-  CloverOracleConfig
+  CloverOracleConfig, EVMConfig, EthereumConfig
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -13,6 +13,10 @@ use sc_service::ChainType;
 use hex_literal::hex;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::UncheckedInto;
+use std::collections::BTreeMap;
+use clover_evm::GenesisAccount;
+use primitive_types::H160;
+use std::str::FromStr;
 
 // The URL for the telemetry server.
 const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -55,6 +59,26 @@ pub fn authority_keys_from_seed(s: &str) -> (AccountId, AccountId, BabeId, Grand
   )
 }
 
+fn endowed_evm_account() -> BTreeMap<H160, GenesisAccount>{
+  let endowed_account = vec![
+    H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap(),
+    H160::from_str("e6206C7f064c7d77C6d8e3eD8601c9AA435419cE").unwrap()
+  ];
+  let mut evm_accounts = BTreeMap::new();
+  for account in endowed_account {
+    evm_accounts.insert(
+      account,
+      GenesisAccount {
+        nonce: U256::from(0),
+        balance: U256::from(10000_000000_000000_000000_u128),
+        storage: Default::default(),
+        code: vec![],
+      },
+    );
+  }
+  evm_accounts
+}
+
 pub fn development_config() -> Result<ChainSpec, String> {
   let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
 
@@ -80,6 +104,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
       ],
       true,
+      endowed_evm_account()
       ),
     // Bootnodes
     vec![],
@@ -131,6 +156,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
       ],
       true,
+      endowed_evm_account()
     ),
     // Bootnodes
     vec![],
@@ -194,6 +220,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
         hex!["26f702ab9792cbb2ea9c23b9f7982b6f6d6e9c3561e701175f9df919cf75f01f"].into(),
       ],
       true,
+      endowed_evm_account()
     ),
     // Bootnodes
     vec![
@@ -225,6 +252,7 @@ fn testnet_genesis(
   root_key: AccountId,
   endowed_accounts: Vec<AccountId>,
   _enable_println: bool,
+  endowed_eth_accounts: BTreeMap<H160, GenesisAccount>,
 ) -> GenesisConfig {
   use clover_runtime::{DOLLARS};
 
@@ -252,7 +280,10 @@ fn testnet_genesis(
         ..Default::default()
       },
     }),
-		pallet_evm: Some(Default::default()),
+    clover_evm: Some(EVMConfig {
+      accounts: endowed_eth_accounts,
+    }),
+    clover_ethereum: Some(EthereumConfig {}),
     pallet_indices: Some(IndicesConfig {
       indices: vec![],
     }),
