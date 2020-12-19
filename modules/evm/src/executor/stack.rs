@@ -681,11 +681,6 @@ impl<'backend, 'config, B: Backend> StackExecutor<'backend, 'config, B> {
 			self.config,
 		);
 
-		let before_gas = self.substates.last()
-			.expect("substate vec always have length greater than one; qed")
-			.gasometer
-			.gas();
-
 		let reason = self.execute(&mut runtime);
 		log::debug!(target: "evm", "Call execution using address {}: {:?}", code_address, reason);
 
@@ -702,8 +697,8 @@ impl<'backend, 'config, B: Backend> StackExecutor<'backend, 'config, B> {
 			developer_reward: None
 		};
 
-		debug::info!("========================EVM INTERNAL CALL [caller: {}, address: {}, used_gas: {}, before: {}]",
-			logcall.parent, logcall.node, logcall.gas_used, before_gas);
+		debug::info!("========================EVM INTERNAL CALL [caller: {}, address: {}, used_gas: {}]",
+			logcall.parent, logcall.node, logcall.gas_used);
 
 		self.call_graph.push(logcall);
 

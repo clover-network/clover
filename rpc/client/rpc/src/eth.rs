@@ -710,42 +710,32 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 	fn estimate_gas(&self, request: CallRequest, block_number: Option<BlockNumber>) -> Result<U256> {
 		let mut test_request = request.clone();
 		test_request.gas = Some(U256::max_value());
-		let result = self.fast_estimate_gas(test_request, block_number.clone());
-		match result {
+		let used_gas = self.fast_estimate_gas(test_request, block_number.clone())?;
+		let mut fist_request = request.clone();
+		fist_request.gas = Some(used_gas);
+		let first_result = self.fast_estimate_gas(fist_request, block_number.clone());
+		match first_result {
+			// in most cases, estimate gas will work
 			Ok(used_gas) => {
-				let mut fist_request = request.clone();
-				fist_request.gas = Some(used_gas);
-				let first_result = self.fast_estimate_gas(fist_request, block_number.clone());
-				match first_result {
-					// in most cases, estimate gas will work
-					Ok(used_gas) => {
-						Ok(used_gas)
-					}
-					// do binary search
-					Err(_) => {
-						let mut lower = used_gas;
-						let mut upper = used_gas * 64 / 63;
-						let mut mid= upper;
-						while lower + 2 < upper {
-							mid = (lower + upper + 1) / 2;
-							let mut test_request = request.clone();
-							test_request.gas = Some(mid);
-							let test_result = self.fast_estimate_gas(test_request, block_number.clone());
-							match test_result {
-								Ok(_) => {
-									upper = mid;
-								}
-								Err(_) => {
-									lower = mid;
-								}
-							}
-						}
-						Ok(mid)
+				Ok(used_gas)
+			}
+			// do binary search
+			Err(_) => {
+				let mut lower = used_gas;
+				let mut upper = used_gas * 64 / 63;
+				let mut mid = upper;
+				while lower + 2 < upper {
+					mid = (lower + upper + 1) / 2;
+					let mut test_request = request.clone();
+					test_request.gas = Some(mid);
+					let test_result = self.fast_estimate_gas(test_request, block_number.clone());
+					if test_result.is_ok() {
+						upper = mid;
+					} else {
+						lower = mid;
 					}
 				}
-			}
-			Err(e) => {
-				Err(e)
+				Ok(mid)
 			}
 		}
 	}
