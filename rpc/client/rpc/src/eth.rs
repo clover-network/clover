@@ -724,18 +724,20 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 				let mut lower = used_gas;
 				let mut upper = used_gas * 64 / 63;
 				let mut mid = upper;
-				while lower + 2 < upper {
+				let mut best = mid;
+				while lower + 1 < upper {
 					mid = (lower + upper + 1) / 2;
 					let mut test_request = request.clone();
 					test_request.gas = Some(mid);
 					let test_result = self.fast_estimate_gas(test_request, block_number.clone());
 					if test_result.is_ok() {
 						upper = mid;
+						best = mid;
 					} else {
 						lower = mid;
 					}
 				}
-				Ok(mid)
+				Ok(best)
 			}
 		}
 	}
