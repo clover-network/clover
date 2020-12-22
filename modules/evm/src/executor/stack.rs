@@ -697,7 +697,7 @@ impl<'backend, 'config, B: Backend> StackExecutor<'backend, 'config, B> {
 			developer_reward: None
 		};
 
-		debug::info!("========================EVM INTERNAL CALL [caller: {}, address: {}, used_gas: {}]", 
+		debug::info!("========================EVM INTERNAL CALL [caller: {}, address: {}, used_gas: {}]",
 			logcall.parent, logcall.node, logcall.gas_used);
 
 		self.call_graph.push(logcall);
@@ -907,7 +907,14 @@ impl<'backend, 'config, B: Backend> Handler for StackExecutor<'backend, 'config,
 		is_static: bool,
 		context: Context,
 	) -> Capture<(ExitReason, Vec<u8>), Self::CallInterrupt> {
-		self.call_inner(code_address, transfer, input, target_gas, is_static, true, true, context)
+		let res = self.call_inner(code_address, transfer, input, target_gas, is_static, true, true, context);
+
+		let gas = self.substates.last()
+			.expect("substate vec always have length greater than one; qed")
+			.gasometer
+			.gas();
+		debug::info!("========================EVM CHECK GAS [before: {}]", gas);
+		res
 	}
 
 	fn pre_validate(

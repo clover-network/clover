@@ -4,7 +4,7 @@ use clover_runtime::{
   AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig, ImOnlineId,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
   Signature, StakerStatus, TokensConfig, IncentivesConfig, CloverDexConfig, BandOracleConfig,
-  CloverOracleConfig, EVMConfig, EthereumConfig
+  CloverOracleConfig, EVMConfig, EthereumConfig, DOLLARS
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -70,7 +70,7 @@ fn endowed_evm_account() -> BTreeMap<H160, GenesisAccount>{
       account,
       GenesisAccount {
         nonce: U256::from(0),
-        balance: U256::from(10000_000000_000000_000000_u128),
+        balance: U256::from(10_000_000_000_000 * DOLLARS),
         storage: Default::default(),
         code: vec![],
       },
@@ -254,8 +254,6 @@ fn testnet_genesis(
   _enable_println: bool,
   endowed_eth_accounts: BTreeMap<H160, GenesisAccount>,
 ) -> GenesisConfig {
-  use clover_runtime::{DOLLARS};
-
   let enable_println = true;
 
   const ENDOWMENT: Balance = 10_000_000 * DOLLARS;

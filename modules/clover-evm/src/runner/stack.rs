@@ -36,6 +36,7 @@ impl<T: Trait> Runner<T> {
 		// Gas price check is skipped when performing a gas estimation.
 		let gas_price = match gas_price {
 			Some(gas_price) => {
+				debug::info!("gas price: {:?}, min gas price: {:?}", gas_price, T::FeeCalculator::min_gas_price());
 				ensure!(gas_price >= T::FeeCalculator::min_gas_price(), Error::<T>::GasPriceTooLow);
 				gas_price
 			},
