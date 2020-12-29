@@ -64,6 +64,23 @@ fn endowed_evm_account() -> BTreeMap<H160, GenesisAccount>{
     H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap(),
     H160::from_str("e6206C7f064c7d77C6d8e3eD8601c9AA435419cE").unwrap()
   ];
+  get_endowed_evm_accounts(endowed_account)
+}
+
+fn dev_endowed_evm_accounts() -> BTreeMap<H160, GenesisAccount>{
+  let endowed_account = vec![
+    H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap(),
+    H160::from_str("e6206C7f064c7d77C6d8e3eD8601c9AA435419cE").unwrap(),
+    // the dev account key
+    // seed: bottom drive obey lake curtain smoke basket hold race lonely fit walk
+    // private key: 0x03183f27e9d78698a05c24eb6732630eb17725fcf2b53ee3a6a635d6ff139680
+    H160::from_str("aed40f2261ba43b4dffe484265ce82d8ffe2b4db").unwrap()
+  ];
+
+  get_endowed_evm_accounts(endowed_account)
+}
+
+fn get_endowed_evm_accounts(endowed_account: Vec<H160>) -> BTreeMap<H160, GenesisAccount>{
   let mut evm_accounts = BTreeMap::new();
   for account in endowed_account {
     evm_accounts.insert(
@@ -104,7 +121,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
         get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
       ],
       true,
-      endowed_evm_account()
+      dev_endowed_evm_accounts()
       ),
     // Bootnodes
     vec![],
