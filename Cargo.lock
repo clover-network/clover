@@ -11,6 +11,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "account"
+version = "0.9.0"
+dependencies = [
+ "clover-ethereum",
+ "clover-primitives",
+ "ethereum 0.5.1",
+ "frame-support",
+ "frame-system",
+ "orml-utilities",
+ "parity-scale-codec",
+ "rlp",
+ "sha3 0.8.2",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -979,6 +998,7 @@ dependencies = [
 name = "clover-runtime"
 version = "0.9.0"
 dependencies = [
+ "account",
  "clover-ethereum",
  "clover-evm",
  "clover-incentives",

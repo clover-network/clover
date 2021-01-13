@@ -288,6 +288,11 @@ impl pallet_session::historical::Trait for Runtime {
   type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
 }
 
+/// clover account
+impl account::Trait for Runtime {
+  type Event = Event;
+}
+
 /// clover evm
 pub struct FixedGasPrice;
 
@@ -988,12 +993,15 @@ construct_runtime!(
 
     Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
-		ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
+	ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
     Offences: pallet_offences::{Module, Call, Storage, Event},
 
     // Utility module.
     Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
     Utility: pallet_utility::{Module, Call, Event},
+
+    // account module
+    Account: account::{Module, Storage, Call, Event<T>},
   }
 );
 

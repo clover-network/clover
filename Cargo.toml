@@ -7,6 +7,7 @@ members = [
     "primitives",
     'runtime',
     'modules/cloverdex',
+    'modules/account',
     'modules/reward-pool',
     'modules/incentives',
     'modules/traits',
