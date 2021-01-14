@@ -224,7 +224,7 @@ impl<'vicinity, T: Trait> Backend<'vicinity, T> {
 	}
 
 	fn mutate_account_basic(&self, address: &H160, new: Account) {
-		let account_id = T::AddressMapping::into_account_id(*address);
+		let account_id = T::AddressMapping::into_account_id(address);
 		let current = Module::<T>::account_basic(address);
 
 		if current.nonce < new.nonce {

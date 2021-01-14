@@ -62,6 +62,7 @@ use clover_evm::{
   Account as EVMAccount, FeeCalculator, HashedAddressMapping,
   EnsureAddressTruncated, Runner,
 };
+use evm_accounts::EvmAddressMapping;
 use fp_rpc::{TransactionStatus};
 
 pub use primitives::{
@@ -194,7 +195,10 @@ impl frame_system::Trait for Runtime {
   /// What to do if a new account is created.
   type OnNewAccount = ();
   /// What to do if an account is fully reaped from the system.
-  type OnKilledAccount = ();
+  type OnKilledAccount = (
+    clover_evm::CallKillAccount<Runtime>,
+    evm_accounts::CallKillAccount<Runtime>,
+  );
   /// The data to be stored in an account.
   type AccountData = pallet_balances::AccountData<Balance>;
   /// Weight information for the extrinsics of this pallet.
@@ -289,8 +293,17 @@ impl pallet_session::historical::Trait for Runtime {
 }
 
 /// clover account
-impl account::Trait for Runtime {
+impl evm_accounts::Trait for Runtime {
   type Event = Event;
+  type Currency = Balances;
+  type KillAccount = frame_system::CallKillAccount<Runtime>;
+  type AddressMapping = EvmAddressMapping<Runtime>;
+  type MergeAccount = Currencies;
+  type WeightInfo = weights::evm_accounts::WeightInfo<Runtime>;
+}
+
+impl evm_bridge::Trait for Runtime {
+  type EVM = EVM;
 }
 
 /// clover evm
@@ -311,7 +324,7 @@ impl clover_evm::Trait for Runtime {
   type GasToWeight = ();
   type CallOrigin = EnsureAddressTruncated;
   type WithdrawOrigin = EnsureAddressTruncated;
-  type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+  type AddressMapping = EvmAddressMapping<Runtime>;
   type Currency = Balances;
   type Event = Event;
   type Runner = clover_evm::runner::stack::Runner<Self>;
@@ -1001,7 +1014,8 @@ construct_runtime!(
     Utility: pallet_utility::{Module, Call, Event},
 
     // account module
-    Account: account::{Module, Storage, Call, Event<T>},
+    EvmAccounts: evm_accounts::{Module, Call, Storage, Event<T>},
+    EVMBridge: evm_bridge::{Module},
   }
 );
 

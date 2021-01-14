@@ -21,7 +21,8 @@ clover-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false
 clover-evm = { path = "../modules/clover-evm", default-features = false }
 clover-ethereum = { path = "../modules/clover-ethereum", default-features = false }
 fp-rpc = { path = "../primitives/rpc", default-features = false  }
-account = { path = "../modules/account", default-features = false  }
+evm-accounts = { path = "../modules/evm-accounts", default-features = false }
+evm-bridge = { path = "../modules/evm-bridge", default-features = false }
 primitives = { default-features = false, package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
 
 enum-iterator = "0.6.0"
@@ -133,7 +134,8 @@ std = [
     "clover-evm/std",
     "clover-ethereum/std",
     "fp-rpc/std",
-    "account/std"
+    "evm-accounts/std",
+    "evm-bridge/std",
 ]
 
 [build-dependencies.wasm-builder-runner]

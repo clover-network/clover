@@ -8,19 +8,20 @@ pub use crate::runner::Runner;
 pub use fp_evm::{Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo};
 pub use evm::{ExitReason, ExitSucceed, ExitError, ExitRevert, ExitFatal};
 
-use sp_std::vec::Vec;
+use sp_std::{marker::PhantomData, vec::Vec};
 #[cfg(feature = "std")]
 use codec::{Encode, Decode};
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
 use frame_support::{decl_module, decl_storage, decl_event, decl_error};
 use frame_support::weights::{Weight, Pays, PostDispatchInfo};
-use frame_support::traits::{Currency, ExistenceRequirement, Get};
+use frame_support::traits::{Currency, ExistenceRequirement, Get, OnKilledAccount};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
-use sp_core::{U256, H256, H160, Hasher};
+use sp_core::{U256, H256, H160};
 use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin}};
 use evm::Config;
+use fp_evm::AddressMapping;
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
@@ -128,31 +129,6 @@ impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressTruncated wh
 	}
 }
 
-pub trait AddressMapping<A> {
-	fn into_account_id(address: H160) -> A;
-}
-
-/// Identity address mapping.
-pub struct IdentityAddressMapping;
-
-impl AddressMapping<H160> for IdentityAddressMapping {
-	fn into_account_id(address: H160) -> H160 { address }
-}
-
-/// Hashed address mapping.
-pub struct HashedAddressMapping<H>(sp_std::marker::PhantomData<H>);
-
-impl<H: Hasher<Out=H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
-	fn into_account_id(address: H160) -> AccountId32 {
-		let mut data = [0u8; 24];
-		data[0..4].copy_from_slice(b"evm:");
-		data[4..24].copy_from_slice(&address[..]);
-		let hash = H::hash(&data);
-
-		AccountId32::from(Into::<[u8; 32]>::into(hash))
-	}
-}
-
 /// A mapping function that converts Ethereum gas to Substrate weight
 pub trait GasToWeight {
 	fn gas_to_weight(gas: u32) -> Weight;
@@ -234,7 +210,7 @@ decl_storage! {
 		config(accounts): std::collections::BTreeMap<H160, GenesisAccount>;
 		build(|config: &GenesisConfig| {
 			for (address, account) in &config.accounts {
-				let account_id = T::AddressMapping::into_account_id(*address);
+				let account_id = T::AddressMapping::into_account_id(address);
 
 				// ASSUME: in one single EVM transaction, the nonce will not increase more than
 				// `u128::max_value()`.
@@ -306,7 +282,7 @@ decl_module! {
 		#[weight = 0]
 		fn withdraw(origin, address: H160, value: BalanceOf<T>) {
 			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
-			let address_account_id = T::AddressMapping::into_account_id(address);
+			let address_account_id = T::AddressMapping::into_account_id(&address);
 
 			T::Currency::transfer(
 				&address_account_id,
@@ -479,7 +455,7 @@ impl<T: Trait> Module<T> {
 
 	/// Get the account basic in EVM format.
 	pub fn account_basic(address: &H160) -> Account {
-		let account_id = T::AddressMapping::into_account_id(*address);
+		let account_id = T::AddressMapping::into_account_id(address);
 
 		let nonce = frame_system::Module::<T>::account_nonce(&account_id);
 		let balance = T::Currency::free_balance(&account_id);
@@ -487,6 +463,15 @@ impl<T: Trait> Module<T> {
 		Account {
 			nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
 			balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
+		}
+	}
+}
+
+pub struct CallKillAccount<T>(PhantomData<T>);
+impl<T: Trait> OnKilledAccount<T::AccountId> for CallKillAccount<T> {
+	fn on_killed_account(who: &T::AccountId) {
+		if let Some(address) = T::AddressMapping::to_evm_address(who) {
+			Module::<T>::remove_account(&address)
 		}
 	}
 }

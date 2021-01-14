@@ -50,7 +50,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 			ensure!(Module::<T>::account_basic(&source).nonce == nonce, Error::<T>::InvalidNonce);
 		}
 
-		let account_id = T::AddressMapping::into_account_id(source);
+		let account_id = T::AddressMapping::into_account_id(&source);
 		frame_system::Module::<T>::inc_account_nonce(&account_id);
 
 		frame_support::storage::with_transaction(|| {
@@ -118,7 +118,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 			ensure!(Module::<T>::account_basic(&source).nonce == nonce, Error::<T>::InvalidNonce);
 		}
 
-		let account_id = T::AddressMapping::into_account_id(source);
+		let account_id = T::AddressMapping::into_account_id(&source);
 		frame_system::Module::<T>::inc_account_nonce(&account_id);
 
 		frame_support::storage::with_transaction(|| {
@@ -198,7 +198,7 @@ impl<T: Trait> RunnerT<T> for Runner<T> {
 			ensure!(Module::<T>::account_basic(&source).nonce == nonce, Error::<T>::InvalidNonce);
 		}
 
-		let account_id = T::AddressMapping::into_account_id(source);
+		let account_id = T::AddressMapping::into_account_id(&source);
 		frame_system::Module::<T>::inc_account_nonce(&account_id);
 
 		frame_support::storage::with_transaction(|| {
@@ -350,8 +350,8 @@ impl<'vicinity, 'config, T: Trait> Handler<'vicinity, 'config, T> {
 	}
 
 	fn transfer(&self, transfer: Transfer) -> Result<(), ExitError> {
-		let source = T::AddressMapping::into_account_id(transfer.source);
-		let target = T::AddressMapping::into_account_id(transfer.target);
+		let source = T::AddressMapping::into_account_id(&transfer.source);
+		let target = T::AddressMapping::into_account_id(&transfer.target);
 
 		T::Currency::transfer(
 			&source,
@@ -367,7 +367,7 @@ impl<'vicinity, 'config, T: Trait> Handler<'vicinity, 'config, T> {
 	}
 
 	fn inc_nonce(&self, address: H160) {
-		let account_id = T::AddressMapping::into_account_id(address);
+		let account_id = T::AddressMapping::into_account_id(&address);
 		frame_system::Module::<T>::inc_account_nonce(&account_id);
 	}
 

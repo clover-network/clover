@@ -1,0 +1,39 @@
+[package]
+name = "evm-accounts"
+authors = ['Clover Network <https://github.com/clover-network>']
+edition = '2018'
+license = 'GPL-3.0'
+homepage = 'https://cloverdefi.com'
+repository = 'https://github.com/clover-network/clover'
+version = '0.9.0'
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false }
+frame-support = { version = "2.0.0", default-features = false }
+frame-system = { version = "2.0.0", default-features = false }
+libsecp256k1 = { version = "0.3.4", default-features = false, features = ["hmac"] }
+sp-core = { version = "2.0.0", default-features = false }
+sp-runtime = { version = "2.0.0", default-features = false }
+sp-io = { version = "2.0.0", default-features = false }
+sp-std = { version = "2.0.0", default-features = false }
+evm-primitives = { default-features = false, package = 'fp-evm', path = '../../primitives/evm', version = '0.9.0'}
+orml-traits = { version = "0.3.2", default-features = false }
+orml-utilities = { version = "0.3.2", default-features = false }
+impl-trait-for-tuples = "0.1.3"
+
+[dev-dependencies]
+pallet-balances = { version = "2.0.0" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"libsecp256k1/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-io/std",
+	"sp-std/std",
+	"frame-support/std",
+	"frame-system/std",
+	"evm-primitives/std",
+]
