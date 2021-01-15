@@ -1,26 +1,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 use ethereum_types::BigEndianHash;
 use frame_support::{
 	decl_error, decl_module,
 	dispatch::{DispatchError, DispatchResult},
 };
 use hex_literal::hex;
-use clover_evm::ExitReason;
+use clover_evm::{ExitReason, ExitSucceed};
 use primitive_types::H256;
 use sp_core::{H160, U256};
-use sp_runtime::{RuntimeDebug, SaturatedConversion, traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize}};
-use fp_evm::CallInfo;
+use sp_runtime::SaturatedConversion;
+use clover_ethereum::{EVM, EVMBridge, InvokeContext};
 
 mod mock;
 mod tests;
-
-#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug)]
-pub struct InvokeContext {
-	pub contract: H160,
-	pub source: H160,
-}
 
 pub type BalanceOf<T> = <<T as Trait>::EVM as EVM>::Balance;
 
@@ -31,9 +24,10 @@ pub trait Trait: frame_system::Trait {
 
 decl_error! {
 	pub enum Error for Module<T: Trait> {
-		Revert,
-		Fatal,
-		Error
+		ExecutionFail,
+		ExecutionRevert,
+		ExecutionFatal,
+		ExecutionError
 	}
 }
 
@@ -43,16 +37,24 @@ decl_module! {
 	}
 }
 
-impl<T: Trait> EVMBridge<InvokeContext, BalanceOf<T>> for Module<T> {
+impl<T: Trait> EVMBridge<BalanceOf<T>> for Module<T> {
 	fn total_supply(context: InvokeContext) -> Result<BalanceOf<T>, DispatchError> {
 		// ERC20.totalSupply method hash
 		let input = hex!("18160ddd").to_vec();
 
-		let info = T::EVM::execute(H160::default(), context.contract, input, Default::default(), 2_100_000)?;
+		let info = T::EVM::execute(
+			H160::default(),
+			context.contract,
+			input,
+			Default::default(),
+			2_100_000,
+			Some(U256::from(1_000_000_000)),
+			None,
+		)?;
 
 		Self::handle_exit_reason(info.exit_reason)?;
 
-		let value = U256::from(info.output.as_slice()).saturated_into::<u128>();
+		let value = U256::from(info.value.as_slice()).saturated_into::<u128>();
 		Ok(value.saturated_into::<BalanceOf<T>>())
 	}
 
@@ -62,7 +64,15 @@ impl<T: Trait> EVMBridge<InvokeContext, BalanceOf<T>> for Module<T> {
 		// append address
 		input.extend_from_slice(H256::from(address).as_bytes());
 
-		let info = T::EVM::execute(H160::default(), context.contract, input, Default::default(), 2_100_000)?;
+		let info = T::EVM::execute(
+			H160::default(),
+			context.contract,
+			input,
+			Default::default(),
+			2_100_000,
+			Some(U256::from(1_000_000_000)),
+			None,
+		)?;
 
 		Self::handle_exit_reason(info.exit_reason)?;
 
@@ -79,7 +89,15 @@ impl<T: Trait> EVMBridge<InvokeContext, BalanceOf<T>> for Module<T> {
 		// append amount to be transferred
 		input.extend_from_slice(H256::from_uint(&U256::from(value.saturated_into::<u128>())).as_bytes());
 
-		let info = T::EVM::execute(context.source, context.contract, input, Default::default(), 2_100_000)?;
+		let info = T::EVM::execute(
+			context.source,
+			context.contract,
+			input,
+			Default::default(),
+			2_100_000,
+			Some(U256::from(1_000_000_000)),
+			None,
+		)?;
 
 		Self::handle_exit_reason(info.exit_reason)
 	}
@@ -88,32 +106,11 @@ impl<T: Trait> EVMBridge<InvokeContext, BalanceOf<T>> for Module<T> {
 impl<T: Trait> Module<T> {
 	fn handle_exit_reason(exit_reason: ExitReason) -> Result<(), DispatchError> {
 		match exit_reason {
-			ExitReason::Succeed(_) => Ok(()),
-			ExitReason::Revert(_) => Err(Error::<T>::Revert.into()),
-			ExitReason::Fatal(_) => Err(Error::<T>::Fatal.into()),
-			ExitReason::Error(_) => Err(Error::<T>::Error.into()),
+			ExitReason::Succeed(ExitSucceed::Returned) => Ok(()),
+			ExitReason::Succeed(_) => Err(Error::<T>::ExecutionFail.into()),
+			ExitReason::Revert(_) => Err(Error::<T>::ExecutionRevert.into()),
+			ExitReason::Fatal(_) => Err(Error::<T>::ExecutionFatal.into()),
+			ExitReason::Error(_) => Err(Error::<T>::ExecutionError.into()),
 		}
 	}
-}
-
-/// An abstraction of EVM for EVMBridge
-pub trait EVM {
-	type Balance: AtLeast32BitUnsigned + Copy + MaybeSerializeDeserialize + Default;
-	fn execute(
-		source: H160,
-		target: H160,
-		input: Vec<u8>,
-		value: Self::Balance,
-		gas_limit: u32,
-	) -> Result<CallInfo, sp_runtime::DispatchError>;
-}
-
-pub trait EVMBridge<InvokeContext, Balance> {
-	/// Execute ERC20.totalSupply() to read total supply from ERC20 contract
-	fn total_supply(context: InvokeContext) -> Result<Balance, DispatchError>;
-	/// Execute ERC20.balanceOf(address) to read balance of address from ERC20
-	/// contract
-	fn balance_of(context: InvokeContext, address: H160) -> Result<Balance, DispatchError>;
-	/// Execute ERC20.transfer(address, uint256) to transfer value to `to`
-	fn transfer(context: InvokeContext, to: H160, value: Balance) -> DispatchResult;
 }

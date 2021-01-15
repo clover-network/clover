@@ -11,7 +11,6 @@ use codec::Encode;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
 	traits::{Currency, Happened, OnKilledAccount, ReservableCurrency, StoredMap},
-	transactional,
 	weights::Weight,
 	StorageMap,
 };
@@ -22,8 +21,7 @@ use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
 use sp_std::marker::PhantomData;
 use sp_std::vec::Vec;
 use orml_utilities::with_transaction_result;
-use sp_runtime::DispatchResult;
-use impl_trait_for_tuples::impl_for_tuples;
+use orml_traits::account::MergeAccount;
 
 mod default_weight;
 mod mock;
@@ -100,45 +98,47 @@ decl_module! {
 		/// Claim account mapping between Substrate accounts and EVM accounts.
 		/// Ensure eth_address has not been mapped.
 		#[weight = T::WeightInfo::claim_account()]
-		#[transactional]
 		pub fn claim_account(origin, eth_address: EvmAddress, eth_signature: EcdsaSignature) {
 			let who = ensure_signed(origin)?;
 
 			// ensure account_id and eth_address has not been mapped
 			ensure!(!EvmAddresses::<T>::contains_key(&who), Error::<T>::AccountIdHasMapped);
 			ensure!(!Accounts::<T>::contains_key(eth_address), Error::<T>::EthAddressHasMapped);
+			with_transaction_result(|| {
+				// recover evm address from signature
+				let address = Self::eth_recover(&eth_signature, &who.using_encoded(to_ascii_hex), &[][..]).ok_or(Error::<T>::BadSignature)?;
+				ensure!(eth_address == address, Error::<T>::InvalidSignature);
 
-			// recover evm address from signature
-			let address = Self::eth_recover(&eth_signature, &who.using_encoded(to_ascii_hex), &[][..]).ok_or(Error::<T>::BadSignature)?;
-			ensure!(eth_address == address, Error::<T>::InvalidSignature);
+				// check if the evm padded address already exists
+				let account_id = T::AddressMapping::into_account_id(&eth_address);
+				let mut nonce = <T as frame_system::Trait>::Index::default();
+				if frame_system::Module::<T>::is_explicit(&account_id) {
+					// merge balance from `evm padded address` to `origin`
+					T::MergeAccount::merge_account(&account_id, &who)?;
 
-			// check if the evm padded address already exists
-			let account_id = T::AddressMapping::into_account_id(&eth_address);
-			let mut nonce = <T as frame_system::Trait>::Index::default();
-			if frame_system::Module::<T>::is_explicit(&account_id) {
-				// merge balance from `evm padded address` to `origin`
-				T::MergeAccount::merge_account(&account_id, &who)?;
+					nonce = frame_system::Module::<T>::account_nonce(&account_id);
+					// finally kill the account
+					T::KillAccount::happened(&account_id);
+				}
+				//	make the origin nonce the max between origin amd evm padded address
+				let origin_nonce = frame_system::Module::<T>::account_nonce(&who);
+				if origin_nonce < nonce {
+					frame_system::Account::<T>::mutate(&who, |v| {
+						v.nonce = nonce;
+					});
+				}
 
-				nonce = frame_system::Module::<T>::account_nonce(&account_id);
-				// finally kill the account
-				T::KillAccount::happened(&account_id);
-			}
-			//	make the origin nonce the max between origin amd evm padded address
-			let origin_nonce = frame_system::Module::<T>::account_nonce(&who);
-			if origin_nonce < nonce {
-				frame_system::Account::<T>::mutate(&who, |v| {
-					v.nonce = nonce;
-				});
-			}
+				// update accounts
+				if let Some(evm_addr) = EvmAddresses::<T>::get(&who) {
+					Accounts::<T>::remove(&evm_addr);
+				}
+				Accounts::<T>::insert(eth_address, &who);
+				EvmAddresses::<T>::insert(&who, eth_address);
 
-			// update accounts
-			if let Some(evm_addr) = EvmAddresses::<T>::get(&who) {
-				Accounts::<T>::remove(&evm_addr);
-			}
-			Accounts::<T>::insert(eth_address, &who);
-			EvmAddresses::<T>::insert(&who, eth_address);
+				Self::deposit_event(RawEvent::ClaimAccount(who, eth_address));
+				Ok(())
+			})?;
 
-			Self::deposit_event(RawEvent::ClaimAccount(who, eth_address));
 		}
 	}
 }
@@ -168,7 +168,7 @@ impl<T: Trait> Module<T> {
 		let msg = keccak_256(&Self::ethereum_signable_message(what, extra));
 		let mut res = EvmAddress::default();
 		res.0
-			.copy_from_slice(&keccak_256(&secp256k1_ecdsa_recover(&s.0, &msg).ok()?[..])[12..]);
+			.copy_from_slice(&keccak_256(&secp256k1_ecdsa_recover(s.as_ref(), &msg).ok()?[..])[12..]);
 		Some(res)
 	}
 
@@ -241,20 +241,4 @@ pub fn to_ascii_hex(data: &[u8]) -> Vec<u8> {
 		push_nibble(b % 16);
 	}
 	r
-}
-
-pub trait MergeAccount<AccountId> {
-	fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult;
-}
-
-#[impl_for_tuples(5)]
-impl<AccountId> MergeAccount<AccountId> for Tuple {
-	fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult {
-		with_transaction_result(|| {
-			for_tuples!( #( {
-                Tuple::merge_account(source, dest)?;
-            } )* );
-			Ok(())
-		})
-	}
 }

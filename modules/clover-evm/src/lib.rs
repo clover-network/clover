@@ -22,6 +22,7 @@ use sp_core::{U256, H256, H160};
 use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin}};
 use evm::Config;
 use fp_evm::AddressMapping;
+use orml_traits::account::MergeAccount;
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
@@ -166,6 +167,10 @@ pub trait Trait: frame_system::Trait + pallet_timestamp::Trait {
 
 	/// Mapping from address to account id.
 	type AddressMapping: AddressMapping<Self::AccountId>;
+
+	/// Merge free balance from source to dest.
+	type MergeAccount: MergeAccount<Self::AccountId>;
+
 	/// Currency type for withdraw and balance storage.
 	type Currency: Currency<Self::AccountId>;
 

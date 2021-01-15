@@ -26,10 +26,10 @@ frame-system = { version = "2.0.0", default-features = false }
 sp-std = { version = "2.0.0", default-features = false }
 pallet-balances = { version = "2.0.0", default-features = false }
 
-orml-currencies = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-tokens = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-traits = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-utilities = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
+orml-currencies = {default-features = false, path = "../../orml/currencies" }
+orml-tokens = {default-features = false, path = "../../orml/tokens" }
+orml-traits = {default-features = false, path = "../../orml/traits" }
+orml-utilities = {default-features = false, path = "../../orml/utilities" }
 
 [dev-dependencies]
 sp-core = { version = "2.0.0", default-features = false }

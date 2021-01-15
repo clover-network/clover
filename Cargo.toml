@@ -15,4 +15,3 @@ members = [
 ]
 
 [patch.crates-io]
-sp-core = { git = "https://github.com/paritytech/substrate.git", rev = "b7712fed2c58a898f7706e16861d7109c8f585a5" }

@@ -59,11 +59,12 @@ pub use frame_support::{
 };
 use codec::{Encode};
 use clover_evm::{
-  Account as EVMAccount, FeeCalculator, HashedAddressMapping,
+  Account as EVMAccount, FeeCalculator,
   EnsureAddressTruncated, Runner,
 };
 use evm_accounts::EvmAddressMapping;
 use fp_rpc::{TransactionStatus};
+use orml_traits::parameter_type_with_key;
 
 pub use primitives::{
   AccountId, AccountIndex, Amount, Balance, BlockNumber, CurrencyId, EraIndex, Hash, Index,
@@ -75,6 +76,7 @@ pub use constants::{time::*, };
 
 use clover_traits::incentive_ops::IncentiveOps;
 
+mod weights;
 mod constants;
 mod mock;
 mod tests;
@@ -303,7 +305,7 @@ impl evm_accounts::Trait for Runtime {
 }
 
 impl evm_bridge::Trait for Runtime {
-  type EVM = EVM;
+  type EVM = Ethereum;
 }
 
 /// clover evm
@@ -326,6 +328,7 @@ impl clover_evm::Trait for Runtime {
   type WithdrawOrigin = EnsureAddressTruncated;
   type AddressMapping = EvmAddressMapping<Runtime>;
   type Currency = Balances;
+  type MergeAccount = Currencies;
   type Event = Event;
   type Runner = clover_evm::runner::stack::Runner<Self>;
   type Precompiles = (
@@ -801,20 +804,27 @@ where
   type Extrinsic = UncheckedExtrinsic;
 }
 
-impl orml_tokens::Trait for Runtime {
+parameter_type_with_key! {
+	pub ExistentialDeposits: |currency_id: CurrencyId| -> Balance {
+		Default::default()
+	};
+}
+
+impl orml_tokens::Config for Runtime {
   type Event = Event;
   type Balance = Balance;
   type Amount = Amount;
   type CurrencyId = CurrencyId;
-  type OnReceived = (); // todo: do we need it?
   type WeightInfo = ();
+  type ExistentialDeposits = ExistentialDeposits;
+  type OnDust = ();
 }
 
 parameter_types! {
   pub const GetNativeCurrencyId: CurrencyId = CurrencyId::CLV;
 }
 
-impl orml_currencies::Trait for Runtime {
+impl orml_currencies::Config for Runtime {
   type Event = Event;
   type MultiCurrency = Tokens;
   type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
@@ -868,7 +878,7 @@ impl clover_loans::Trait for Runtime {
 }
 
 type CloverDataProvider = orml_oracle::Instance1;
-impl orml_oracle::Trait<CloverDataProvider> for Runtime {
+impl orml_oracle::Config<CloverDataProvider> for Runtime {
   type Event = Event;
   type OnNewData = ();
   type CombineData = orml_oracle::DefaultCombineData<Runtime, MinimumCount, ExpiresIn, CloverDataProvider>;
@@ -880,7 +890,7 @@ impl orml_oracle::Trait<CloverDataProvider> for Runtime {
 }
 
 type BandDataProvider = orml_oracle::Instance2;
-impl orml_oracle::Trait<BandDataProvider> for Runtime {
+impl orml_oracle::Config<BandDataProvider> for Runtime {
   type Event = Event;
   type OnNewData = ();
   type CombineData = orml_oracle::DefaultCombineData<Runtime, MinimumCount, ExpiresIn, BandDataProvider>;

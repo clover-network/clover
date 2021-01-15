@@ -53,7 +53,7 @@ pallet-transaction-payment-rpc-runtime-api = {default-features = false, version 
 serde = {features = ['derive'], optional = true, version = '1.0.101' }
 sp-api = {default-features = false, version = '2.0.0' }
 sp-block-builder = {default-features = false, version = '2.0.0' }
-sp-consensus-babe = {default-features = false, version = '0.8.0-rc6' }
+sp-consensus-babe = {default-features = false, version = '0.8.0' }
 sp-core = {default-features = false, version = '2.0.0' }
 sp-inherents = {default-features = false, version = '2.0.0' }
 sp-offchain = {default-features = false, version = '2.0.0' }
@@ -72,10 +72,10 @@ pallet-scheduler = {default-features = false, version = '2.0.0' }
 pallet-utility = {default-features = false, version = '2.0.0' }
 frame-benchmarking = {default-features = false, version = '2.0.0' }
 
-orml-currencies = { default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-tokens = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-traits = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-oracle = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
+orml-currencies = { default-features = false, path = "../orml/currencies" }
+orml-tokens = {default-features = false, path = "../orml/tokens" }
+orml-traits = {default-features = false, path = "../orml/traits" }
+orml-oracle = {default-features = false, path = "../orml/oracle" }
 
 
 [features]

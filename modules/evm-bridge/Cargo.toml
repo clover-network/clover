@@ -25,6 +25,7 @@ impl-trait-for-tuples = "0.1"
 ethereum-types = { version = "0.9", default-features = false }
 fp-evm = { default-features = false, path = '../../primitives/evm', version = '0.9.0'}
 clover-evm = { path = "../../modules/clover-evm", default-features = false }
+clover-ethereum = { path = "../../modules/clover-ethereum", default-features = false }
 hex-literal = { version = "0.3.1" }
 
 [dev-dependencies]
@@ -46,5 +47,6 @@ std = [
 	"ethereum-types/std",
 	"fp-evm/std",
 	"primitive-types/std",
-	"clover-evm/std"
+	"clover-evm/std",
+	"clover-ethereum/std"
 ]
