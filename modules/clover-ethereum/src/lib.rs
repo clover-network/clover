@@ -3,7 +3,7 @@
 use frame_support::{
 	decl_module, decl_storage, decl_error, decl_event,
 	traits::Get, traits::FindAuthor, weights::Weight,
-	dispatch::DispatchResultWithPostInfo,
+	dispatch::{DispatchResult, DispatchResultWithPostInfo},
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
@@ -12,13 +12,14 @@ use sp_runtime::{
 	transaction_validity::{
 		TransactionValidity, TransactionSource, InvalidTransaction, ValidTransactionBuilder,
 	},
-	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError,
+	traits::{AtLeast32BitUnsigned, MaybeSerializeDeserialize},
+	generic::DigestItem, traits::UniqueSaturatedInto, DispatchError, RuntimeDebug
 };
 use evm::ExitReason;
-use fp_evm::CallOrCreateInfo;
+use fp_evm::{CallInfo, CallOrCreateInfo};
 use clover_evm::{Runner, GasToWeight};
 use sha3::{Digest, Keccak256};
-use codec::Encode;
+use codec::{Decode, Encode};
 use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
 
 pub use fp_rpc::TransactionStatus;
@@ -39,6 +40,37 @@ pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + palle
 	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
+}
+
+/// An abstraction of EVM for EVMBridge
+pub trait EVM {
+	type Balance: AtLeast32BitUnsigned + Copy + MaybeSerializeDeserialize + Default;
+	fn execute(
+		source: H160,
+		target: H160,
+		input: Vec<u8>,
+		value: U256,
+		gas_limit: u32,
+		gas_price: Option<U256>,
+		config: Option<evm::Config>,
+	) -> Result<CallInfo, sp_runtime::DispatchError>;
+}
+
+#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug)]
+pub struct InvokeContext {
+	pub contract: H160,
+	pub source: H160,
+}
+
+/// An abstraction of EVMBridge
+pub trait EVMBridge<Balance> {
+	/// Execute ERC20.totalSupply() to read total supply from ERC20 contract
+	fn total_supply(context: InvokeContext) -> Result<Balance, DispatchError>;
+	/// Execute ERC20.balanceOf(address) to read balance of address from ERC20
+	/// contract
+	fn balance_of(context: InvokeContext, address: H160) -> Result<Balance, DispatchError>;
+	/// Execute ERC20.transfer(address, uint256) to transfer value to `to`
+	fn transfer(context: InvokeContext, to: H160, value: Balance) -> DispatchResult;
 }
 
 decl_storage! {
@@ -65,6 +97,8 @@ decl_event!(
 	pub enum Event {
 		/// An clover-ethereum transaction was successfully executed. [from, transaction_hash]
 		Executed(H160, H256, ExitReason),
+		TransferExecuted(H160),
+		TransferFailed(H160, ExitReason, Vec<u8>),
 	}
 );
 
@@ -382,5 +416,42 @@ impl<T: Trait> Module<T> {
 				).map_err(Into::into)?)))
 			},
 		}
+	}
+}
+
+impl<T: Trait> EVM for Module<T> {
+	type Balance = BalanceOf<T>;
+
+	fn execute(
+		source: H160,
+		target: H160,
+		input: Vec<u8>,
+		value: U256,
+		gas_limit: u32,
+		gas_price: Option<U256>,
+		config: Option<evm::Config>,
+	) -> Result<CallInfo, sp_runtime::DispatchError> {
+		let info = T::Runner::call(
+			source,
+			target,
+			input,
+			value,
+			gas_limit,
+			gas_price,
+			None,
+			config.as_ref().unwrap_or(T::config()),
+		).map_err(Into::into)?;
+
+		if info.exit_reason.is_succeed() {
+			Module::<T>::deposit_event(Event::TransferExecuted(target));
+		} else {
+			Module::<T>::deposit_event(Event::TransferFailed(
+				target,
+				info.exit_reason.clone(),
+				info.value.clone(),
+			));
+		}
+
+		Ok(info)
 	}
 }

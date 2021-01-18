@@ -39,3 +39,9 @@ pub enum CallOrCreateInfo {
 	Call(CallInfo),
 	Create(CreateInfo),
 }
+
+/// A mapping between `AccountId` and `H160`.
+pub trait AddressMapping<AccountId> {
+	fn into_account_id(evm: &H160) -> AccountId;
+	fn to_evm_address(account: &AccountId) -> Option<H160>;
+}

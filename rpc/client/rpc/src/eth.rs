@@ -646,7 +646,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		}
 	}
 
-	fn fast_estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+	fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
 		let hash = self.client.info().best_hash;
 
 		let CallRequest {
@@ -707,7 +707,7 @@ impl<B, C, P, CT, BE, H: ExHashT> EthApiT for EthApi<B, C, P, CT, BE, H> where
 		Ok(used_gas)
 	}
 
-	fn estimate_gas(&self, request: CallRequest, block_number: Option<BlockNumber>) -> Result<U256> {
+	fn fast_estimate_gas(&self, request: CallRequest, block_number: Option<BlockNumber>) -> Result<U256> {
 		let mut test_request = request.clone();
 		test_request.gas = Some(U256::max_value());
 		let used_gas = self.fast_estimate_gas(test_request, block_number.clone())?;

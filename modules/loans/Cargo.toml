@@ -17,10 +17,10 @@ frame-support = { version = "2.0.0", default-features = false }
 frame-system = { version = "2.0.0", default-features = false }
 sp-std = { version = "2.0.0", default-features = false }
 
-orml-utilities = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-traits = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-tokens = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
-orml-rewards = {default-features = false, git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = '616e6858ec' }
+orml-utilities = {default-features = false, path = "../../orml/utilities" }
+orml-traits = {default-features = false, path = "../../orml/traits" }
+orml-tokens = {default-features = false, path = "../../orml/tokens" }
+orml-rewards = {default-features = false, path = "../../orml/rewards" }
 
 [dev-dependencies]
 sp-core = { version = "2.0.0", default-features = false }

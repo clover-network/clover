@@ -33,6 +33,11 @@ impl-trait-for-tuples = "0.1"
 ripemd160 = { version = "0.9", default-features = false }
 fp-evm = { version = "0.9.0", default-features = false, path = "../../primitives/evm" }
 hex-slice = { version = "0.1.4", default-features = false }
+orml-traits = { path = "../../orml/traits", default-features = false }
+
+[dev-dependencies]
+orml-currencies = { path = "../../orml/currencies", default-features = false }
+orml-tokens = { path = "../../orml/tokens", default-features = false }
 
 [features]
 default = ["std"]
