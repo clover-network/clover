@@ -1017,7 +1017,6 @@ dependencies = [
  "cloverdex",
  "enum-iterator",
  "evm-accounts",
- "evm-bridge",
  "fp-rpc",
  "frame-benchmarking 2.0.1",
  "frame-executive",
@@ -1750,30 +1749,6 @@ dependencies = [
  "orml-utilities 0.3.3-dev",
  "pallet-balances 2.0.1",
  "parity-scale-codec",
- "sp-core 2.0.1",
- "sp-io 2.0.1",
- "sp-runtime 2.0.1",
- "sp-std 2.0.1",
-]
-
-[[package]]
-name = "evm-bridge"
-version = "0.9.0"
-dependencies = [
- "clover-ethereum",
- "clover-evm",
- "ethereum-types",
- "fp-evm",
- "frame-support 2.0.1",
- "frame-system 2.0.1",
- "hex-literal",
- "impl-trait-for-tuples",
- "pallet-balances 2.0.1",
- "pallet-timestamp",
- "parity-scale-codec",
- "primitive-types",
- "serde",
- "sha3 0.8.2",
  "sp-core 2.0.1",
  "sp-io 2.0.1",
  "sp-runtime 2.0.1",

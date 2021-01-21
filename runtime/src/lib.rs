@@ -304,10 +304,6 @@ impl evm_accounts::Trait for Runtime {
   type WeightInfo = weights::evm_accounts::WeightInfo<Runtime>;
 }
 
-impl evm_bridge::Trait for Runtime {
-  type EVM = Ethereum;
-}
-
 /// clover evm
 pub struct FixedGasPrice;
 
@@ -1025,7 +1021,6 @@ construct_runtime!(
 
     // account module
     EvmAccounts: evm_accounts::{Module, Call, Storage, Event<T>},
-    EVMBridge: evm_bridge::{Module},
   }
 );
 
