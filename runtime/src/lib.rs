@@ -110,7 +110,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 3,
+  spec_version: 4,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -302,10 +302,6 @@ impl evm_accounts::Trait for Runtime {
   type AddressMapping = EvmAddressMapping<Runtime>;
   type MergeAccount = Currencies;
   type WeightInfo = weights::evm_accounts::WeightInfo<Runtime>;
-}
-
-impl evm_bridge::Trait for Runtime {
-  type EVM = Ethereum;
 }
 
 /// clover evm
@@ -1025,7 +1021,6 @@ construct_runtime!(
 
     // account module
     EvmAccounts: evm_accounts::{Module, Call, Storage, Event<T>},
-    EVMBridge: evm_bridge::{Module},
   }
 );
 

@@ -8,7 +8,6 @@ members = [
     'runtime',
     'modules/cloverdex',
     'modules/evm-accounts',
-    'modules/evm-bridge',
     'modules/reward-pool',
     'modules/incentives',
     'modules/traits',

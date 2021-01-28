@@ -61,8 +61,7 @@ pub fn authority_keys_from_seed(s: &str) -> (AccountId, AccountId, BabeId, Grand
 
 fn endowed_evm_account() -> BTreeMap<H160, GenesisAccount>{
   let endowed_account = vec![
-    H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap(),
-    H160::from_str("e6206C7f064c7d77C6d8e3eD8601c9AA435419cE").unwrap()
+    H160::from_str("5b38ced9055b075A817239eA9745Ed6260d3e12a").unwrap()
   ];
   get_endowed_evm_accounts(endowed_account)
 }
@@ -87,7 +86,7 @@ fn get_endowed_evm_accounts(endowed_account: Vec<H160>) -> BTreeMap<H160, Genesi
       account,
       GenesisAccount {
         nonce: U256::from(0),
-        balance: U256::from(10_000_000_000_000 * DOLLARS),
+        balance: U256::from(10_000_000 * DOLLARS),
         storage: Default::default(),
         code: vec![],
       },
@@ -131,7 +130,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
     Some("cloverlocal"),
     // Properties
     Some(json!({
-      "tokenDecimals": 12,
+      "tokenDecimals": 18,
       "tokenSymbol": "CLV"
     }).as_object().expect("Created an object").clone()),
     // Extensions
@@ -183,7 +182,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
     Some("cloverlocal"),
     // Properties
     Some(json!({
-      "tokenDecimals": 12,
+      "tokenDecimals": 18,
       "tokenSymbol": "CLV"
     }).as_object().expect("Created an object").clone()),
     // Extensions
@@ -254,7 +253,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
     Some("rose"),
     // Properties
     Some(json!({
-      "tokenDecimals": 12,
+      "tokenDecimals": 18,
       "tokenSymbol": "CLV"
     }).as_object().expect("Created an object").clone()),
     // Extensions
