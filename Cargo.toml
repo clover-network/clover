@@ -5,6 +5,7 @@ panic = 'unwind'
 members = [
     'node',
     "primitives",
+    "primitives/eth",
     'runtime',
     'modules/cloverdex',
     'modules/evm-accounts',

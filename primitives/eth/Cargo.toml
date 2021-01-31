@@ -1,0 +1,53 @@
+[package]
+name = "eth-primitives"
+version = "0.1.0"
+authors = ["Dejavukong <foxcong.yolo@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# crates
+codec  = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
+ethash = { default-features = false,  path = "../../../ethash" }
+serde  = { version = "1.0.118", optional = true, features = ["derive"] }
+
+#array-bytes          = { default-features = false, path = "../array-bytes" }
+#merkle-patricia-trie = { default-features = false, path = "../merkle-patricia-trie" }
+# common types
+ethbloom = { default-features = false, features = ["codec", "rlp"], path = "../../../parity-common/ethbloom" }
+ethereum-types = { default-features = false, features = ["codec", "rlp"], path = "../../../parity-common/ethereum-types" }
+fixed-hash = { default-features = false, path = "../../../parity-common/fixed-hash" }
+impl-codec = { default-features = false, path = "../../../parity-common/primitive-types/impls/codec" }
+impl-rlp = { default-features = false, path = "../../../parity-common/primitive-types/impls/rlp" }
+keccak-hash = { default-features = false, path = "../../../parity-common/keccak-hash" }
+primitive-types = { default-features = false, features = ["codec", "rlp"], path = "../../../parity-common/primitive-types" }
+rlp = { default-features = false, path = "../../../parity-common/rlp" }
+rlp-derive = { path = "../../../parity-common/rlp-derive" }
+merkle-patricia-trie = {default-features = false, path = "../../../merkle-patricia-trie"}
+# substrate
+sp-io = { version ="2.0.0",  default-features = false }
+sp-runtime = { version ="2.0.0",  default-features = false }
+sp-std = { version ="2.0.0", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "ethash/std",
+    "serde",
+    "ethbloom/std",
+    "ethereum-types/std",
+    "ethereum-types/serialize",
+    "fixed-hash/std",
+    "impl-codec/std",
+    "impl-rlp/std",
+    "keccak-hash/std",
+    "primitive-types/std",
+    "rlp/std",
+    "merkle-patricia-trie/std",
+    # substrate
+    "sp-std/std",
+    "sp-io/std",
+    "sp-runtime/std",
+]
