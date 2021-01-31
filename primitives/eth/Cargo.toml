@@ -9,22 +9,22 @@ edition = "2018"
 [dependencies]
 # crates
 codec  = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-ethash = { default-features = false,  path = "../../../ethash" }
+ethash = { default-features = false,  git = "https://github.com/keylcong/ethash.git" }
 serde  = { version = "1.0.118", optional = true, features = ["derive"] }
 
 #array-bytes          = { default-features = false, path = "../array-bytes" }
 #merkle-patricia-trie = { default-features = false, path = "../merkle-patricia-trie" }
 # common types
-ethbloom = { default-features = false, features = ["codec", "rlp"], path = "../../../parity-common/ethbloom" }
-ethereum-types = { default-features = false, features = ["codec", "rlp"], path = "../../../parity-common/ethereum-types" }
-fixed-hash = { default-features = false, path = "../../../parity-common/fixed-hash" }
-impl-codec = { default-features = false, path = "../../../parity-common/primitive-types/impls/codec" }
-impl-rlp = { default-features = false, path = "../../../parity-common/primitive-types/impls/rlp" }
-keccak-hash = { default-features = false, path = "../../../parity-common/keccak-hash" }
-primitive-types = { default-features = false, features = ["codec", "rlp"], path = "../../../parity-common/primitive-types" }
-rlp = { default-features = false, path = "../../../parity-common/rlp" }
-rlp-derive = { path = "../../../parity-common/rlp-derive" }
-merkle-patricia-trie = {default-features = false, path = "../../../merkle-patricia-trie"}
+ethbloom = { default-features = false, features = ["codec", "rlp"], git = "https://github.com/keylcong/parity-common.git" }
+ethereum-types = { default-features = false, features = ["codec", "rlp"], git = "https://github.com/keylcong/parity-common.git" }
+fixed-hash = { default-features = false, git = "https://github.com/keylcong/parity-common.git" }
+impl-codec = { default-features = false, git = "https://github.com/keylcong/parity-common.git" }
+impl-rlp = { default-features = false, git = "https://github.com/keylcong/parity-common.git" }
+keccak-hash = { default-features = false, git = "https://github.com/keylcong/parity-common.git" }
+primitive-types = { default-features = false, features = ["codec", "rlp"], git = "https://github.com/keylcong/parity-common.git" }
+rlp = { default-features = false,git = "https://github.com/keylcong/parity-common.git" }
+rlp-derive = { git = "https://github.com/keylcong/parity-common.git" }
+merkle-patricia-trie = {default-features = false, git = "https://github.com/keylcong/merkle-patricia-trie.git"}
 # substrate
 sp-io = { version ="2.0.0",  default-features = false }
 sp-runtime = { version ="2.0.0",  default-features = false }
