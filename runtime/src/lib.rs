@@ -14,7 +14,9 @@ use sp_core::{
 };
 use sp_runtime::{
   ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
-  ModuleId, transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
+  ModuleId, 
+  Perquintill,
+  transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
   DispatchResult, OpaqueExtrinsic
 };
 use sp_runtime::traits::{
@@ -25,11 +27,13 @@ use sp_runtime::curve::PiecewiseLinear;
 use enum_iterator::IntoEnumIterator;
 
 use sp_api::impl_runtime_apis;
+
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_grandpa::fg_primitives;
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_session::historical as pallet_session_historical;
+pub use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use sp_version::RuntimeVersion;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -50,9 +54,9 @@ pub use sp_runtime::{Permill, Perbill};
 use frame_system::{EnsureRoot, EnsureOneOf};
 pub use frame_support::{
   construct_runtime, debug, parameter_types, StorageValue,
-  traits::{KeyOwnerProofSystem, Randomness, LockIdentifier, FindAuthor},
+  traits::{Currency, Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, LockIdentifier, FindAuthor},
   weights::{
-    Weight, IdentityFee,
+    Weight,
     constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
   },
   ConsensusEngineId
@@ -75,9 +79,11 @@ pub use primitives::{
 pub use constants::{time::*, };
 
 use clover_traits::incentive_ops::IncentiveOps;
+use impls::{Author, WeightToFee, StaticFeeMultiplierUpdate, };
 
 mod weights;
 mod constants;
+mod impls;
 mod mock;
 mod tests;
 
@@ -110,7 +116,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 4,
+  spec_version: 5,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -713,16 +719,37 @@ impl pallet_treasury::Trait for Runtime {
   type WeightInfo = ();
 }
 
+type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item=NegativeImbalance>) {
+		if let Some(fees) = fees_then_tips.next() {
+			// for fees, 80% to treasury, 20% to author
+			let mut split = fees.ration(80, 20);
+			if let Some(tips) = fees_then_tips.next() {
+				// for tips, if any, 80% to treasury, 20% to author (though this can be anything)
+				tips.ration_merge_into(80, 20, &mut split);
+			}
+			Treasury::on_unbalanced(split.0);
+			Author::on_unbalanced(split.1);
+		}
+	}
+}
+
 parameter_types! {
-  pub const TransactionByteFee: Balance = 1;
+  pub const TransactionByteFee: Balance = MILLICENTS;
+  pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+  pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
+	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 }
 
 impl pallet_transaction_payment::Trait for Runtime {
   type Currency = Balances;
-  type OnTransactionPayment = ();
+  type OnTransactionPayment = DealWithFees;
   type TransactionByteFee = TransactionByteFee;
-  type WeightToFee = IdentityFee<Balance>;
-  type FeeMultiplierUpdate = ();
+  type WeightToFee = WeightToFee<Balance>;
+  type FeeMultiplierUpdate = StaticFeeMultiplierUpdate<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
 
 impl pallet_sudo::Trait for Runtime {
