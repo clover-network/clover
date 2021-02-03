@@ -37,6 +37,7 @@ impl<T> WeightToFeePolynomial for WeightToFee<T> where
 /// this is required to perform the upgrade from a previously running chain
 /// without applying the static fee multiplier
 /// the value is incorrect (1_000_000_000 in clover testnet, spec version4).
+#[allow(dead_code)]
 pub struct StaticFeeMultiplierUpdate<T, S, V, M>(sp_std::marker::PhantomData<(T, S, V, M)>);
 
 impl<T, S, V, M> MultiplierUpdate for StaticFeeMultiplierUpdate<T, S, V, M>

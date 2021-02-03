@@ -79,7 +79,7 @@ pub use primitives::{
 pub use constants::{time::*, };
 
 use clover_traits::incentive_ops::IncentiveOps;
-use impls::{Author, WeightToFee, StaticFeeMultiplierUpdate, };
+use impls::{Author, WeightToFee, };
 
 mod weights;
 mod constants;
@@ -116,7 +116,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 5,
+  spec_version: 6,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -749,7 +749,7 @@ impl pallet_transaction_payment::Trait for Runtime {
   type OnTransactionPayment = DealWithFees;
   type TransactionByteFee = TransactionByteFee;
   type WeightToFee = WeightToFee<Balance>;
-  type FeeMultiplierUpdate = StaticFeeMultiplierUpdate<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+  type FeeMultiplierUpdate = TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
 
 impl pallet_sudo::Trait for Runtime {
