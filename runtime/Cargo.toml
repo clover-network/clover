@@ -51,6 +51,7 @@ pallet-transaction-payment = {default-features = false, version = '2.0.0' }
 pallet-transaction-payment-rpc-runtime-api = {default-features = false, version = '2.0.0' }
 serde = {features = ['derive'], optional = true, version = '1.0.101' }
 sp-api = {default-features = false, version = '2.0.0' }
+sp-arithmetic = {default-features = false, version = '2.0.0' }
 sp-block-builder = {default-features = false, version = '2.0.0' }
 sp-consensus-babe = {default-features = false, version = '0.8.0' }
 sp-core = {default-features = false, version = '2.0.0' }
@@ -76,6 +77,7 @@ orml-tokens = {default-features = false, path = "../orml/tokens" }
 orml-traits = {default-features = false, path = "../orml/traits" }
 orml-oracle = {default-features = false, path = "../orml/oracle" }
 
+smallvec = "1.4.1"
 
 [features]
 default = ['std']
@@ -112,6 +114,7 @@ std = [
     'pallet-transaction-payment-rpc-runtime-api/std',
     'serde',
     'sp-api/std',
+    'sp-arithmetic/std',
     'sp-block-builder/std',
     'sp-consensus-babe/std',
     'sp-core/std',
