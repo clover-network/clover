@@ -14,7 +14,7 @@ use sp_core::{
 };
 use sp_runtime::{
   ApplyExtrinsicResult, generic, create_runtime_str, FixedPointNumber, impl_opaque_keys, Percent,
-  ModuleId, 
+  ModuleId,
   Perquintill,
   transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
   DispatchResult, OpaqueExtrinsic
@@ -33,7 +33,7 @@ use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthority
 use pallet_grandpa::fg_primitives;
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_session::historical as pallet_session_historical;
-pub use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
+pub use ladder_payment::{Multiplier, TargetedFeeAdjustment};
 use sp_version::RuntimeVersion;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -744,9 +744,23 @@ parameter_types! {
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 }
 
-impl pallet_transaction_payment::Trait for Runtime {
+type PositiveImbalance = <Balances as Currency<AccountId>>::PositiveImbalance;
+pub struct DummyPayment;
+
+impl clover_traits::TransactionPaymentOps<AccountId, Balance, PositiveImbalance, NegativeImbalance> for DummyPayment {
+  fn payfee(who: &AccountId, tx_fee: Balance, tip: Balance) -> Result<(NegativeImbalance, NegativeImbalance), sp_runtime::DispatchError> {
+    Ok((NegativeImbalance::zero(), NegativeImbalance::zero()))
+  }
+
+  fn on_payback(who: &AccountId, tx_fee: Balance, tip: Balance) -> Result<(PositiveImbalance, PositiveImbalance), sp_runtime::DispatchError> {
+    Ok((PositiveImbalance::zero(), PositiveImbalance::zero()))
+  }
+}
+
+impl ladder_payment::Trait for Runtime {
   type Currency = Balances;
   type OnTransactionPayment = DealWithFees;
+  type OnTransactionPayment2 = DummyPayment;
   type TransactionByteFee = TransactionByteFee;
   type WeightToFee = WeightToFee<Balance>;
   type FeeMultiplierUpdate = TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
@@ -800,7 +814,7 @@ where
       frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
       frame_system::CheckNonce::<Runtime>::from(nonce),
       frame_system::CheckWeight::<Runtime>::new(),
-      pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+      ladder_payment::ChargeTransactionPayment::<Runtime>::from(tip),
     );
     let raw_payload = SignedPayload::new(call, extra)
       .map_err(|e| {
@@ -962,7 +976,7 @@ impl pallet_contracts::Trait for Runtime {
   type SurchargeReward = SurchargeReward;
   type MaxDepth = pallet_contracts::DefaultMaxDepth;
   type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
-  type WeightPrice = pallet_transaction_payment::Module<Self>;
+  type WeightPrice = ladder_payment::Module<Self>;
 }
 
 parameter_types! {
@@ -1004,7 +1018,7 @@ construct_runtime!(
 
     Indices: pallet_indices::{Module, Call, Storage, Config<T>, Event<T>},
     Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-    TransactionPayment: pallet_transaction_payment::{Module, Storage},
+    TransactionPayment: ladder_payment::{Module, Storage},
 
     Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
     Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
@@ -1069,7 +1083,7 @@ pub type SignedExtra = (
   frame_system::CheckEra<Runtime>,
   frame_system::CheckNonce<Runtime>,
   frame_system::CheckWeight<Runtime>,
-  pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+  ladder_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;

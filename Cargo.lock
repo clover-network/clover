@@ -1023,6 +1023,7 @@ dependencies = [
  "frame-support 2.0.1",
  "frame-system 2.0.1",
  "frame-system-rpc-runtime-api",
+ "ladder-payment",
  "orml-currencies 0.3.3-dev",
  "orml-oracle",
  "orml-tokens 0.3.3-dev",
@@ -1048,7 +1049,6 @@ dependencies = [
  "pallet-staking-reward-curve",
  "pallet-sudo",
  "pallet-timestamp",
- "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury 2.0.1",
  "pallet-utility",
@@ -3378,6 +3378,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ladder-payment"
+version = "0.9.0"
+dependencies = [
+ "clover-traits",
+ "frame-support 2.0.1",
+ "frame-system 2.0.1",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "smallvec 1.6.1",
+ "sp-core 2.0.1",
+ "sp-io 2.0.1",
+ "sp-runtime 2.0.1",
+ "sp-std 2.0.1",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5052,24 +5069,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-transaction-payment"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a34775aaf85a16cb1db44a1bef33c4ce6ef327fedb0c8eda7543991ccee7f73"
-dependencies = [
- "frame-support 2.0.1",
- "frame-system 2.0.1",
- "pallet-transaction-payment-rpc-runtime-api",
- "parity-scale-codec",
- "serde",
- "smallvec 1.6.1",
- "sp-core 2.0.1",
- "sp-io 2.0.1",
- "sp-runtime 2.0.1",
- "sp-std 2.0.1",
-]
-
-[[package]]
 name = "pallet-transaction-payment-rpc"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5402,6 +5401,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d95a7db200b97ef370c8e6de0088252f7e0dfff7d047a28528e47456c0fc98b6"
 dependencies = [
  "proc-macro-hack",
+]
+
+[[package]]
+name = "payment-pool"
+version = "0.9.0"
+dependencies = [
+ "clover-traits",
+ "frame-support 2.0.1",
+ "frame-system 2.0.1",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "parity-scale-codec",
+ "serde",
+ "smallvec 1.6.1",
+ "sp-core 2.0.1",
+ "sp-io 2.0.1",
+ "sp-runtime 2.0.1",
+ "sp-std 2.0.1",
 ]
 
 [[package]]

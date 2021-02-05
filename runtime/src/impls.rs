@@ -6,7 +6,7 @@ use frame_support::traits::{Get, OnUnbalanced, Currency, };
 use frame_support::weights::{
     WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
-use pallet_transaction_payment::{Multiplier, MultiplierUpdate, };
+use ladder_payment::{Multiplier, MultiplierUpdate, };
 use crate::{Balances, Authorship, NegativeImbalance};
 
 pub struct Author;
