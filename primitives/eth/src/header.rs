@@ -4,6 +4,7 @@ use ethbloom::Bloom;
 use keccak_hash::{keccak, KECCAK_EMPTY_LIST_RLP, KECCAK_NULL_RLP};
 pub use primitive_types::{H160, H256, U128, U256, U512};
 use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
+use rlp_derive::{RlpEncodable, RlpDecodable};
 
 #[cfg(any(feature = "deserialize", test))]
 use serde::Deserialize;
@@ -65,6 +66,13 @@ pub struct EthereumHeader {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HeaderStr(Vec<u8>);
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
+pub struct HeaderCandidate {
+    hash: H256,
+    parent_hash: H256,
+    total_difficulty: U256
+}
 
 impl HeaderStr {
     pub fn new(slice: Vec<u8>) -> Self {

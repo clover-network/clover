@@ -1,3 +1,6 @@
+
+// TODO: replace the ethereum::SOME_ETHEREUM_TYPES with eth-primitives::TYPES
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{

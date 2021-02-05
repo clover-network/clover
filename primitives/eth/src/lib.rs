@@ -10,11 +10,11 @@ use alloc::vec::Vec;
 #[macro_use]
 pub mod utils;
 pub mod header;
-pub mod ethash_proof;
 pub mod pow;
 pub mod error;
 pub mod receipt;
 pub mod log;
+pub mod network_type;
 
 
 pub use utils::hex_bytes_unchecked;

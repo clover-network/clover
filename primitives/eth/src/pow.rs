@@ -12,10 +12,10 @@ use keccak_hash::KECCAK_EMPTY_LIST_RLP;
 use rlp::*;
 use sp_runtime::RuntimeDebug;
 use sp_std::{cell::RefCell, collections::btree_map::BTreeMap, mem};
+use ethash::{LightDAG, EthereumPatch};
 
 use crate::{
     error::{EthereumError, Mismatch, OutOfBounds},
-    ethash_proof::EthashProof,
     header::EthereumHeader,
     *,
 };
@@ -126,89 +126,16 @@ impl EthashPartial {
 }
 
 impl EthashPartial {
-    pub fn verify_seal_with_proof(
-        self,
-        header: &EthereumHeader,
-        ethash_proof: &[EthashProof],
-        merkle_root: &H128,
-    ) -> Result<(), EthereumError> {
+    pub fn calculate_mixhash(
+    &self,
+    header: &EthereumHeader
+    ) -> Result<H256, EthereumError> {
+        // temporary type
+        type DAG = LightDAG<EthereumPatch>;
+        let light_dag = DAG::new(header.number().into());
+        let partial_header_hash = header.bare_hash();
         let seal = EthashSeal::parse_seal(header.seal())?;
-
-        let (mix_hash, _result) = self.hashimoto_merkle(
-            &header.bare_hash(),
-            &seal.nonce,
-            header.number,
-            ethash_proof,
-            merkle_root,
-        )?;
-        if mix_hash != seal.mix_hash {
-            return Err(EthereumError::SealInvalid);
-        }
-        Ok(())
-    }
-
-    fn hashimoto_merkle(
-        self,
-        header_hash: &H256,
-        nonce: &ethereum_types::H64,
-        block_number: u64,
-        nodes: &[EthashProof],
-        merkle_root: &H128,
-    ) -> Result<(H256, H256), EthereumError> {
-        // Boxed index since ethash::hashimoto gets Fn, but not FnMut
-        let index = RefCell::new(0);
-        let err = RefCell::new(0u8);
-
-        let pair = ethash::hashimoto(
-            *header_hash,
-            *nonce,
-            ethash::get_full_size(block_number as usize / 30000),
-            |offset| {
-                if *err.borrow() != 0 {
-                    return Default::default();
-                }
-
-                let index = index.replace_with(|&mut old| old + 1);
-
-                // Each two nodes are packed into single 128 bytes with Merkle proof
-                let node = if let Some(node) = nodes.get(index / 2) {
-                    node
-                } else {
-                    err.replace(1);
-                    return Default::default();
-                };
-
-                if index % 2 == 0 {
-                    // Divide by 2 to adjust offset for 64-byte words instead of 128-byte
-                    if *merkle_root != node.apply_merkle_proof((offset / 2) as u64) {
-                        err.replace(2);
-                        return Default::default();
-                    }
-                };
-
-                // Reverse each 32 bytes for ETHASH compatibility
-                let mut data = if let Some(dag_node) = node.dag_nodes.get(index % 2) {
-                    dag_node.0
-                } else {
-                    err.replace(1);
-                    return Default::default();
-                };
-                data[..32].reverse();
-                data[32..].reverse();
-                data.into()
-            },
-        );
-
-        match err.into_inner() {
-            0 => Ok(pair),
-            1 => Err(EthereumError::MerkleProofMismatch(
-                "Merkle proof index out off range error",
-            )),
-            2 => Err(EthereumError::MerkleProofMismatch("Merkle root mismatch")),
-            _ => Err(EthereumError::MerkleProofMismatch(
-                "Merkle root error - should not be here",
-            )),
-        }
+        Ok(light_dag.hashimoto(partial_header_hash, seal.nonce).0)
     }
 
     pub fn verify_block_basic(&self, header: &EthereumHeader) -> Result<(), EthereumError> {

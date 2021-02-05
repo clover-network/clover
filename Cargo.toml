@@ -12,6 +12,8 @@ members = [
     'modules/reward-pool',
     'modules/incentives',
     'modules/traits',
+    # bridge
+    'modules/eth-light',
 ]
 
 [patch.crates-io]
