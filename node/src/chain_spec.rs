@@ -3,8 +3,8 @@ use sp_core::{Pair, Public, sr25519, U256};
 use clover_runtime::{
   AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig, ImOnlineId,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
-  Signature, StakerStatus, TokensConfig, IncentivesConfig, CloverDexConfig, BandOracleConfig,
-  CloverOracleConfig, EVMConfig, EthereumConfig, DOLLARS
+  Signature, StakerStatus, TokensConfig,
+  EVMConfig, EthereumConfig, DOLLARS
 };
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -331,15 +331,7 @@ fn testnet_genesis(
       // Assign network admin rights.
       key: root_key,
     }),
-    orml_oracle_Instance1: Some(CloverOracleConfig {
-      members: Default::default(), // initialized by OperatorMembership
-      phantom: Default::default(),
-    }),
-    orml_oracle_Instance2: Some(BandOracleConfig {
-      members: Default::default(), // initialized by OperatorMembership
-      phantom: Default::default(),
-    }),
-      orml_tokens: Some(TokensConfig {
+    orml_tokens: Some(TokensConfig {
       endowed_accounts: endowed_accounts
         .iter()
         .flat_map(|x| {
@@ -350,20 +342,6 @@ fn testnet_genesis(
           ]
         })
         .collect(),
-    }),
-    clover_incentives: Some(IncentivesConfig{
-      dex_rewards: vec![
-        (CurrencyId::CLV, CurrencyId::DOT, 1 * DOLLARS),
-        (CurrencyId::CLV, CurrencyId::CUSDT, 2 * DOLLARS),
-        (CurrencyId::CETH, CurrencyId::CUSDT, 3 * DOLLARS),
-      ],
-    }),
-    cloverdex: Some(CloverDexConfig {
-        initial_pairs: vec![
-          (CurrencyId::CUSDT, CurrencyId::CETH, Some(1000 * DOLLARS), Some(500 * DOLLARS)),
-          (CurrencyId::CUSDT, CurrencyId::DOT, Some(700 * DOLLARS), Some(250 * DOLLARS)),
-          (CurrencyId::CUSDT, CurrencyId::CLV, Some(300 * DOLLARS), Some(600 * DOLLARS)),
-        ],
     }),
     pallet_collective_Instance1: Some(Default::default()),
     pallet_collective_Instance2: Some(Default::default()),

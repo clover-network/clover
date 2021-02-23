@@ -6,7 +6,7 @@
 #![warn(missing_docs)]
 use std::sync::Arc;
 
-use primitives::{Block, BlockNumber, AccountId, CurrencyId, Index, Balance, Hash, Rate, Share};
+use primitives::{Block, BlockNumber, AccountId, CurrencyId, Index, Balance, Hash, };
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -97,9 +97,6 @@ pub fn create_full<C, P, SC, B>(
   C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
   C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
   C::Api: clover_rpc::balance::CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
-  C::Api: clover_rpc::pair::CurrencyPairRuntimeApi<Block>,
-  C::Api: clover_rpc::incentive_pool::IncentivePoolRuntimeApi<Block, AccountId, CurrencyId, Share, Balance>,
-  C::Api: clover_rpc::exchange::CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance, Rate, Share>,
   C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
   C::Api: BabeApi<Block>,
   C::Api: BlockBuilder<Block>,
@@ -174,22 +171,6 @@ pub fn create_full<C, P, SC, B>(
 
   io.extend_with(clover_rpc::balance::CurrencyBalanceRpc::to_delegate(
     clover_rpc::balance::CurrencyBalance::new(client.clone()),
-  ));
-
-  io.extend_with(clover_rpc::currency::CurrencyRpc::to_delegate(
-        clover_rpc::currency::Currency {},
-    ));
-
-  io.extend_with(clover_rpc::pair::CurrencyPairRpc::to_delegate(
-    clover_rpc::pair::CurrencyPair::new(client.clone()),
-  ));
-
-  io.extend_with(clover_rpc::exchange::CurrencyExchangeRpc::to_delegate(
-    clover_rpc::exchange::CurrencyExchange::new(client.clone()),
-  ));
-
-  io.extend_with(clover_rpc::incentive_pool::IncentivePoolRpc::to_delegate(
-    clover_rpc::incentive_pool::IncentivePool::new(client.clone()),
   ));
 
   let mut signers = Vec::new();

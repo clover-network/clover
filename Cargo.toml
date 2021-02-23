@@ -6,10 +6,7 @@ members = [
     'node',
     "primitives",
     'runtime',
-    'modules/cloverdex',
     'modules/evm-accounts',
-    'modules/reward-pool',
-    'modules/incentives',
     'modules/traits',
 ]
 
