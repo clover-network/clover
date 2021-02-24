@@ -1,18 +1,32 @@
 
 use sp_arithmetic::{traits::{BaseArithmetic, Unsigned}};
 use sp_runtime::traits::Convert;
-use sp_runtime::{ FixedPointNumber, Perquintill, Perbill, };
-use frame_support::traits::{Get, OnUnbalanced, Currency, };
+use sp_runtime::{ DispatchResult, FixedPointNumber, Perquintill, Perbill, };
+use frame_support::transactional;
+use frame_support::traits::{Get, OnUnbalanced, Currency, ReservableCurrency, };
 use frame_support::weights::{
     WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use pallet_transaction_payment::{Multiplier, MultiplierUpdate, };
-use crate::{Balances, Authorship, NegativeImbalance};
+use crate::{AccountId, Balances, Authorship, NegativeImbalance};
+use clover_traits::account::MergeAccount;
 
 pub struct Author;
 impl OnUnbalanced<NegativeImbalance> for Author {
   fn on_nonzero_unbalanced(amount: NegativeImbalance) {
     Balances::resolve_creating(&Authorship::author(), amount);
+  }
+}
+
+pub struct MergeAccountEvm;
+impl MergeAccount<AccountId> for MergeAccountEvm {
+#[transactional]
+fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult {
+      // unreserve all reserved currency
+      <Balances as ReservableCurrency<_>>::unreserve(source, Balances::reserved_balance(source));
+
+      // transfer all free to dest
+      Balances::transfer(Some(source.clone()).into(), dest.clone().into(), Balances::free_balance(source))
   }
 }
 

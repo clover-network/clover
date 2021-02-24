@@ -17,7 +17,7 @@ use sp_runtime::{
   ModuleId,
   Perquintill,
   transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
-  DispatchResult, OpaqueExtrinsic
+  OpaqueExtrinsic
 };
 use sp_runtime::traits::{
   BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion, Saturating,
@@ -51,7 +51,7 @@ use frame_system::{EnsureRoot, };
 pub use frame_support::{
   construct_runtime, debug, ensure, parameter_types, StorageValue,
   traits::{
-    Currency, ReservableCurrency,
+    Currency,
     Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, LockIdentifier, FindAuthor
   },
   weights::{
@@ -76,10 +76,7 @@ pub use primitives::{
 };
 
 pub use constants::{time::*, };
-
-use clover_traits::account::MergeAccount;
-
-use impls::{Author, WeightToFee, };
+use impls::{Author, WeightToFee, MergeAccountEvm, };
 
 mod weights;
 mod constants;
@@ -298,18 +295,6 @@ impl pallet_session::Trait for Runtime {
 impl pallet_session::historical::Trait for Runtime {
   type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
   type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
-}
-
-pub struct MergeAccountEvm;
-impl MergeAccount<AccountId> for MergeAccountEvm {
-	#[transactional]
-	fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult {
-    	// unreserve all reserved currency
-			<Balances as ReservableCurrency<_>>::unreserve(source, Balances::reserved_balance(source));
-
-			// transfer all free to dest
-			Balances::transfer(Some(source.clone()).into(), dest.clone().into(), Balances::free_balance(source))
-	}
 }
 
 /// clover account
