@@ -17,14 +17,13 @@ use sp_runtime::{
   ModuleId,
   Perquintill,
   transaction_validity::{TransactionPriority, TransactionValidity, TransactionSource},
-  OpaqueExtrinsic
+  DispatchResult, OpaqueExtrinsic
 };
 use sp_runtime::traits::{
   BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion, Saturating,
   StaticLookup,
 };
 use sp_runtime::curve::PiecewiseLinear;
-use enum_iterator::IntoEnumIterator;
 
 use sp_api::impl_runtime_apis;
 
@@ -43,9 +42,6 @@ use sp_core::{u32_trait::{_1, _2, _4, _5}};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-use orml_traits::{ MultiCurrency, };
-use orml_currencies::{BasicCurrencyAdapter};
-
 pub use pallet_staking::StakerStatus;
 
 pub use pallet_timestamp::Call as TimestampCall;
@@ -53,13 +49,17 @@ pub use pallet_balances::Call as BalancesCall;
 pub use sp_runtime::{Permill, Perbill};
 use frame_system::{EnsureRoot, };
 pub use frame_support::{
-  construct_runtime, debug, parameter_types, StorageValue,
-  traits::{Currency, Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, LockIdentifier, FindAuthor},
+  construct_runtime, debug, ensure, parameter_types, StorageValue,
+  traits::{
+    Currency, ReservableCurrency,
+    Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, LockIdentifier, FindAuthor
+  },
   weights::{
     Weight,
     constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
   },
-  ConsensusEngineId
+  ConsensusEngineId,
+  transactional,
 };
 use codec::{Encode};
 use clover_evm::{
@@ -68,7 +68,6 @@ use clover_evm::{
 };
 use evm_accounts::EvmAddressMapping;
 use fp_rpc::{TransactionStatus};
-use orml_traits::parameter_type_with_key;
 
 pub use primitives::{
   AccountId, AccountIndex, Amount, Balance, BlockNumber, CurrencyId, EraIndex, Hash, Index,
@@ -77,6 +76,8 @@ pub use primitives::{
 };
 
 pub use constants::{time::*, };
+
+use clover_traits::account::MergeAccount;
 
 use impls::{Author, WeightToFee, };
 
@@ -299,13 +300,25 @@ impl pallet_session::historical::Trait for Runtime {
   type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
 }
 
+pub struct MergeAccountEvm;
+impl MergeAccount<AccountId> for MergeAccountEvm {
+	#[transactional]
+	fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult {
+    	// unreserve all reserved currency
+			<Balances as ReservableCurrency<_>>::unreserve(source, Balances::reserved_balance(source));
+
+			// transfer all free to dest
+			Balances::transfer(Some(source.clone()).into(), dest.clone().into(), Balances::free_balance(source))
+	}
+}
+
 /// clover account
 impl evm_accounts::Trait for Runtime {
   type Event = Event;
   type Currency = Balances;
   type KillAccount = frame_system::CallKillAccount<Runtime>;
   type AddressMapping = EvmAddressMapping<Runtime>;
-  type MergeAccount = Currencies;
+  type MergeAccount = MergeAccountEvm;
   type WeightInfo = weights::evm_accounts::WeightInfo<Runtime>;
 }
 
@@ -329,7 +342,7 @@ impl clover_evm::Trait for Runtime {
   type WithdrawOrigin = EnsureAddressTruncated;
   type AddressMapping = EvmAddressMapping<Runtime>;
   type Currency = Balances;
-  type MergeAccount = Currencies;
+  type MergeAccount = MergeAccountEvm;
   type Event = Event;
   type Runner = clover_evm::runner::stack::Runner<Self>;
   type Precompiles = (
@@ -621,7 +634,7 @@ parameter_types! {
   pub const VotingBond: Balance = 5 * CENTS;
   /// Daily council elections.
   pub const TermDuration: BlockNumber = 24 * HOURS;
-  pub const DesiredMembers: u32 = 17;
+  pub const DesiredMembers: u32 = 5;
   pub const DesiredRunnersUp: u32 = 30;
   pub const ElectionsPhragmenModuleId: LockIdentifier = *b"phrelect";
 }
@@ -826,34 +839,6 @@ where
   type Extrinsic = UncheckedExtrinsic;
 }
 
-parameter_type_with_key! {
-	pub ExistentialDeposits: |currency_id: CurrencyId| -> Balance {
-		Default::default()
-	};
-}
-
-impl orml_tokens::Config for Runtime {
-  type Event = Event;
-  type Balance = Balance;
-  type Amount = Amount;
-  type CurrencyId = CurrencyId;
-  type WeightInfo = ();
-  type ExistentialDeposits = ExistentialDeposits;
-  type OnDust = ();
-}
-
-parameter_types! {
-  pub const GetNativeCurrencyId: CurrencyId = CurrencyId::CLV;
-}
-
-impl orml_currencies::Config for Runtime {
-  type Event = Event;
-  type MultiCurrency = Tokens;
-  type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
-  type GetNativeCurrencyId = GetNativeCurrencyId;
-  type WeightInfo = ();
-}
-
 parameter_types! {
   pub const TombstoneDeposit: Balance = 16 * MILLICENTS;
   pub const RentByteFee: Balance = 4 * MILLICENTS;
@@ -910,9 +895,6 @@ construct_runtime!(
     Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
     Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
     Historical: pallet_session_historical::{Module},
-
-    Currencies: orml_currencies::{Module, Call, Event<T>},
-    Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
 
     // Governance.
     Democracy: pallet_democracy::{Module, Call, Storage, Config, Event<T>},
@@ -1162,21 +1144,6 @@ impl_runtime_apis! {
       len: u32,
     ) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
       TransactionPayment::query_info(uxt, len)
-    }
-  }
-
-  impl clover_rpc_runtime_api::CurrencyBalanceApi<Block, AccountId, CurrencyId, Balance> for Runtime {
-    fn account_balance(account: AccountId, currency_id: Option<CurrencyId>) -> sp_std::vec::Vec<(CurrencyId, Balance)> {
-      let mut balances = sp_std::vec::Vec::new();
-      match currency_id {
-        None => {
-          for cid in CurrencyId::into_enum_iter() {
-            balances.push((cid, Currencies::total_balance(cid, &account)));
-          }
-        },
-        Some(cid) => balances.push((cid, Currencies::total_balance(cid, &account)))
-      }
-      balances
     }
   }
 

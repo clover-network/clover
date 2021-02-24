@@ -22,7 +22,7 @@ use sp_core::{U256, H256, H160};
 use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin}};
 use evm::Config;
 use fp_evm::AddressMapping;
-use orml_traits::account::MergeAccount;
+use clover_traits::account::MergeAccount;
 
 /// Type alias for currency balance.
 pub type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;

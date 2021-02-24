@@ -31,8 +31,6 @@ use sp_std::vec;
 
 use primitives::{Balance, CurrencyId, Price, Share, Ratio};
 
-use orml_traits::{MultiCurrency, MultiCurrencyExtended};
-
 pub mod traits;
 
 use traits::RewardHandler;

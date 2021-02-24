@@ -6,7 +6,7 @@
 #![warn(missing_docs)]
 use std::sync::Arc;
 
-use primitives::{Block, BlockNumber, AccountId, CurrencyId, Index, Balance, Hash, };
+use primitives::{Block, BlockNumber, AccountId, Index, Balance, Hash, };
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -96,7 +96,6 @@ pub fn create_full<C, P, SC, B>(
   C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
   C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
   C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-  C::Api: clover_rpc::balance::CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
   C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
   C::Api: BabeApi<Block>,
   C::Api: BlockBuilder<Block>,
@@ -168,10 +167,6 @@ pub fn create_full<C, P, SC, B>(
       )
     )
   );
-
-  io.extend_with(clover_rpc::balance::CurrencyBalanceRpc::to_delegate(
-    clover_rpc::balance::CurrencyBalance::new(client.clone()),
-  ));
 
   let mut signers = Vec::new();
   signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);

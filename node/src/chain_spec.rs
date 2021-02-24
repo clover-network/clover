@@ -1,9 +1,9 @@
 use serde_json::json;
 use sp_core::{Pair, Public, sr25519, U256};
 use clover_runtime::{
-  AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, CurrencyId, IndicesConfig, GenesisConfig, ImOnlineId,
+  AccountId, BabeConfig, Balance, BalancesConfig, ContractsConfig, IndicesConfig, GenesisConfig, ImOnlineId,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
-  Signature, StakerStatus, TokensConfig,
+  Signature, StakerStatus,
   EVMConfig, EthereumConfig, DOLLARS
 };
 use sp_consensus_babe::AuthorityId as BabeId;
@@ -330,18 +330,6 @@ fn testnet_genesis(
     pallet_sudo: Some(SudoConfig {
       // Assign network admin rights.
       key: root_key,
-    }),
-    orml_tokens: Some(TokensConfig {
-      endowed_accounts: endowed_accounts
-        .iter()
-        .flat_map(|x| {
-          vec![
-            (x.clone(), CurrencyId::CETH, 100000 * DOLLARS),
-            (x.clone(), CurrencyId::CUSDT, 100000 * DOLLARS),
-            (x.clone(), CurrencyId::DOT, 100000 * DOLLARS),
-          ]
-        })
-        .collect(),
     }),
     pallet_collective_Instance1: Some(Default::default()),
     pallet_collective_Instance2: Some(Default::default()),

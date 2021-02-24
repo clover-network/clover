@@ -67,11 +67,6 @@ pallet-scheduler = {default-features = false, version = '2.0.0' }
 pallet-utility = {default-features = false, version = '2.0.0' }
 frame-benchmarking = {default-features = false, version = '2.0.0' }
 
-orml-currencies = { default-features = false, path = "../orml/currencies" }
-orml-tokens = {default-features = false, path = "../orml/tokens" }
-orml-traits = {default-features = false, path = "../orml/traits" }
-orml-oracle = {default-features = false, path = "../orml/oracle" }
-
 smallvec = "1.4.1"
 
 [features]
@@ -84,10 +79,6 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'frame-system-rpc-runtime-api/std',
-    'orml-currencies/std',
-    'orml-tokens/std',
-    'orml-traits/std',
-    'orml-oracle/std',
     'pallet-authorship/std',
     'pallet-babe/std',
     'pallet-balances/std',
