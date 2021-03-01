@@ -12,7 +12,7 @@ use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
 use sc_finality_grandpa::{FinalityProofProvider, SharedVoterState, SharedAuthoritySet, GrandpaJustificationStream};
 use sc_finality_grandpa_rpc::GrandpaRpcHandler;
-use sc_keystore::KeyStorePtr;
+use sp_keystore::SyncCryptoStorePtr;
 pub use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
@@ -44,7 +44,7 @@ pub struct BabeDeps {
   /// BABE pending epoch changes.
   pub shared_epoch_changes: SharedEpochChanges<Block, Epoch>,
   /// The keystore that manages the keys of the node.
-  pub keystore: KeyStorePtr,
+  pub keystore: SyncCryptoStorePtr,
 }
 
 /// Extra dependencies for GRANDPA
@@ -69,6 +69,8 @@ pub struct FullDeps<C, P, SC, B> {
   pub pool: Arc<P>,
   /// The SelectChain Strategy
   pub select_chain: SC,
+  /// A copy of the chain spec.
+	pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
   /// Whether to deny unsafe calls
   pub deny_unsafe: DenyUnsafe,
   /// BABE specific dependencies.
@@ -117,11 +119,12 @@ pub fn create_full<C, P, SC, B>(
     client,
     pool,
     select_chain,
+    chain_spec,
     deny_unsafe,
     babe,
     grandpa,
-    is_authority,
     network,
+    is_authority,
   } = deps;
 
   let BabeDeps {

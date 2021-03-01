@@ -49,7 +49,7 @@ parameter_types! {
   pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
 
-impl frame_system::Trait for TestRuntime {
+impl frame_system::Config for TestRuntime {
   type Origin = Origin;
   type Index = u64;
   type BlockNumber = BlockNumber;
@@ -84,7 +84,7 @@ parameter_types! {
   pub const MaxLocks: u32 = 50;
 }
 
-impl pallet_balances::Trait for TestRuntime {
+impl pallet_balances::Config for TestRuntime {
   /// The type for recording an account's balance.
   type Balance = Balance;
   /// The ubiquitous event type.
@@ -98,7 +98,7 @@ impl pallet_balances::Trait for TestRuntime {
 
 pub type Balances = pallet_balances::Module<TestRuntime>;
 
-impl orml_tokens::Trait for TestRuntime {
+impl orml_tokens::Config for TestRuntime {
   type Event = TestEvent;
   type Balance = Balance;
   type Amount = Amount;
@@ -113,7 +113,7 @@ parameter_types! {
   pub const GetNativeCurrencyId: CurrencyId = CurrencyId::CLV;
 }
 
-impl orml_currencies::Trait for TestRuntime {
+impl orml_currencies::Config for TestRuntime {
   type Event = TestEvent;
   type MultiCurrency = Tokens;
   type NativeCurrency = BasicCurrencyAdapter<TestRuntime, Balances, Amount, BlockNumber>;

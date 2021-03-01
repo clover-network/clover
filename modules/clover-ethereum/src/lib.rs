@@ -32,12 +32,12 @@ pub enum ReturnValue {
 }
 
 /// A type alias for the balance type from this pallet's point of view.
-pub type BalanceOf<T> = <T as pallet_balances::Trait>::Balance;
+pub type BalanceOf<T> = <T as pallet_balances::Config>::Balance;
 
 /// Trait for Ethereum pallet.
-pub trait Trait: frame_system::Trait<Hash=H256> + pallet_balances::Trait + pallet_timestamp::Trait + clover_evm::Trait {
+pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config+ pallet_timestamp::Config+ clover_evm::Config{
 	/// The overarching event type.
-	type Event: From<Event> + Into<<Self as frame_system::Trait>::Event>;
+	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
 }
@@ -74,7 +74,7 @@ pub trait EVMBridge<Balance> {
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as Ethereum {
+	trait Store for Module<T: Config> as Ethereum {
 		/// Current building block's transactions and receipts.
 		Pending: Vec<(ethereum::Transaction, TransactionStatus, ethereum::Receipt)>;
 
@@ -105,7 +105,7 @@ decl_event!(
 
 decl_error! {
 	/// Ethereum pallet errors.
-	pub enum Error for Module<T: Trait> {
+	pub enum Error for Module<T: Config> {
 		/// Signature is invalid.
 		InvalidSignature,
 	}
@@ -113,12 +113,12 @@ decl_error! {
 
 decl_module! {
 	/// Ethereum pallet module.
-	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		/// Deposit one of this pallet's events by using the default implementation.
 		fn deposit_event() = default;
 
 		/// Transact an Ethereum transaction.
-		#[weight = <T as clover_evm::Trait>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
+		#[weight = <T as clover_evm::Config>::GasToWeight::gas_to_weight(transaction.gas_limit.low_u32())]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 
@@ -219,7 +219,7 @@ enum TransactionValidationError {
 	InvalidSignature,
 }
 
-impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
+impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 	type Call = Call<T>;
 
 	fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
@@ -259,7 +259,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 	}
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
 	fn recover_signer(transaction: &ethereum::Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -419,7 +419,7 @@ impl<T: Trait> Module<T> {
 	}
 }
 
-impl<T: Trait> EVM for Module<T> {
+impl<T: Config> EVM for Module<T> {
 	type Balance = BalanceOf<T>;
 
 	fn execute(

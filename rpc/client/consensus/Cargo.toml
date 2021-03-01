@@ -8,19 +8,19 @@ repository = 'https://github.com/clover-network/clover'
 version = '0.9.0'
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "1.3.4", features = ["derive"] }
-sp-core = { version = "2.0.0" }
-sp-blockchain = { version = "2.0.0" }
-sp-runtime = { version = "2.0.0" }
-sp-api = { version = "2.0.0" }
-sc-client-api = { version = "2.0.0" }
-sp-block-builder = { version = "2.0.0" }
-sp-inherents = { version = "2.0.0" }
+codec = { package = "parity-scale-codec", version = "2.0.0", features = ["derive"] }
+sp-core = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
+sp-api = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
+sp-block-builder = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
+sp-inherents = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 fp-consensus = { path = "../../../primitives/consensus" }
-sp-consensus = { version = "0.8.0" }
+sp-consensus = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 log = "0.4.8"
 futures = { version = "0.3.1", features = ["compat"] }
-sp-timestamp = { version = "2.0.0" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 derive_more = "0.99.2"
 prometheus-endpoint = { version = "0.8.0", package = "substrate-prometheus-endpoint" }
 ethereum = { version = "0.5", features = ["with-codec"] }

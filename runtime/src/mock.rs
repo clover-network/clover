@@ -5,7 +5,7 @@ use super::*;
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct TestRuntime;
 
-impl frame_system::Trait for TestRuntime {
+impl frame_system::Config for TestRuntime {
   type BaseCallFilter = ();
   type AccountId = AccountId;
   type Call = Call;

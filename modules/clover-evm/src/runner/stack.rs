@@ -8,7 +8,7 @@ use fp_evm::{ExecutionInfo, CallInfo, CreateInfo, Account, Log, Vicinity};
 use evm::ExitReason;
 use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
 use evm::executor::StackExecutor;
-use crate::{Trait, AccountStorages, FeeCalculator, AccountCodes, Module, Event, Error, AddressMapping};
+use crate::{Config, AccountStorages, FeeCalculator, AccountCodes, Module, Event, Error, AddressMapping};
 use crate::runner::Runner as RunnerT;
 use crate::AccountConnection;
 use crate::precompiles::Precompiles;
@@ -16,11 +16,11 @@ extern crate hex_slice;
 use hex_slice::AsHex;
 
 #[derive(Default)]
-pub struct Runner<T: Trait> {
+pub struct Runner<T: Config> {
 	_marker: PhantomData<T>,
 }
 
-impl<T: Trait> Runner<T> {
+impl<T: Config> Runner<T> {
 	/// Execute an EVM operation.
 	pub fn execute<F, R>(
 		source: H160,
@@ -70,7 +70,7 @@ impl<T: Trait> Runner<T> {
 		let (reason, retv) = f(&mut executor);
 
 		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = executor.fee(gas_price);		
+		let actual_fee = executor.fee(gas_price);
 
 		executor.deposit(source, total_fee.saturating_sub(actual_fee));
 
@@ -108,7 +108,7 @@ impl<T: Trait> Runner<T> {
 	}
 }
 
-impl<T: Trait> RunnerT<T> for Runner<T> {
+impl<T: Config> RunnerT<T> for Runner<T> {
 	type Error = Error<T>;
 
 	fn call(
@@ -217,7 +217,7 @@ pub struct Backend<'vicinity, T> {
 	_marker: PhantomData<T>,
 }
 
-impl<'vicinity, T: Trait> Backend<'vicinity, T> {
+impl<'vicinity, T: Config> Backend<'vicinity, T> {
 	/// Create a new backend with given vicinity.
 	pub fn new(vicinity: &'vicinity Vicinity) -> Self {
 		Self { vicinity, _marker: PhantomData }
@@ -245,7 +245,7 @@ impl<'vicinity, T: Trait> Backend<'vicinity, T> {
 	}
 }
 
-impl<'vicinity, T: Trait> BackendT for Backend<'vicinity, T> {
+impl<'vicinity, T: Config> BackendT for Backend<'vicinity, T> {
 	fn gas_price(&self) -> U256 { self.vicinity.gas_price }
 	fn origin(&self) -> H160 { self.vicinity.origin }
 
@@ -314,7 +314,7 @@ impl<'vicinity, T: Trait> BackendT for Backend<'vicinity, T> {
 	}
 }
 
-impl<'vicinity, T: Trait> ApplyBackend for Backend<'vicinity, T> {
+impl<'vicinity, T: Config> ApplyBackend for Backend<'vicinity, T> {
 	fn apply<A, I, L>(
 		&mut self,
 		values: A,
