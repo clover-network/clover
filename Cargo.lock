@@ -852,6 +852,7 @@ dependencies = [
  "sc-transaction-pool",
  "serde_json",
  "sp-api",
+ "sp-authority-discovery",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
@@ -986,6 +987,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "orml-utilities",
+ "pallet-authority-discovery",
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
@@ -1017,6 +1019,7 @@ dependencies = [
  "smallvec 1.6.1",
  "sp-api",
  "sp-arithmetic",
+ "sp-authority-discovery",
  "sp-block-builder",
  "sp-consensus-babe",
  "sp-core",
@@ -4277,6 +4280,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-authority-discovery"
+version = "3.0.0"
+source = "git+https://github.com/paritytech/substrate.git?tag=v3.0.0#49a4103f4bfef55be20a5c6d26e18ff3003c3353"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-session",
+ "parity-scale-codec 2.0.0",
+ "serde",
+ "sp-application-crypto",
+ "sp-authority-discovery",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-authorship"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git?tag=v3.0.0#49a4103f4bfef55be20a5c6d26e18ff3003c3353"
@@ -7266,6 +7285,18 @@ dependencies = [
  "parity-scale-codec 2.0.0",
  "serde",
  "sp-debug-derive",
+ "sp-std",
+]
+
+[[package]]
+name = "sp-authority-discovery"
+version = "3.0.0"
+source = "git+https://github.com/paritytech/substrate.git?tag=v3.0.0#49a4103f4bfef55be20a5c6d26e18ff3003c3353"
+dependencies = [
+ "parity-scale-codec 2.0.0",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-runtime",
  "sp-std",
 ]
 

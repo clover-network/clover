@@ -28,6 +28,7 @@ use sp_runtime::curve::PiecewiseLinear;
 use sp_api::impl_runtime_apis;
 
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use pallet_contracts::weights::WeightInfo;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_grandpa::fg_primitives;
@@ -108,6 +109,7 @@ impl_opaque_keys! {
     pub grandpa: Grandpa,
     pub babe: Babe,
     pub im_online: ImOnline,
+    pub authority_discovery: AuthorityDiscovery,
   }
 }
 
@@ -243,6 +245,8 @@ impl pallet_babe::Config for Runtime {
   type WeightInfo = ();
 }
 
+impl pallet_authority_discovery::Config for Runtime {}
+
 impl pallet_grandpa::Config for Runtime {
   type Event = Event;
   type Call = Call;
@@ -258,7 +262,7 @@ impl pallet_grandpa::Config for Runtime {
   )>>::IdentificationTuple;
 
   type HandleEquivocation =
-		pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
+    pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
 
   type WeightInfo = ();
 }
@@ -328,7 +332,7 @@ impl FeeCalculator for FixedGasPrice {
 }
 
 parameter_types! {
-	pub const ChainId: u64 = 1337;
+  pub const ChainId: u64 = 1337;
 }
 
 impl clover_evm::Config for Runtime {
@@ -436,10 +440,10 @@ parameter_types! {
   // 0.05%. The higher the value, the more strict solution acceptance becomes.
   pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
   pub OffchainSolutionWeightLimit: Weight = BlockWeights::get()
-		.get(DispatchClass::Normal)
-		.max_extrinsic
-		.expect("Normal extrinsics have weight limit configured by default; qed")
-		.saturating_sub(BlockExecutionWeight::get());
+    .get(DispatchClass::Normal)
+    .max_extrinsic
+    .expect("Normal extrinsics have weight limit configured by default; qed")
+    .saturating_sub(BlockExecutionWeight::get());
 }
 
 impl pallet_staking::Config for Runtime {
@@ -502,14 +506,14 @@ impl pallet_im_online::Config for Runtime {
 }
 
 parameter_types! {
-	pub OffencesWeightSoftLimit: Weight = Perbill::from_percent(60) * MAXIMUM_BLOCK_WEIGHT;
+  pub OffencesWeightSoftLimit: Weight = Perbill::from_percent(60) * MAXIMUM_BLOCK_WEIGHT;
 }
 
 impl pallet_offences::Config for Runtime {
-	type Event = Event;
-	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
-	type OnOffenceHandler = Staking;
-	type WeightSoftLimit = OffencesWeightSoftLimit;
+  type Event = Event;
+  type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+  type OnOffenceHandler = Staking;
+  type WeightSoftLimit = OffencesWeightSoftLimit;
 }
 
 parameter_types! {
@@ -570,10 +574,10 @@ impl pallet_democracy::Config for Runtime {
   /// agree to it.
   type CancellationOrigin = pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
   type CancelProposalOrigin = EnsureOneOf<
-		AccountId,
-		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>,
-	>;
+    AccountId,
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>,
+  >;
   type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
   type BlacklistOrigin = EnsureRoot<AccountId>;
   /// Any single technical committee member may veto a coming council
@@ -722,10 +726,10 @@ parameter_types! {
 
   pub const MaximumReasonLength: u32 = 16384;
   pub const BountyDepositBase: Balance = 1 * DOLLARS;
-	pub const BountyDepositPayoutDelay: BlockNumber = 1 * DAYS;
+  pub const BountyDepositPayoutDelay: BlockNumber = 1 * DAYS;
   pub const BountyUpdatePeriod: BlockNumber = 14 * DAYS;
   pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
-	pub const BountyValueMinimum: Balance = 5 * DOLLARS;
+  pub const BountyValueMinimum: Balance = 5 * DOLLARS;
 }
 
 impl pallet_treasury::Config for Runtime {
@@ -745,40 +749,40 @@ impl pallet_treasury::Config for Runtime {
 }
 
 impl pallet_bounties::Config for Runtime {
-	type Event = Event;
-	type BountyDepositBase = BountyDepositBase;
-	type BountyDepositPayoutDelay = BountyDepositPayoutDelay;
-	type BountyUpdatePeriod = BountyUpdatePeriod;
-	type BountyCuratorDeposit = BountyCuratorDeposit;
-	type BountyValueMinimum = BountyValueMinimum;
-	type DataDepositPerByte = DataDepositPerByte;
-	type MaximumReasonLength = MaximumReasonLength;
-	type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
+  type Event = Event;
+  type BountyDepositBase = BountyDepositBase;
+  type BountyDepositPayoutDelay = BountyDepositPayoutDelay;
+  type BountyUpdatePeriod = BountyUpdatePeriod;
+  type BountyCuratorDeposit = BountyCuratorDeposit;
+  type BountyValueMinimum = BountyValueMinimum;
+  type DataDepositPerByte = DataDepositPerByte;
+  type MaximumReasonLength = MaximumReasonLength;
+  type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
 }
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
 pub struct DealWithFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithFees {
-	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item=NegativeImbalance>) {
-		if let Some(fees) = fees_then_tips.next() {
-			// for fees, 80% to treasury, 20% to author
-			let mut split = fees.ration(80, 20);
-			if let Some(tips) = fees_then_tips.next() {
-				// for tips, if any, 80% to treasury, 20% to author (though this can be anything)
-				tips.ration_merge_into(80, 20, &mut split);
-			}
-			Treasury::on_unbalanced(split.0);
-			Author::on_unbalanced(split.1);
-		}
-	}
+  fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item=NegativeImbalance>) {
+    if let Some(fees) = fees_then_tips.next() {
+      // for fees, 80% to treasury, 20% to author
+      let mut split = fees.ration(80, 20);
+      if let Some(tips) = fees_then_tips.next() {
+        // for tips, if any, 80% to treasury, 20% to author (though this can be anything)
+        tips.ration_merge_into(80, 20, &mut split);
+      }
+      Treasury::on_unbalanced(split.0);
+      Author::on_unbalanced(split.1);
+    }
+  }
 }
 
 parameter_types! {
   pub const TransactionByteFee: Balance = MILLICENTS;
   pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
   pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
-	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
+  pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -955,6 +959,7 @@ construct_runtime!(
     Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
     ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
+    AuthorityDiscovery: pallet_authority_discovery::{Module, Call, Config},
     Offences: pallet_offences::{Module, Call, Storage, Event},
 
     // Utility module.
@@ -1092,12 +1097,12 @@ impl_runtime_apis! {
     }
 
     fn current_epoch() -> sp_consensus_babe::Epoch {
-			Babe::current_epoch()
-		}
+      Babe::current_epoch()
+    }
 
-		fn next_epoch() -> sp_consensus_babe::Epoch {
-			Babe::next_epoch()
-		}
+    fn next_epoch() -> sp_consensus_babe::Epoch {
+      Babe::next_epoch()
+    }
 
     fn generate_key_ownership_proof(
       _slot_number: sp_consensus_babe::Slot,
@@ -1149,6 +1154,12 @@ impl_runtime_apis! {
     }
   }
 
+  impl sp_authority_discovery::AuthorityDiscoveryApi<Block> for Runtime {
+    fn authorities() -> Vec<AuthorityDiscoveryId> {
+      AuthorityDiscovery::authorities()
+    }
+  }
+
   impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
     fn account_nonce(account: AccountId) -> Index {
       System::account_nonce(account)
@@ -1191,8 +1202,8 @@ impl_runtime_apis! {
     }
 
     fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> pallet_transaction_payment_rpc_runtime_api::FeeDetails<Balance> {
-			TransactionPayment::query_fee_details(uxt, len)
-		}
+      TransactionPayment::query_fee_details(uxt, len)
+    }
   }
 
   impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {

@@ -48,6 +48,7 @@ sc-sync-state-rpc = { git = "https://github.com/paritytech/substrate.git",  tag 
 sc-service = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 sp-api = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
+sp-authority-discovery = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 sp-block-builder = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 sp-consensus = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
