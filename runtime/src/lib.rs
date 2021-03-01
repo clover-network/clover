@@ -20,7 +20,7 @@ use sp_runtime::{
   OpaqueExtrinsic
 };
 use sp_runtime::traits::{
-  BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion, Saturating,
+  BlakeTwo256, Block as BlockT, Convert, NumberFor, OpaqueKeys, SaturatedConversion,
   StaticLookup,
 };
 use sp_runtime::curve::PiecewiseLinear;

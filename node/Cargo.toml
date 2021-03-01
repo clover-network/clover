@@ -44,6 +44,7 @@ sc-keystore = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.
 sc-network = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 sc-rpc = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 sc-rpc-api = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
+sc-sync-state-rpc = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 sc-service = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 sp-api = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }

@@ -10,7 +10,7 @@
 use codec::Encode;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
-	traits::{Currency, HandleLifetime, OnKilledAccount, ReservableCurrency, StoredMap},
+	traits::{Currency, HandleLifetime, OnKilledAccount, ReservableCurrency, },
 	weights::Weight,
 	StorageMap,
 };
@@ -118,7 +118,7 @@ decl_module! {
 
 					nonce = frame_system::Module::<T>::account_nonce(&account_id);
 					// finally kill the account
-					T::KillAccount::killed(&account_id);
+					let _ = T::KillAccount::killed(&account_id);
 				}
 				//	make the origin nonce the max between origin amd evm padded address
 				let origin_nonce = frame_system::Module::<T>::account_nonce(&who);

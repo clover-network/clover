@@ -10,7 +10,6 @@ use sp_runtime::traits::Block as BlockT;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_telemetry::TelemetryConnectionNotifier;
-use sc_finality_grandpa::{self, FinalityProofProvider as GrandpaFinalityProofProvider, SharedVoterState};
 use fc_consensus::FrontierBlockImport;
 
 // Our native executor instance.
@@ -92,8 +91,6 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
   )?;
 
   let import_setup = (block_import, grandpa_link, babe_link);
-
-  let subscription_task_executor = sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
   let (rpc_extensions_builder, rpc_setup) = {
     let (_, grandpa_link, babe_link) = &import_setup;

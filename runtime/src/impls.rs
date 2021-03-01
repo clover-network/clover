@@ -1,17 +1,15 @@
 
 use sp_arithmetic::{traits::{BaseArithmetic, Unsigned}};
 use sp_runtime::traits::Convert;
-use sp_runtime::{ DispatchResult, DispatchError, DispatchErrorWithPostInfo, FixedPointNumber, Perquintill, Perbill, };
+use sp_runtime::{ DispatchResult, FixedPointNumber, Perquintill, Perbill, };
 use frame_support::transactional;
 use frame_support::traits::{Get, OnUnbalanced, Currency, ReservableCurrency, };
 use frame_support::weights::{
     WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
-    PostDispatchInfo,
 };
 use pallet_transaction_payment::{Multiplier, MultiplierUpdate, };
 use crate::{AccountId, Balances, Authorship, NegativeImbalance};
 use clover_traits::account::MergeAccount;
-use orml_utilities::with_transaction_result;
 
 pub struct Author;
 impl OnUnbalanced<NegativeImbalance> for Author {

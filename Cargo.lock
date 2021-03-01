@@ -847,6 +847,7 @@ dependencies = [
  "sc-rpc",
  "sc-rpc-api",
  "sc-service",
+ "sc-sync-state-rpc",
  "sc-telemetry",
  "sc-transaction-pool",
  "serde_json",
@@ -6701,6 +6702,26 @@ dependencies = [
  "parking_lot 0.11.1",
  "sc-client-api",
  "sp-core",
+ "thiserror",
+]
+
+[[package]]
+name = "sc-sync-state-rpc"
+version = "0.9.0"
+source = "git+https://github.com/paritytech/substrate.git?tag=v3.0.0#49a4103f4bfef55be20a5c6d26e18ff3003c3353"
+dependencies = [
+ "jsonrpc-core 15.1.0",
+ "jsonrpc-core-client 15.1.0",
+ "jsonrpc-derive 15.1.0",
+ "sc-chain-spec",
+ "sc-client-api",
+ "sc-consensus-babe",
+ "sc-consensus-epochs",
+ "sc-finality-grandpa",
+ "sc-rpc-api",
+ "serde_json",
+ "sp-blockchain",
+ "sp-runtime",
  "thiserror",
 ]
 

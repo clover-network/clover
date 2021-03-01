@@ -151,7 +151,7 @@ pub fn create_full<C, P, SC, B>(
     sc_consensus_babe_rpc::BabeApi::to_delegate(
       BabeRpcHandler::new(
         client.clone(),
-        shared_epoch_changes,
+        shared_epoch_changes.clone(),
         keystore,
         babe_config,
         select_chain,
@@ -162,7 +162,7 @@ pub fn create_full<C, P, SC, B>(
   io.extend_with(
     sc_finality_grandpa_rpc::GrandpaApi::to_delegate(
       GrandpaRpcHandler::new(
-        shared_authority_set,
+        shared_authority_set.clone(),
         shared_voter_state,
         justification_stream,
         subscription_executor,
@@ -170,6 +170,18 @@ pub fn create_full<C, P, SC, B>(
       )
     )
   );
+
+  io.extend_with(
+		sc_sync_state_rpc::SyncStateRpcApi::to_delegate(
+			sc_sync_state_rpc::SyncStateRpcHandler::new(
+				chain_spec,
+				client.clone(),
+				shared_authority_set,
+				shared_epoch_changes,
+				deny_unsafe,
+			)
+		)
+	);
 
   let mut signers = Vec::new();
   signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
