@@ -19,6 +19,7 @@ name = 'clover'
 primitives = { package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
 clover-runtime = {path = '../runtime', version = '0.9.0' }
 clover-rpc = {default-features = false, version = '0.9.0', package = 'clover-rpc', path = '../rpc' }
+futures = { version = "0.3.9", features = ["compat"] }
 
 jsonrpc-core = '15.0.0'
 jsonrpc-pubsub = "15.0.0"
@@ -28,6 +29,7 @@ serde_json = "1.0"
 pallet-contracts = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" , default-features = false }
 pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
+sc-authority-discovery = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 sc-cli = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 sc-client-api = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
