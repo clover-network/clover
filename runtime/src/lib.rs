@@ -429,9 +429,9 @@ pallet_staking_reward_curve::build! {
 
 parameter_types! {
   // session: 10 minutes
-  pub const SessionsPerEra: sp_staking::SessionIndex = 6;  // 6 sessions in an era, (1 hour)
-  pub const BondingDuration: pallet_staking::EraIndex = 28; // 28 era for unbouding (28 * 1 hours)
-  pub const SlashDeferDuration: pallet_staking::EraIndex = 14; // 1/2 bonding duration
+  pub const SessionsPerEra: sp_staking::SessionIndex = 18;  // 18 sessions in an era, (3 hours)
+  pub const BondingDuration: pallet_staking::EraIndex = 24; // 24 era for unbouding (24 * 3 hours)
+  pub const SlashDeferDuration: pallet_staking::EraIndex = 12; // 1/2 bonding duration
   pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
   pub const MaxNominatorRewardedPerValidator: u32 = 64;
   pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
@@ -737,7 +737,7 @@ impl pallet_treasury::Config for Runtime {
   type ApproveOrigin = pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>;
   type RejectOrigin = pallet_collective::EnsureProportionMoreThan<_1, _5, AccountId, CouncilCollective>;
   type Event = Event;
-  type OnSlash = Treasury;
+  type OnSlash = ();
   type ProposalBond = ProposalBond;
   type ProposalBondMinimum = ProposalBondMinimum;
   type SpendPeriod = SpendPeriod;
@@ -745,7 +745,7 @@ impl pallet_treasury::Config for Runtime {
   type BurnDestination = ();
   type SpendFunds = Bounties;
   type ModuleId = TreasuryModuleId;
-  type WeightInfo = ();
+  type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_bounties::Config for Runtime {
@@ -758,6 +758,17 @@ impl pallet_bounties::Config for Runtime {
   type DataDepositPerByte = DataDepositPerByte;
   type MaximumReasonLength = MaximumReasonLength;
   type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_tips::Config for Runtime {
+	type Event = Event;
+	type DataDepositPerByte = DataDepositPerByte;
+	type MaximumReasonLength = MaximumReasonLength;
+	type Tippers = ElectionsPhragmen;
+	type TipCountdown = TipCountdown;
+	type TipFindersFee = TipFindersFee;
+	type TipReportDepositBase = TipReportDepositBase;
+	type WeightInfo = pallet_tips::weights::SubstrateWeight<Runtime>;
 }
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -967,6 +978,7 @@ construct_runtime!(
     Utility: pallet_utility::{Module, Call, Event},
 
     Bounties: pallet_bounties::{Module, Call, Storage, Event<T>},
+    Tips: pallet_tips::{Module, Call, Storage, Event<T>},
 
     // account module
     EvmAccounts: evm_accounts::{Module, Call, Storage, Event<T>},

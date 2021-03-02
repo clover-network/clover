@@ -64,7 +64,8 @@ pub fn authority_keys_from_seed(s: &str) -> (AccountId, AccountId, BabeId, Grand
 
 fn endowed_evm_account() -> BTreeMap<H160, GenesisAccount>{
   let endowed_account = vec![
-    H160::from_str("5b38ced9055b075A817239eA9745Ed6260d3e12a").unwrap()
+    // clover fauct
+    H160::from_str("9157f0316f375e4ccf67f8d21ae0881d0abcbb21").unwrap()
   ];
   get_endowed_evm_accounts(endowed_account)
 }
@@ -251,7 +252,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
         ),
       ],
       // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
-      // subkey inspect "$SECRET//root"
+      // subkey inspect "$SECRET//clover/root"
       hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
       // Pre-funded accounts
       vec![
@@ -263,10 +264,10 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
     ),
     // Bootnodes
     vec![
-      "/dns/seed1.rose.clovernode.com/tcp/30333/p2p/12D3KooWF9dXRyooKqXCJWPyvQx2Am2Tg1Wq2pqBdgbor57g2cFQ"
+      "/dns/seed1.rose-cc2.clovernode.com/tcp/30333/p2p/12D3KooWPb5VY3dzydLFVh4Bn8sk73QvicvVoYcHQawRgicuMNwJ"
         .parse()
         .unwrap(),
-      "/dns/seed2.rose.clovernode.com/tcp/30333/p2p/12D3KooWPrKZgyxGniSna9yigFrqhR2nA4ZcBWH4qwUAoGsc6PSp"
+      "/dns/seed2.rose-cc2.clovernode.com/tcp/30333/p2p/12D3KooWG4jPV345wrEE23tdRh69i9YH5BtSo8RhToPj4fTaJgkZ"
         .parse()
         .unwrap(),
     ],
@@ -297,6 +298,7 @@ fn testnet_genesis(
 
   const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
   const STASH: Balance = 100 * DOLLARS;
+  const AUTHOR_BALANCE: Balance = 200 * DOLLARS;
 
   GenesisConfig {
     frame_system: Some(SystemConfig {
@@ -308,7 +310,7 @@ fn testnet_genesis(
       // Configure endowed accounts with initial balance of 1 << 60.
       balances: endowed_accounts.iter().cloned()
             .map(|k| (k, ENDOWMENT))
-            .chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
+            .chain(initial_authorities.iter().map(|x| (x.0.clone(), AUTHOR_BALANCE)))
             .collect(),
     }),
     pallet_contracts: Some(ContractsConfig {
@@ -335,7 +337,7 @@ fn testnet_genesis(
       }).collect::<Vec<_>>(),
     }),
     pallet_staking: Some(StakingConfig {
-      validator_count: initial_authorities.len() as u32 * 2,
+      validator_count: initial_authorities.len() as u32,
       minimum_validator_count: initial_authorities.len() as u32,
       stakers: initial_authorities.iter().map(|x| {
         (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator)

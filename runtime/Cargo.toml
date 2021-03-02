@@ -64,6 +64,7 @@ sp-version = {default-features = false, git = "https://github.com/paritytech/sub
 pallet-authority-discovery = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-democracy = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-elections-phragmen = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
+pallet-tips = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-treasury = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-membership = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-scheduler = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
@@ -100,6 +101,7 @@ std = [
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
     'pallet-timestamp/std',
+    'pallet-tips/std',
     'pallet-transaction-payment/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'serde',

@@ -83,7 +83,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
   let import_queue = sc_consensus_babe::import_queue(
     babe_link.clone(),
     block_import.clone(),
-    Some(Box::new(justification_import.clone())),
+    Some(Box::new(justification_import)),
     client.clone(),
     select_chain.clone(),
     inherent_data_providers.clone(),
@@ -115,8 +115,9 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 		let keystore = keystore_container.sync_keystore();
 		let chain_spec = config.chain_spec.cloned_box();
     let is_authority = config.role.is_authority();
+    let subscription_task_executor = sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
-    let rpc_extensions_builder = move |deny_unsafe, subscription_executor: sc_rpc::SubscriptionTaskExecutor, network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>| {
+    let rpc_extensions_builder = move |deny_unsafe, _subscription_executor: sc_rpc::SubscriptionTaskExecutor, network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>| {
       let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
@@ -132,14 +133,14 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 					shared_voter_state: shared_voter_state.clone(),
 					shared_authority_set: shared_authority_set.clone(),
 					justification_stream: justification_stream.clone(),
-					subscription_executor: subscription_executor.clone(),
+					subscription_executor: _subscription_executor.clone(),
 					finality_provider: finality_proof_provider.clone(),
 				},
         is_authority,
-        network: network.clone(),
+        network: network,
 			};
 
-			crate::rpc::create_full(deps, subscription_executor)
+			crate::rpc::create_full(deps, subscription_task_executor.clone())
 		};
 
     (rpc_extensions_builder, rpc_setup)
@@ -154,7 +155,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 }
 
 /// Builds a new service for a full client.
-pub fn new_full_base(config: Configuration,
+pub fn new_full_base(mut config: Configuration,
   with_startup_data: impl FnOnce(
     &sc_consensus_babe::BabeBlockImport<Block, FullClient,
       FrontierBlockImport<Block, FullGrandpaBlockImport, FullClient>,
@@ -173,6 +174,13 @@ pub fn new_full_base(config: Configuration,
   } = new_partial(&config)?;
 
   let shared_voter_state = rpc_setup;
+
+  config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
+
+  #[cfg(feature = "cli")]
+	config.network.request_response_protocols.push(sc_finality_grandpa_warp_sync::request_response_config_for_chain(
+		&config, task_manager.spawn_handle(), backend.clone(),
+	));
 
   let (network, network_status_sinks, system_rpc_tx, network_starter) =
     sc_service::build_network(sc_service::BuildNetworkParams {
