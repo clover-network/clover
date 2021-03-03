@@ -332,7 +332,7 @@ impl FeeCalculator for FixedGasPrice {
 }
 
 parameter_types! {
-  pub const ChainId: u64 = 1337;
+  pub const ChainId: u64 = 1023;
 }
 
 impl clover_evm::Config for Runtime {
