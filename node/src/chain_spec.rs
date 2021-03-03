@@ -252,7 +252,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
         ),
       ],
       // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
-      // subkey inspect "$SECRET//clover/root"
+      // subkey inspect "$SECRET//clover//root"
       hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
       // Pre-funded accounts
       vec![

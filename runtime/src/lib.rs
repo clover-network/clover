@@ -37,7 +37,7 @@ pub use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use sp_version::RuntimeVersion;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
-use sp_core::{u32_trait::{_1, _2, _4, _5}};
+use sp_core::{u32_trait::{_1, _2, _3, _4, _5}};
 
 // A few exports that help ease life for downstream crates.
 #[cfg(any(feature = "std", test))]
@@ -217,7 +217,7 @@ impl frame_system::Config for Runtime {
   /// The data to be stored in an account.
   type AccountData = pallet_balances::AccountData<Balance>;
   /// Weight information for the extrinsics of this pallet.
-  type SystemWeightInfo = ();
+  type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
   type SS58Prefix = SS58Prefix;
 }
 
@@ -276,7 +276,7 @@ impl pallet_timestamp::Config for Runtime {
   type Moment = u64;
   type OnTimestampSet = Babe;
   type MinimumPeriod = MinimumPeriod;
-  type WeightInfo = ();
+  type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -304,7 +304,7 @@ impl pallet_session::Config for Runtime {
   type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
   type Keys = SessionKeys;
   type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
-  type WeightInfo = ();
+  type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_session::historical::Config for Runtime {
@@ -458,7 +458,11 @@ impl pallet_staking::Config for Runtime {
   type BondingDuration = BondingDuration;
   type SlashDeferDuration = SlashDeferDuration;
 
-  type SlashCancelOrigin = EnsureRoot<AccountId>;
+  type SlashCancelOrigin = EnsureOneOf<
+		AccountId,
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>
+	>;
 
   type SessionInterface = Self;
   type RewardCurve = RewardCurve;
@@ -469,7 +473,7 @@ impl pallet_staking::Config for Runtime {
   type MinSolutionScoreBump = MinSolutionScoreBump;
   type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
   type UnsignedPriority = StakingUnsignedPriority;
-  type WeightInfo = ();
+  type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
   type OffchainSolutionWeightLimit = OffchainSolutionWeightLimit;
 }
 
@@ -487,7 +491,7 @@ impl pallet_balances::Config for Runtime {
   type ExistentialDeposit = ExistentialDeposit;
   type AccountStore = System;
   type MaxLocks = MaxLocks;
-  type WeightInfo = ();
+  type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -502,7 +506,7 @@ impl pallet_im_online::Config for Runtime {
   type ReportUnresponsiveness = Offences;
   type SessionDuration = SessionDuration;
   type UnsignedPriority = ImOnlineUnsignedPriority;
-  type WeightInfo = ();
+  type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -530,7 +534,7 @@ impl pallet_scheduler::Config for Runtime {
   type PalletsOrigin = OriginCaller;
   type ScheduleOrigin = EnsureRoot<AccountId>;
   type MaxScheduledPerBlock = MaxScheduledPerBlock;
-  type WeightInfo = ();
+  type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -590,14 +594,14 @@ impl pallet_democracy::Config for Runtime {
   type Scheduler = Scheduler;
   type MaxVotes = MaxVotes;
   type PalletsOrigin = OriginCaller;
-  type WeightInfo = ();
+  type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
   type MaxProposals = MaxProposals;
 }
 
 impl pallet_utility::Config for Runtime {
   type Event = Event;
   type Call = Call;
-  type WeightInfo = ();
+  type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -615,7 +619,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
   type MaxProposals = CouncilMaxProposals;
   type MaxMembers = GeneralCouncilMaxMembers;
   type DefaultVote = pallet_collective::PrimeDefaultVote;
-  type WeightInfo = ();
+  type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
 /// Converter for currencies to votes.
@@ -680,7 +684,7 @@ impl pallet_elections_phragmen::Config for Runtime {
   type DesiredRunnersUp = DesiredRunnersUp;
   type TermDuration = TermDuration;
   type ModuleId = ElectionsPhragmenModuleId;
-  type WeightInfo = ();
+  type WeightInfo = pallet_elections_phragmen::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -698,7 +702,7 @@ impl pallet_collective::Config<TechnicalCollective> for Runtime {
   type MaxProposals = TechnicalMaxProposals;
   type MaxMembers = TechnicalMaxMembers;
   type DefaultVote = pallet_collective::PrimeDefaultVote;
-  type WeightInfo = ();
+  type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
@@ -817,7 +821,7 @@ impl pallet_indices::Config for Runtime {
   type Event = Event;
   type Currency = Balances;
   type Deposit = IndexDeposit;
-  type WeightInfo = ();
+  type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
