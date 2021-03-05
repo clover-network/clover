@@ -64,11 +64,14 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git",  ta
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"   }
 hex-literal = { version = '0.3.1' }
 sc-telemetry = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
-clover-evm = { path = "../modules/clover-evm" }
-clover-ethereum = { path = "../modules/clover-ethereum" }
-fc-rpc = { path = "../rpc/client/rpc" }
-fp-rpc = { path = "../primitives/rpc" }
-fc-consensus = { path = "../rpc/client/consensus" }
+pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover"  }
+pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
+fc-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", features = ["rpc_binary_search_estimate"] }
+fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
+fc-consensus = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
+fp-consensus = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
+fc-db = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
+fc-rpc-core = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
 primitive-types = { version = "0.9", default-features = false, features = ["rlp", "byteorder"] }
 
 [build-dependencies]

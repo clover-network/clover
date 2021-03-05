@@ -15,7 +15,7 @@ use frame_support::{
 	StorageMap,
 };
 use frame_system::ensure_signed;
-use evm_primitives::AddressMapping;
+use pallet_evm::AddressMapping;
 use sp_core::{crypto::AccountId32, ecdsa, H160};
 use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
 use sp_std::marker::PhantomData;
@@ -110,7 +110,7 @@ decl_module! {
 				ensure!(eth_address == address, Error::<T>::InvalidSignature);
 
 				// check if the evm padded address already exists
-				let account_id = T::AddressMapping::into_account_id(&eth_address);
+				let account_id = T::AddressMapping::into_account_id(eth_address);
 				let mut nonce = <T as frame_system::Config>::Index::default();
 				if frame_system::Account::<T>::contains_key(&account_id) {
 					// merge balance from `evm padded address` to `origin`
@@ -201,7 +201,7 @@ impl<T: Config> AddressMapping<T::AccountId> for EvmAddressMapping<T>
 where
 	T::AccountId: From<AccountId32> + Into<AccountId32>,
 {
-	fn into_account_id(address: &H160) -> T::AccountId {
+	fn into_account_id(address: H160) -> T::AccountId {
 		if let Some(acc) = Accounts::<T>::get(address) {
 			acc
 		} else {
@@ -212,7 +212,7 @@ where
 		}
 	}
 
-	fn to_evm_address(account_id: &T::AccountId) -> Option<H160> {
+  fn to_evm_address(account_id: &T::AccountId) -> Option<H160> {
 		EvmAddresses::<T>::get(account_id).or_else(|| {
 			let data: [u8; 32] = account_id.clone().into().into();
 			if data.starts_with(b"evm:") {

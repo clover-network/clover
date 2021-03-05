@@ -1,15 +1,16 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::{Arc, Mutex}, time::Duration, collections::{HashMap, BTreeMap}};
 use sc_client_api::{ExecutorProvider, RemoteBackend};
+use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use clover_runtime::{self, opaque::Block, RuntimeApi};
 use futures::prelude::*;
 use sc_network::{Event, };
-use sc_service::{error::Error as ServiceError, Configuration, RpcHandlers, TaskManager};
+use sc_service::{BasePath, error::Error as ServiceError, Configuration, RpcHandlers, TaskManager};
 use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
 use sc_executor::native_executor_instance;
+use sc_cli::SubstrateCli;
 pub use sc_executor::NativeExecutor;
 use sc_telemetry::TelemetryConnectionNotifier;
 use fc_consensus::FrontierBlockImport;
@@ -27,6 +28,23 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport =
   sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
 type LightClient = sc_service::TLightClient<Block, RuntimeApi, Executor>;
+
+pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
+	let config_dir = config.base_path.as_ref()
+		.map(|base_path| base_path.config_dir(config.chain_spec.id()))
+		.unwrap_or_else(|| {
+			BasePath::from_project("", "", &crate::cli::Cli::executable_name())
+				.config_dir(config.chain_spec.id())
+		});
+	let database_dir = config_dir.join("frontier").join("db");
+
+	Ok(Arc::new(fc_db::Backend::<Block>::new(&fc_db::DatabaseSettings {
+		source: fc_db::DatabaseSettingsSrc::RocksDb {
+			path: database_dir,
+			cache_size: 0,
+		}
+	})?))
+}
 
 pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponents<
   FullClient, FullBackend, FullSelectChain,
@@ -67,12 +85,25 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
     client.clone(),
   );
 
+  let pending_transactions: PendingTransactions
+      = Some(Arc::new(Mutex::new(HashMap::new())));
+
+  let filter_pool: Option<FilterPool>
+      = Some(Arc::new(Mutex::new(BTreeMap::new())));
+
+  let frontier_backend = open_frontier_backend(config)?;
+
   let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
     client.clone(), &(client.clone() as Arc<_>), select_chain.clone(),
   )?;
 
   let justification_import = grandpa_block_import.clone();
-  let frontier_block_import = FrontierBlockImport::new(grandpa_block_import.clone(), client.clone(), true);
+  let frontier_block_import = FrontierBlockImport::new(
+      grandpa_block_import.clone(),
+      client.clone(),
+      frontier_backend.clone(),
+      true
+    );
 
   let (block_import, babe_link) = sc_consensus_babe::block_import(
     sc_consensus_babe::Config::get_or_compute(&*client)?,
@@ -117,7 +148,12 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
     let is_authority = config.role.is_authority();
     let subscription_task_executor = sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
+
     let rpc_extensions_builder = move |deny_unsafe, _subscription_executor: sc_rpc::SubscriptionTaskExecutor, network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>| {
+      let pending = pending_transactions.clone();
+      let filter_pool = filter_pool.clone();
+      let backend = frontier_backend.clone();
+
       let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
@@ -136,6 +172,9 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 					subscription_executor: _subscription_executor.clone(),
 					finality_provider: finality_proof_provider.clone(),
 				},
+        pending_transactions: pending,
+        filter_pool: filter_pool,
+        backend: backend,
         is_authority,
         network: network,
 			};

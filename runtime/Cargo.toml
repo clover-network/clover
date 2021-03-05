@@ -13,9 +13,10 @@ targets = ['x86_64-unknown-linux-gnu']
 [dependencies]
 clover-traits = { path = "../modules/traits", default-features = false }
 clover-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
-clover-evm = { path = "../modules/clover-evm", default-features = false }
-clover-ethereum = { path = "../modules/clover-ethereum", default-features = false }
-fp-rpc = { path = "../primitives/rpc", default-features = false  }
+pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
+pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
+fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
 evm-accounts = { path = "../modules/evm-accounts", default-features = false }
 primitives = { default-features = false, package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
 
@@ -126,8 +127,9 @@ std = [
     "pallet-membership/std",
     "pallet-scheduler/std",
     "pallet-utility/std",
-    "clover-evm/std",
-    "clover-ethereum/std",
+    "pallet-evm/std",
+    "pallet-evm-precompile-simple/std",
+    "pallet-ethereum/std",
     "fp-rpc/std",
     "evm-accounts/std",
 ]

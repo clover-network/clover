@@ -15,7 +15,7 @@ use hex_literal::hex;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::UncheckedInto;
 use std::collections::BTreeMap;
-use clover_evm::GenesisAccount;
+use pallet_evm::GenesisAccount;
 use primitive_types::H160;
 use std::str::FromStr;
 
@@ -319,10 +319,10 @@ fn testnet_genesis(
         ..Default::default()
       },
     }),
-    clover_evm: Some(EVMConfig {
+    pallet_evm: Some(EVMConfig {
       accounts: endowed_eth_accounts,
     }),
-    clover_ethereum: Some(EthereumConfig {}),
+    pallet_ethereum: Some(EthereumConfig {}),
     pallet_indices: Some(IndicesConfig {
       indices: vec![],
     }),

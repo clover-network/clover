@@ -65,7 +65,7 @@ pub use frame_support::{
   transactional,
 };
 use codec::{Encode};
-use clover_evm::{
+use pallet_evm::{
   Account as EVMAccount, FeeCalculator,
   EnsureAddressTruncated, Runner,
 };
@@ -211,7 +211,7 @@ impl frame_system::Config for Runtime {
   type OnNewAccount = ();
   /// What to do if an account is fully reaped from the system.
   type OnKilledAccount = (
-    clover_evm::CallKillAccount<Runtime>,
+    pallet_evm::CallKillAccount<Runtime>,
     evm_accounts::CallKillAccount<Runtime>,
   );
   /// The data to be stored in an account.
@@ -335,21 +335,20 @@ parameter_types! {
   pub const ChainId: u64 = 1023;
 }
 
-impl clover_evm::Config for Runtime {
+impl pallet_evm::Config for Runtime {
   type FeeCalculator = FixedGasPrice;
-  type GasToWeight = ();
+  type GasWeightMapping = ();
   type CallOrigin = EnsureAddressTruncated;
   type WithdrawOrigin = EnsureAddressTruncated;
   type AddressMapping = EvmAddressMapping<Runtime>;
   type Currency = Balances;
-  type MergeAccount = MergeAccountEvm;
   type Event = Event;
-  type Runner = clover_evm::runner::stack::Runner<Self>;
+  type Runner = pallet_evm::runner::stack::Runner<Self>;
   type Precompiles = (
-    clover_evm::precompiles::ECRecover,
-    clover_evm::precompiles::Sha256,
-    clover_evm::precompiles::Ripemd160,
-    clover_evm::precompiles::Identity,
+      pallet_evm_precompile_simple::ECRecover,
+      pallet_evm_precompile_simple::Sha256,
+      pallet_evm_precompile_simple::Ripemd160,
+      pallet_evm_precompile_simple::Identity,
   );
   type ChainId = ChainId;
 }
@@ -368,23 +367,29 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
   }
 }
 
-impl clover_ethereum::Config for Runtime {
+parameter_types! {
+	pub BlockGasLimit: U256 = U256::from(u32::max_value());
+}
+
+impl pallet_ethereum::Config for Runtime {
   type Event = Event;
   type FindAuthor = EthereumFindAuthor<Babe>;
+  type StateRoot = pallet_ethereum::IntermediateStateRoot;
+	type BlockGasLimit = BlockGasLimit;
 }
 
 pub struct TransactionConverter;
 
 impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
-  fn convert_transaction(&self, transaction: clover_ethereum::Transaction) -> UncheckedExtrinsic {
-    UncheckedExtrinsic::new_unsigned(clover_ethereum::Call::<Runtime>::transact(transaction).into())
+  fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
+    UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into())
   }
 }
 
 impl fp_rpc::ConvertTransaction<OpaqueExtrinsic> for TransactionConverter {
-  fn convert_transaction(&self, transaction: clover_ethereum::Transaction) -> OpaqueExtrinsic {
+  fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> OpaqueExtrinsic {
     let extrinsic =
-        UncheckedExtrinsic::new_unsigned(clover_ethereum::Call::<Runtime>::transact(transaction).into());
+        UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into());
     let encoded = extrinsic.encode();
     OpaqueExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
   }
@@ -968,8 +973,8 @@ construct_runtime!(
 
     // Smart contracts modules
     Contracts: pallet_contracts::{Module, Call, Config<T>, Storage, Event<T>},
-    EVM: clover_evm::{Module, Config, Call, Storage, Event<T>},
-    Ethereum: clover_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
+    EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
+    Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
 
     Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
@@ -1224,7 +1229,7 @@ impl_runtime_apis! {
 
   impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
     fn chain_id() -> u64 {
-        <Runtime as clover_evm::Config>::ChainId::get()
+        <Runtime as pallet_evm::Config>::ChainId::get()
     }
 
     fn account_basic(address: H160) -> EVMAccount {
@@ -1232,7 +1237,7 @@ impl_runtime_apis! {
     }
 
     fn gas_price() -> U256 {
-        <Runtime as clover_evm::Config>::FeeCalculator::min_gas_price()
+        <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
     }
 
     fn account_code_at(address: H160) -> Vec<u8> {
@@ -1240,7 +1245,7 @@ impl_runtime_apis! {
     }
 
     fn author() -> H160 {
-        <clover_ethereum::Module<Runtime>>::find_author()
+        <pallet_ethereum::Module<Runtime>>::find_author()
     }
 
     fn storage_at(address: H160, index: U256) -> H256 {
@@ -1258,24 +1263,24 @@ impl_runtime_apis! {
         gas_price: Option<U256>,
         nonce: Option<U256>,
         estimate: bool,
-    ) -> Result<clover_evm::CallInfo, sp_runtime::DispatchError> {
+    ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
         let config = if estimate {
-            let mut config = <Runtime as clover_evm::Config>::config().clone();
+            let mut config = <Runtime as pallet_evm::Config>::config().clone();
             config.estimate = true;
             Some(config)
         } else {
             None
         };
 
-        <Runtime as clover_evm::Config>::Runner::call(
+        <Runtime as pallet_evm::Config>::Runner::call(
             from,
             to,
             data,
             value,
-            gas_limit.low_u32(),
+            gas_limit.low_u64(),
             gas_price,
             nonce,
-            config.as_ref().unwrap_or(<Runtime as clover_evm::Config>::config()),
+            config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
         ).map_err(|err| err.into())
     }
 
@@ -1287,23 +1292,23 @@ impl_runtime_apis! {
         gas_price: Option<U256>,
         nonce: Option<U256>,
         estimate: bool,
-    ) -> Result<clover_evm::CreateInfo, sp_runtime::DispatchError> {
+    ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
         let config = if estimate {
-            let mut config = <Runtime as clover_evm::Config>::config().clone();
+            let mut config = <Runtime as pallet_evm::Config>::config().clone();
             config.estimate = true;
             Some(config)
         } else {
             None
         };
 
-        <Runtime as clover_evm::Config>::Runner::create(
+        <Runtime as pallet_evm::Config>::Runner::create(
             from,
             data,
             value,
-            gas_limit.low_u32(),
+            gas_limit.low_u64(),
             gas_price,
             nonce,
-            config.as_ref().unwrap_or(<Runtime as clover_evm::Config>::config()),
+            config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
         ).map_err(|err| err.into())
     }
 
@@ -1311,17 +1316,17 @@ impl_runtime_apis! {
         Ethereum::current_transaction_statuses()
     }
 
-    fn current_block() -> Option<clover_ethereum::Block> {
+    fn current_block() -> Option<pallet_ethereum::Block> {
         Ethereum::current_block()
     }
 
-    fn current_receipts() -> Option<Vec<clover_ethereum::Receipt>> {
+    fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
         Ethereum::current_receipts()
     }
 
     fn current_all() -> (
-        Option<clover_ethereum::Block>,
-        Option<Vec<clover_ethereum::Receipt>>,
+        Option<pallet_ethereum::Block>,
+        Option<Vec<pallet_ethereum::Receipt>>,
         Option<Vec<TransactionStatus>>
     ) {
         (

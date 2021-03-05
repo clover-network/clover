@@ -7,6 +7,7 @@
 use std::sync::Arc;
 
 use primitives::{Block, BlockNumber, AccountId, Index, Balance, Hash, };
+use fc_rpc_core::types::{PendingTransactions, FilterPool};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -77,6 +78,12 @@ pub struct FullDeps<C, P, SC, B> {
   pub babe: BabeDeps,
   /// GRANDPA specific dependencies.
   pub grandpa: GrandpaDeps<B>,
+  /// Ethereum pending transactions.
+	pub pending_transactions: PendingTransactions,
+	/// EthFilterApi pool.
+	pub filter_pool: Option<FilterPool>,
+  /// Backend.
+	pub backend: Arc<fc_db::Backend<Block>>,
   /// The Node authority flag
   pub is_authority: bool,
   /// Network service
@@ -107,7 +114,7 @@ pub fn create_full<C, P, SC, B>(
   B::State: sc_client_api::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
   use fc_rpc::{
-    EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
+    EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
     Web3Api, Web3ApiServer, EthDevSigner, EthSigner, HexEncodedIdProvider,
   };
   use substrate_frame_rpc_system::{FullSystem, SystemApi};
@@ -124,6 +131,9 @@ pub fn create_full<C, P, SC, B>(
     babe,
     grandpa,
     network,
+    pending_transactions,
+		filter_pool,
+    backend,
     is_authority,
   } = deps;
 
@@ -190,9 +200,21 @@ pub fn create_full<C, P, SC, B>(
     pool.clone(),
     clover_runtime::TransactionConverter,
     network.clone(),
+    pending_transactions.clone(),
     signers,
+    backend,
     is_authority,
   )));
+
+  if let Some(filter_pool) = filter_pool {
+		io.extend_with(
+			EthFilterApiServer::to_delegate(EthFilterApi::new(
+				client.clone(),
+				filter_pool.clone(),
+				500 as usize, // max stored filters
+			))
+		);
+	}
 
   io.extend_with(
     NetApiServer::to_delegate(NetApi::new(
