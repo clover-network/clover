@@ -37,6 +37,7 @@ pallet-contracts-rpc-runtime-api = { version = "0.8.0", default-features = false
 pallet-grandpa = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-indices = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
+pallet-identity = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-multisig = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-staking = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
@@ -47,6 +48,7 @@ pallet-sudo = {default-features = false, git = "https://github.com/paritytech/su
 pallet-timestamp = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-transaction-payment = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-transaction-payment-rpc-runtime-api = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
+pallet-vesting = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 serde = {features = ['derive'], optional = true, version = '1.0.101' }
 sp-api = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 sp-arithmetic = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
@@ -97,6 +99,7 @@ std = [
     'pallet-grandpa/std',
     'pallet-im-online/std',
     'pallet-indices/std',
+    'pallet-identity/std',
     'pallet-multisig/std',
     'pallet-offences/std',
     'pallet-staking/std',
@@ -107,6 +110,7 @@ std = [
     'pallet-tips/std',
     'pallet-transaction-payment/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
+    'pallet-vesting/std',
     'serde',
     'sp-api/std',
     'sp-authority-discovery/std',
