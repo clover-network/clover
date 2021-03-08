@@ -37,6 +37,7 @@ pallet-contracts-rpc-runtime-api = { version = "0.8.0", default-features = false
 pallet-grandpa = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-im-online = { default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-indices = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
+pallet-multisig = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-offences = { default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-staking = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 pallet-session = {default-features = false, features = ["historical"], git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
@@ -96,6 +97,7 @@ std = [
     'pallet-grandpa/std',
     'pallet-im-online/std',
     'pallet-indices/std',
+    'pallet-multisig/std',
     'pallet-offences/std',
     'pallet-staking/std',
     'pallet-session/std',
