@@ -117,7 +117,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 6,
+  spec_version: 7,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -610,6 +610,24 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
+	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+	pub const DepositBase: Balance = deposit(1, 88);
+	// Additional storage item size of 32 bytes.
+	pub const DepositFactor: Balance = deposit(0, 32);
+	pub const MaxSignatories: u16 = 100;
+}
+
+impl pallet_multisig::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = MaxSignatories;
+	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
   pub const CouncilMotionDuration: BlockNumber = 3 * DAYS;
   pub const CouncilMaxProposals: u32 = 100;
   pub const GeneralCouncilMaxMembers: u32 = 100;
@@ -986,6 +1004,8 @@ construct_runtime!(
     Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
     Utility: pallet_utility::{Module, Call, Event},
 
+    Multisig: pallet_multisig::{Module, Call, Storage, Event<T>},
+
     Bounties: pallet_bounties::{Module, Call, Storage, Event<T>},
     Tips: pallet_tips::{Module, Call, Storage, Event<T>},
 
@@ -995,7 +1015,7 @@ construct_runtime!(
 );
 
 /// The address format for describing accounts.
-pub type Address = <Indices as StaticLookup>::Source;
+pub type Address = sp_runtime::MultiAddress<AccountId, AccountIndex>;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
