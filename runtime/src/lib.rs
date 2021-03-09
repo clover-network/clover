@@ -373,8 +373,14 @@ impl FeeCalculator for FixedGasPrice {
   }
 }
 
+
+#[cfg(feature="clover-mainnet")]
+const CHAIN_ID: u64 = 1024;
+#[cfg(feature = "clover-testnet")]
+const CHAIN_ID: u64 = 1023;
+
 parameter_types! {
-  pub const ChainId: u64 = 1023;
+  pub const ChainId: u64 = CHAIN_ID;
 }
 
 impl pallet_evm::Config for Runtime {
