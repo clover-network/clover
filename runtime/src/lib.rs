@@ -117,7 +117,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 8,
+  spec_version: 9,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -170,7 +170,7 @@ parameter_types! {
   .build_or_panic();
   pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
   pub const Version: RuntimeVersion = VERSION;
-  pub const SS58Prefix: u8 = 42; //todo: apply for clover prefix
+  pub const SS58Prefix: u8 = 128;
 }
 
 // Configure FRAME pallets to include in runtime.
