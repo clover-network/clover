@@ -47,7 +47,7 @@ pub enum PoolId {
   Dex(PairKey),
 }
 
-pub trait Trait: frame_system::Trait {
+pub trait Trait: frame_system::Config{
   type RewardPool:  RewardPoolOps<Self::AccountId, PoolId, Share, Balance>;
 }
 

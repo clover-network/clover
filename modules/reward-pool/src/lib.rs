@@ -31,8 +31,6 @@ use sp_std::vec;
 
 use primitives::{Balance, CurrencyId, Price, Share, Ratio};
 
-use orml_traits::{MultiCurrency, MultiCurrencyExtended};
-
 pub mod traits;
 
 use traits::RewardHandler;
@@ -70,8 +68,8 @@ pub struct PoolAccountInfo <Share: HasCompact, Balance: HasCompact> {
   pub borrowed_amount: Balance, // borrow balances
 }
 
-pub trait Trait: frame_system::Trait {
-  type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+pub trait Trait: frame_system::Config{
+  type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 
   /// The reward pool ID type.
   type PoolId: Parameter + Member + Copy + FullCodec;
@@ -92,7 +90,7 @@ pub trait Trait: frame_system::Trait {
 
 decl_event!(
   pub enum Event<T> where
-    <T as frame_system::Trait>::AccountId,
+    <T as frame_system::Config>::AccountId,
     <T as Trait>::PoolId,
     Share = Share,
     Balance = Balance,

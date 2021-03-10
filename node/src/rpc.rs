@@ -6,13 +6,14 @@
 #![warn(missing_docs)]
 use std::sync::Arc;
 
-use primitives::{Block, BlockNumber, AccountId, CurrencyId, Index, Balance, Hash, Rate, Share};
+use primitives::{Block, BlockNumber, AccountId, Index, Balance, Hash, };
+use fc_rpc_core::types::{PendingTransactions, FilterPool};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
 use sc_finality_grandpa::{FinalityProofProvider, SharedVoterState, SharedAuthoritySet, GrandpaJustificationStream};
 use sc_finality_grandpa_rpc::GrandpaRpcHandler;
-use sc_keystore::KeyStorePtr;
+use sp_keystore::SyncCryptoStorePtr;
 pub use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
@@ -44,7 +45,7 @@ pub struct BabeDeps {
   /// BABE pending epoch changes.
   pub shared_epoch_changes: SharedEpochChanges<Block, Epoch>,
   /// The keystore that manages the keys of the node.
-  pub keystore: KeyStorePtr,
+  pub keystore: SyncCryptoStorePtr,
 }
 
 /// Extra dependencies for GRANDPA
@@ -69,12 +70,20 @@ pub struct FullDeps<C, P, SC, B> {
   pub pool: Arc<P>,
   /// The SelectChain Strategy
   pub select_chain: SC,
+  /// A copy of the chain spec.
+	pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
   /// Whether to deny unsafe calls
   pub deny_unsafe: DenyUnsafe,
   /// BABE specific dependencies.
   pub babe: BabeDeps,
   /// GRANDPA specific dependencies.
   pub grandpa: GrandpaDeps<B>,
+  /// Ethereum pending transactions.
+	pub pending_transactions: PendingTransactions,
+	/// EthFilterApi pool.
+	pub filter_pool: Option<FilterPool>,
+  /// Backend.
+	pub backend: Arc<fc_db::Backend<Block>>,
   /// The Node authority flag
   pub is_authority: bool,
   /// Network service
@@ -96,10 +105,6 @@ pub fn create_full<C, P, SC, B>(
   C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
   C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
   C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-  C::Api: clover_rpc::balance::CurrencyBalanceRuntimeApi<Block, AccountId, CurrencyId, Balance>,
-  C::Api: clover_rpc::pair::CurrencyPairRuntimeApi<Block>,
-  C::Api: clover_rpc::incentive_pool::IncentivePoolRuntimeApi<Block, AccountId, CurrencyId, Share, Balance>,
-  C::Api: clover_rpc::exchange::CurrencyExchangeRuntimeApi<Block, AccountId, CurrencyId, Balance, Rate, Share>,
   C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
   C::Api: BabeApi<Block>,
   C::Api: BlockBuilder<Block>,
@@ -109,7 +114,7 @@ pub fn create_full<C, P, SC, B>(
   B::State: sc_client_api::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
   use fc_rpc::{
-    EthApi, EthApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
+    EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
     Web3Api, Web3ApiServer, EthDevSigner, EthSigner, HexEncodedIdProvider,
   };
   use substrate_frame_rpc_system::{FullSystem, SystemApi};
@@ -121,11 +126,15 @@ pub fn create_full<C, P, SC, B>(
     client,
     pool,
     select_chain,
+    chain_spec,
     deny_unsafe,
     babe,
     grandpa,
-    is_authority,
     network,
+    pending_transactions,
+		filter_pool,
+    backend,
+    is_authority,
   } = deps;
 
   let BabeDeps {
@@ -152,7 +161,7 @@ pub fn create_full<C, P, SC, B>(
     sc_consensus_babe_rpc::BabeApi::to_delegate(
       BabeRpcHandler::new(
         client.clone(),
-        shared_epoch_changes,
+        shared_epoch_changes.clone(),
         keystore,
         babe_config,
         select_chain,
@@ -163,7 +172,7 @@ pub fn create_full<C, P, SC, B>(
   io.extend_with(
     sc_finality_grandpa_rpc::GrandpaApi::to_delegate(
       GrandpaRpcHandler::new(
-        shared_authority_set,
+        shared_authority_set.clone(),
         shared_voter_state,
         justification_stream,
         subscription_executor,
@@ -172,25 +181,17 @@ pub fn create_full<C, P, SC, B>(
     )
   );
 
-  io.extend_with(clover_rpc::balance::CurrencyBalanceRpc::to_delegate(
-    clover_rpc::balance::CurrencyBalance::new(client.clone()),
-  ));
-
-  io.extend_with(clover_rpc::currency::CurrencyRpc::to_delegate(
-        clover_rpc::currency::Currency {},
-    ));
-
-  io.extend_with(clover_rpc::pair::CurrencyPairRpc::to_delegate(
-    clover_rpc::pair::CurrencyPair::new(client.clone()),
-  ));
-
-  io.extend_with(clover_rpc::exchange::CurrencyExchangeRpc::to_delegate(
-    clover_rpc::exchange::CurrencyExchange::new(client.clone()),
-  ));
-
-  io.extend_with(clover_rpc::incentive_pool::IncentivePoolRpc::to_delegate(
-    clover_rpc::incentive_pool::IncentivePool::new(client.clone()),
-  ));
+  io.extend_with(
+		sc_sync_state_rpc::SyncStateRpcApi::to_delegate(
+			sc_sync_state_rpc::SyncStateRpcHandler::new(
+				chain_spec,
+				client.clone(),
+				shared_authority_set,
+				shared_epoch_changes,
+				deny_unsafe,
+			)
+		)
+	);
 
   let mut signers = Vec::new();
   signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
@@ -199,9 +200,21 @@ pub fn create_full<C, P, SC, B>(
     pool.clone(),
     clover_runtime::TransactionConverter,
     network.clone(),
+    pending_transactions.clone(),
     signers,
+    backend,
     is_authority,
   )));
+
+  if let Some(filter_pool) = filter_pool {
+		io.extend_with(
+			EthFilterApiServer::to_delegate(EthFilterApi::new(
+				client.clone(),
+				filter_pool.clone(),
+				500 as usize, // max stored filters
+			))
+		);
+	}
 
   io.extend_with(
     NetApiServer::to_delegate(NetApi::new(

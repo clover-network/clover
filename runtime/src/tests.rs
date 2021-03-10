@@ -5,7 +5,6 @@ use mock::*;
 
 pub const CLV: CurrencyId = CurrencyId::CLV;
 pub const CUSDT: CurrencyId = CurrencyId::CUSDT;
-use orml_traits::{MultiCurrency, MultiCurrencyExtended};
 
 #[test]
 fn test_balance() {
