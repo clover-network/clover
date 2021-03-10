@@ -4,7 +4,6 @@ use std::{sync::{Arc, Mutex}, time::Duration, collections::{HashMap, BTreeMap}};
 use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use clover_runtime::{self, opaque::Block, RuntimeApi};
-use futures::prelude::*;
 use sc_network::{Event, };
 use sc_service::{BasePath, error::Error as ServiceError, Configuration, RpcHandlers, TaskManager};
 use sp_inherents::InherentDataProviders;
@@ -14,6 +13,8 @@ use sc_cli::SubstrateCli;
 pub use sc_executor::NativeExecutor;
 use sc_telemetry::TelemetryConnectionNotifier;
 use fc_consensus::FrontierBlockImport;
+use fc_mapping_sync::MappingSyncWorker;
+use futures::StreamExt;
 
 // Our native executor instance.
 native_executor_instance!(
@@ -66,7 +67,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
       sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
       sc_consensus_babe::BabeLink<Block>,
     ),
-    (sc_finality_grandpa::SharedVoterState, PendingTransactions, Option<FilterPool>),
+    (sc_finality_grandpa::SharedVoterState, PendingTransactions, Option<FilterPool>, Arc<fc_db::Backend<Block>>),
   )
 >, ServiceError> {
   let inherent_data_providers = sp_inherents::InherentDataProviders::new();
@@ -102,7 +103,6 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
       grandpa_block_import.clone(),
       client.clone(),
       frontier_backend.clone(),
-      true
     );
 
   let (block_import, babe_link) = sc_consensus_babe::block_import(
@@ -150,9 +150,9 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 
     let pending = pending_transactions.clone();
     let filter_pool_clone = filter_pool.clone();
+    let backend = frontier_backend.clone();
 
     let rpc_extensions_builder = move |deny_unsafe, _subscription_executor: sc_rpc::SubscriptionTaskExecutor, network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>| {
-      let backend = frontier_backend.clone();
 
       let deps = crate::rpc::FullDeps {
         client: client.clone(),
@@ -174,7 +174,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
         },
         pending_transactions: pending.clone(),
         filter_pool: filter_pool_clone.clone(),
-        backend: backend,
+        backend: backend.clone(),
         is_authority,
         network: network,
       };
@@ -189,7 +189,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
   Ok(sc_service::PartialComponents {
     client, backend, task_manager, keystore_container, select_chain, import_queue, transaction_pool,
     inherent_data_providers,
-    other: (rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool))
+    other: (rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool, frontier_backend))
   })
 }
 
@@ -209,7 +209,8 @@ pub fn new_full_base(mut config: Configuration,
   let sc_service::PartialComponents {
     client, backend, mut task_manager, import_queue, keystore_container, select_chain, transaction_pool,
     inherent_data_providers,
-    other: (partial_rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool)),
+    other: (partial_rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool,
+    frontier_backend)),
   } = new_partial(&config)?;
 
   let shared_voter_state = rpc_setup;
@@ -252,6 +253,17 @@ pub fn new_full_base(mut config: Configuration,
     partial_rpc_extensions_builder(deny_unsafe, subscription_executor, network_clone.clone())
   };
 
+  task_manager.spawn_essential_handle().spawn(
+		"frontier-mapping-sync-worker",
+		MappingSyncWorker::new(
+			client.import_notification_stream(),
+			Duration::new(6, 0),
+			client.clone(),
+			backend.clone(),
+			frontier_backend.clone(),
+		).for_each(|()| futures::future::ready(()))
+	);
+
   let (_rpc_handlers, telemetry_connection_notifier) = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
     config,
     backend,
@@ -269,7 +281,6 @@ pub fn new_full_base(mut config: Configuration,
 
   // Spawn Frontier EthFilterApi maintenance task.
   if filter_pool.is_some() {
-    use futures::StreamExt;
     // Each filter is allowed to stay in the pool for 100 blocks.
     const FILTER_RETAIN_THRESHOLD: u64 = 100;
     task_manager.spawn_essential_handle().spawn(
@@ -291,10 +302,6 @@ pub fn new_full_base(mut config: Configuration,
 
   // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
   if pending_transactions.is_some() {
-    use futures::StreamExt;
-    use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
-    use sp_runtime::generic::OpaqueDigestItemId;
-
     const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
     task_manager.spawn_essential_handle().spawn(
       "frontier-pending-transactions",
@@ -302,29 +309,17 @@ pub fn new_full_base(mut config: Configuration,
         if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
           // As pending transactions have a finite lifespan anyway
           // we can ignore MultiplePostRuntimeLogs error checks.
-          let mut frontier_log: Option<_> = None;
-          for log in notification.header.digest.logs {
-            let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
-            if let Some(log) = log {
-              frontier_log = Some(log);
-            }
-          }
-
-          let imported_number: u64 = notification.header.number as u64;
-
-          let post_hashes = frontier_log.map(|l| {
-            match l {
-              ConsensusLog::PostHashes(post_hashes) => post_hashes,
-              ConsensusLog::PreBlock(block) => fp_consensus::PostHashes::from_block(block),
-              ConsensusLog::PostBlock(block) => fp_consensus::PostHashes::from_block(block),
-            }
-          });
+          let log = fp_consensus::find_log(&notification.header.digest).ok();
+					let post_hashes = log.map(|log| log.into_hashes());
 
           if let Some(post_hashes) = post_hashes {
             // Retain all pending transactions that were not
             // processed in the current block.
             locked.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
           }
+
+          let imported_number: u64 = notification.header.number as u64;
+
           locked.retain(|_, v| {
             // Drop all the transactions that exceeded the given lifespan.
             let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;

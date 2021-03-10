@@ -90,7 +90,7 @@ fn get_endowed_evm_accounts(endowed_account: Vec<H160>) -> BTreeMap<H160, Genesi
       account,
       GenesisAccount {
         nonce: U256::from(0),
-        balance: U256::from(10_000_000 * DOLLARS),
+        balance: U256::from(100 * DOLLARS),
         storage: Default::default(),
         code: vec![],
       },
@@ -296,7 +296,7 @@ fn testnet_genesis(
 ) -> GenesisConfig {
   let enable_println = true;
 
-  const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+  const ENDOWMENT: Balance = 10_000 * DOLLARS;
   const STASH: Balance = 100 * DOLLARS;
   const AUTHOR_BALANCE: Balance = 200 * DOLLARS;
 

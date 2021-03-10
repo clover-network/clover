@@ -117,7 +117,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 8,
+  spec_version: 9,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -399,6 +399,7 @@ impl pallet_evm::Config for Runtime {
       pallet_evm_precompile_simple::Identity,
   );
   type ChainId = ChainId;
+  type OnChargeTransaction = ();
 }
 
 pub struct EthereumFindAuthor<F>(PhantomData<F>);
