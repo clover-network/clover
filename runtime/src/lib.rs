@@ -79,7 +79,7 @@ pub use primitives::{
 };
 
 pub use constants::{time::*, };
-use impls::{Author, WeightToFee, MergeAccountEvm, };
+use impls::{Author, SimpleBanlistChecker, WeightToFee, MergeAccountEvm, };
 
 mod weights;
 mod constants;
@@ -399,6 +399,12 @@ impl pallet_evm::Config for Runtime {
       pallet_evm_precompile_simple::Identity,
   );
   type ChainId = ChainId;
+  type BanlistChecker = SimpleBanlistChecker;
+}
+
+impl evm_banlist::Config for Runtime {
+  type Event = Event;
+  type BanOrigin = EnsureRoot<AccountId>;
 }
 
 pub struct EthereumFindAuthor<F>(PhantomData<F>);
@@ -1041,6 +1047,8 @@ construct_runtime!(
     Contracts: pallet_contracts::{Module, Call, Config<T>, Storage, Event<T>},
     EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
     Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
+
+    EvmBanlist: evm_banlist::{Module, Call, Storage, Event<T>},
 
     Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 

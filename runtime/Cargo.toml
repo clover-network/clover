@@ -13,11 +13,12 @@ targets = ['x86_64-unknown-linux-gnu']
 [dependencies]
 clover-traits = { path = "../modules/traits", default-features = false }
 clover-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
-pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
-pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
-fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
+pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.2-clover", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.2-clover", default-features = false }
+pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.2-clover", default-features = false }
+fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.2-clover", default-features = false }
 evm-accounts = { path = "../modules/evm-accounts", default-features = false }
+evm-banlist = { path = "../modules/evm-banlist", default-features = false }
 primitives = { default-features = false, package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
 
 enum-iterator = "0.6.0"
@@ -138,6 +139,7 @@ std = [
     "pallet-ethereum/std",
     "fp-rpc/std",
     "evm-accounts/std",
+    "evm-banlist/std",
 ]
 clover-testnet = []
 clover-mainnet = []

@@ -1,5 +1,6 @@
 
 use sp_arithmetic::{traits::{BaseArithmetic, Unsigned}};
+use sp_core::H160;
 use sp_runtime::traits::Convert;
 use sp_runtime::{ DispatchResult, FixedPointNumber, Perquintill, Perbill, };
 use frame_support::transactional;
@@ -8,7 +9,7 @@ use frame_support::weights::{
     WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use pallet_transaction_payment::{Multiplier, MultiplierUpdate, };
-use crate::{AccountId, Balances, Authorship, NegativeImbalance};
+use crate::{AccountId, Balances, Authorship, EvmBanlist, NegativeImbalance};
 use clover_traits::account::MergeAccount;
 
 pub struct Author;
@@ -76,5 +77,16 @@ impl<T, S, V, M> Convert<Multiplier, Multiplier> for StaticFeeMultiplierUpdate<T
 {
   fn convert(_previous: Multiplier) -> Multiplier {
     Multiplier::saturating_from_integer(1)
+  }
+}
+
+pub struct SimpleBanlistChecker;
+
+impl pallet_evm::BanlistChecker for SimpleBanlistChecker {
+	fn is_banned(address: &H160) -> bool {
+    EvmBanlist::is_banned(address.clone()).is_some()
+  }
+	fn banned_gas_fee() -> u64 {
+    100
   }
 }

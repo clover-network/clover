@@ -1,9 +1,8 @@
 [package]
-name = "evm-accounts"
+name = "evm-banlist"
 authors = ['Clover Network <https://github.com/clover-network>']
-edition = '2018'
-license = 'GPL-3.0'
-homepage = 'https://cloverdefi.com'
+edition = "2018"
+homepage = 'https://clover.finance'
 repository = 'https://github.com/clover-network/clover'
 version = '0.9.0'
 
@@ -21,9 +20,6 @@ pallet-evm = { default-features = false, git = "https://github.com/clover-networ
 orml-utilities = { git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = 'fb405b1', default-features = false }
 impl-trait-for-tuples = "0.1.3"
 clover-traits = { path = "../../modules/traits", default-features = false }
-
-[dev-dependencies]
-pallet-balances = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
 
 [features]
 default = ["std"]
