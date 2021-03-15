@@ -355,10 +355,10 @@ pub fn iris_testnet_config() -> Result<ChainSpec, String> {
     ),
     // Bootnodes
     vec![
-      "/dns/seed1.iris-cc2.clovernode.com/tcp/30333/p2p/12D3KooWPb5VY3dzydLFVh4Bn8sk73QvicvVoYcHQawRgicuMNwJ"
+      "/dns/seed1.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWFtshqoFL1hAwseGc4WuFeREKicjFR15JiVEaJiHnDvn2"
         .parse()
         .unwrap(),
-      "/dns/seed2.iris-cc2.clovernode.com/tcp/30333/p2p/12D3KooWG4jPV345wrEE23tdRh69i9YH5BtSo8RhToPj4fTaJgkZ"
+      "/dns/seed2.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWBcU1EShS2azLwQhKVKyeXU2cc3CWyhuN8wJwEKaRVNe8"
         .parse()
         .unwrap(),
     ],
