@@ -14,7 +14,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 use crate::chain_spec;
 use crate::cli::{Cli, Subcommand};
 use crate::service;
@@ -65,6 +64,7 @@ impl SubstrateCli for Cli {
 }
 
 /// Parse and run command line arguments
+#[allow(dead_code)]
 pub fn run() -> sc_cli::Result<()> {
   let cli = Cli::from_args();
 

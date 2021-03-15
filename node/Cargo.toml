@@ -72,6 +72,7 @@ fc-consensus = { git = "https://github.com/clover-network/frontier.git", tag = "
 fp-consensus = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
 fc-db = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
 fc-rpc-core = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
+fc-mapping-sync = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover" }
 primitive-types = { version = "0.9", default-features = false, features = ["rlp", "byteorder"] }
 
 [build-dependencies]
