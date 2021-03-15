@@ -84,6 +84,7 @@ use impls::{Author, WeightToFee, MergeAccountEvm, };
 mod weights;
 mod constants;
 mod impls;
+mod clover_evm_config;
 mod mock;
 mod tests;
 
@@ -117,7 +118,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 9,
+  spec_version: 10,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -369,7 +370,7 @@ pub struct FixedGasPrice;
 
 impl FeeCalculator for FixedGasPrice {
   fn min_gas_price() -> U256 {
-    1_000_000_000.into()
+    50_000_000_000u64.into()
   }
 }
 
@@ -382,6 +383,8 @@ const CHAIN_ID: u64 = 1023;
 parameter_types! {
   pub const ChainId: u64 = CHAIN_ID;
 }
+
+static CLOVER_EVM_CONFIG: evm::Config = clover_evm_config::CloverEvmConfig::config();
 
 impl pallet_evm::Config for Runtime {
   type FeeCalculator = FixedGasPrice;
@@ -400,6 +403,9 @@ impl pallet_evm::Config for Runtime {
   );
   type ChainId = ChainId;
   type OnChargeTransaction = ();
+  fn config() -> &'static evm::Config {
+		&CLOVER_EVM_CONFIG
+	}
 }
 
 pub struct EthereumFindAuthor<F>(PhantomData<F>);
