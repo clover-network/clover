@@ -170,7 +170,7 @@ parameter_types! {
   .build_or_panic();
   pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
   pub const Version: RuntimeVersion = VERSION;
-  pub const SS58Prefix: u8 = 42; //todo: apply for clover prefix
+  pub const SS58Prefix: u8 = 42;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -483,8 +483,8 @@ pallet_staking_reward_curve::build! {
 
 parameter_types! {
   // session: 10 minutes
-  pub const SessionsPerEra: sp_staking::SessionIndex = 18;  // 18 sessions in an era, (3 hours)
-  pub const BondingDuration: pallet_staking::EraIndex = 24; // 24 era for unbouding (24 * 3 hours)
+  pub const SessionsPerEra: sp_staking::SessionIndex = 36;  // 18 sessions in an era, (6 hours)
+  pub const BondingDuration: pallet_staking::EraIndex = 24; // 24 era for unbouding (24 * 6 hours)
   pub const SlashDeferDuration: pallet_staking::EraIndex = 12; // 1/2 bonding duration
   pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
   pub const MaxNominatorRewardedPerValidator: u32 = 64;
@@ -592,12 +592,12 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 parameter_types! {
-  pub const LaunchPeriod: BlockNumber = 7 * MINUTES;
-  pub const VotingPeriod: BlockNumber = 7 * MINUTES;
-  pub const FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
+  pub const LaunchPeriod: BlockNumber = 7 * DAYS;
+  pub const VotingPeriod: BlockNumber = 7 * DAYS;
+  pub const FastTrackVotingPeriod: BlockNumber = 1 * DAYS;
   pub const MinimumDeposit: Balance = 100 * DOLLARS;
-  pub const EnactmentPeriod: BlockNumber = 8 * MINUTES;
-  pub const CooloffPeriod: BlockNumber = 7 * MINUTES;
+  pub const EnactmentPeriod: BlockNumber = 8 * DAYS;
+  pub const CooloffPeriod: BlockNumber = 7 * DAYS;
   // One cent: $10,000 / MB
   pub const PreimageByteDeposit: Balance = 10 * MILLICENTS;
   pub const InstantAllowed: bool = false;
@@ -735,8 +735,8 @@ parameter_types! {
   // additional data per vote is 32 bytes (account id).
   pub const VotingBondFactor: Balance = deposit(0, 32);
   /// Daily council elections.
-  pub const TermDuration: BlockNumber = 24 * HOURS;
-  pub const DesiredMembers: u32 = 5;
+  pub const TermDuration: BlockNumber = 3 * DAYS;
+  pub const DesiredMembers: u32 = 7;
   pub const DesiredRunnersUp: u32 = 30;
   pub const ElectionsPhragmenModuleId: LockIdentifier = *b"phrelect";
 }
@@ -790,8 +790,8 @@ impl pallet_membership::Config<pallet_membership::Instance1> for Runtime {
 
 parameter_types! {
   pub const ProposalBond: Permill = Permill::from_percent(5);
-  pub const ProposalBondMinimum: Balance = 20 * DOLLARS;
-  pub const SpendPeriod: BlockNumber = 6 * DAYS;
+  pub const ProposalBondMinimum: Balance = 1 * DOLLARS;
+  pub const SpendPeriod: BlockNumber = 1 * DAYS;
   pub const Burn: Permill = Permill::from_percent(1);
   pub const TreasuryModuleId: ModuleId = ModuleId(*b"py/trsry");
 
@@ -803,7 +803,7 @@ parameter_types! {
   pub const MaximumReasonLength: u32 = 16384;
   pub const BountyDepositBase: Balance = 1 * DOLLARS;
   pub const BountyDepositPayoutDelay: BlockNumber = 1 * DAYS;
-  pub const BountyUpdatePeriod: BlockNumber = 14 * DAYS;
+  pub const BountyUpdatePeriod: BlockNumber = 7 * DAYS;
   pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
   pub const BountyValueMinimum: Balance = 5 * DOLLARS;
 }

@@ -90,7 +90,7 @@ fn get_endowed_evm_accounts(endowed_account: Vec<H160>) -> BTreeMap<H160, Genesi
       account,
       GenesisAccount {
         nonce: U256::from(0),
-        balance: U256::from(100 * DOLLARS),
+        balance: U256::from(1_000 * DOLLARS),
         storage: Default::default(),
         code: vec![],
       },
@@ -285,6 +285,98 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
   ))
 }
 
+pub fn iris_testnet_config() -> Result<ChainSpec, String> {
+  let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+
+  Ok(ChainSpec::from_genesis(
+    // Name
+    "Clover",
+    // ID
+    "iris",
+    ChainType::Custom(String::from("iris")),
+    move || testnet_genesis(
+      wasm_binary,
+      // Initial PoA authorities
+      vec![
+        // SECRET="..."
+        // 5CqWfdrRGdZe6bwxZMiHfdcNAVePjkUJpSh2rpKgcNWciTFP
+        // subkey inspect "$SECRET//clover//1//validator"
+        // subkey inspect "$SECRET//clover//1//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//1//grandpa"
+        // subkey inspect "$SECRET//clover//1//imonline"
+        // subkey inspect "$SECRET//clover//1//discovery"
+        (
+          hex!["222c5fa244583b1734ceb6515916efc5e103f65b869ebec4e56b989d9dbb446e"].into(),
+          hex!["222c5fa244583b1734ceb6515916efc5e103f65b869ebec4e56b989d9dbb446e"].into(),
+          hex!["005b5b120aabe29673ca587a738ff1032437a388b006b51a9d6ea16f3dee6349"].unchecked_into(), // babe key
+          hex!["6575c1155089f6653206ffa533757ef71a9efb2738fb86bcc89128b1517788c0"].unchecked_into(), // grandpa
+          hex!["f8bc696eadcba0561c7a19af387b11f7db04e1d6457d344aa626476d6152a612"].unchecked_into(), // imonline
+          hex!["64f317d45163a8b4c1960c60550ea1f70506768a96eac2881f7805b9141d1b11"].unchecked_into(), // discovery
+        ),
+        // 5FNQoCoibJMAyqC77og9tSbhGUtaVt51SD7GdCxmMeWxPBvX
+        // subkey inspect "$SECRET//clover//2//validator"5FNQoCoibJMAyqC77og9tSbhGUtaVt51SD7GdCxmMeWxPBvX
+        // subkey inspect "$SECRET//clover//2//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//2//grandpa"
+        // subkey inspect "$SECRET//clover//2//imonline"
+        // subkey inspect "$SECRET//clover//2//discovery"
+        (
+          hex!["9235b080b6ca2e7b2a7af7a46ac4f677bfa394e29d83611324046c38eb14ee49"].into(),
+          hex!["9235b080b6ca2e7b2a7af7a46ac4f677bfa394e29d83611324046c38eb14ee49"].into(),
+          hex!["dcb5d89f40d57b9da9cd1f677c789584e4e88e1cdfd7a91d561757e23e73aa45"].unchecked_into(), // babe
+          hex!["c7925c95410d4ad451f9bc995852127f169bef4fd75f2c23f9472620ddd59f91"].unchecked_into(), // grandpa
+          hex!["14e2ecd186552e1dfb1f2d5233657b69e0b398d7ec405bb68071ee19d3009f04"].unchecked_into(), // imonline
+          hex!["e404b380c6bd7ab0577a5e6809a3338d28d191137e7581bdd23eb3e893ca9e6a"].unchecked_into(), // discovery
+        ),
+        // 5HQDFanwYwt3QtkAvaBHbaaLgSRER42PWAXCJqNoxyQFZXZJ
+        // subkey inspect "$SECRET//clover//3//validator"
+        // subkey inspect "$SECRET//clover//3//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//3//grandpa"
+        // subkey inspect "$SECRET//clover//3//imonline"
+        // subkey inspect "$SECRET//clover//3//discovery"
+        (
+          hex!["ec0dc859299bcc7146d9ba74956ff67334454e23c0d9fd3e55302f94b09a742b"].into(),
+          hex!["ec0dc859299bcc7146d9ba74956ff67334454e23c0d9fd3e55302f94b09a742b"].into(),
+          hex!["c08908eb1a58eb1df74e54415cdd4977c20023cc7f5dff771c38f26491367b6e"].unchecked_into(), // babe
+          hex!["0ec2a175b1efc3835a8d1497f914ef39ec4ba0ea7a60cf4cb440586fa74fcd99"].unchecked_into(), // grandpa
+          hex!["f49fda7f7db9af41fd4095a7bf37745e4cc30f9b592c1563ecc5fe2292e9f309"].unchecked_into(), // imonline
+          hex!["e0520566773304de5fd0d448b0ca76b6a2c7edd66d90b4dba36785e64ba65949"].unchecked_into(), // discovery
+        ),
+      ],
+      // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
+      // subkey inspect "$SECRET//clover//root"
+      hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
+      // Pre-funded accounts
+      vec![
+        // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
+        hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
+      ],
+      true,
+      endowed_evm_account()
+    ),
+    // Bootnodes
+    vec![
+      "/dns/seed1.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWFtshqoFL1hAwseGc4WuFeREKicjFR15JiVEaJiHnDvn2"
+        .parse()
+        .unwrap(),
+      "/dns/seed2.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWBcU1EShS2azLwQhKVKyeXU2cc3CWyhuN8wJwEKaRVNe8"
+        .parse()
+        .unwrap(),
+    ],
+    // Telemetry
+    TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
+    // Protocol ID
+    Some("iris"),
+    // Properties
+    Some(json!({
+      "tokenDecimals": 18,
+      "tokenSymbol": "CLV"
+    }).as_object().expect("Created an object").clone()),
+    // Extensions
+    None,
+  ))
+}
+
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
   wasm_binary: &[u8],
@@ -296,7 +388,7 @@ fn testnet_genesis(
 ) -> GenesisConfig {
   let enable_println = true;
 
-  const ENDOWMENT: Balance = 10_000 * DOLLARS;
+  const ENDOWMENT: Balance = 1_000 * DOLLARS;
   const STASH: Balance = 100 * DOLLARS;
   const AUTHOR_BALANCE: Balance = 200 * DOLLARS;
 
