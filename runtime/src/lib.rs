@@ -170,7 +170,7 @@ parameter_types! {
   .build_or_panic();
   pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
   pub const Version: RuntimeVersion = VERSION;
-  pub const SS58Prefix: u8 = 128;
+  pub const SS58Prefix: u8 = 42;
 }
 
 // Configure FRAME pallets to include in runtime.
