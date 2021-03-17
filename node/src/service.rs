@@ -303,7 +303,7 @@ pub fn new_full_base(mut config: Configuration,
 
   // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
   if let Some(pending_transactions) = pending_transactions {
-    const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
+    const TRANSACTION_RETAIN_THRESHOLD: u64 = 15;
     task_manager.spawn_essential_handle().spawn(
       "frontier-pending-transactions",
       EthTask::pending_transaction_task(
