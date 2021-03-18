@@ -13,6 +13,7 @@ targets = ['x86_64-unknown-linux-gnu']
 [dependencies]
 clover-traits = { path = "../modules/traits", default-features = false }
 clover-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
+evm = { git = "https://github.com/clover-network/evm.git", tag = "v0.24.0-clover", default-features = false, features = ["with-codec"] }
 pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
 pallet-evm-precompile-simple = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
 pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
@@ -88,6 +89,7 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'frame-system-rpc-runtime-api/std',
+    'evm/std',
     'pallet-authority-discovery/std',
     'pallet-authorship/std',
     'pallet-babe/std',
