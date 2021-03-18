@@ -58,16 +58,11 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
       Arc<sc_network::NetworkService<Block, primitives::Hash>>,
     ) -> crate::rpc::IoHandler,
     (
-      sc_consensus_babe::BabeBlockImport<Block, FullClient,
-        FrontierBlockImport<
-          Block,
-          FullGrandpaBlockImport,
-          FullClient,
-        >>,
+      sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
       sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
       sc_consensus_babe::BabeLink<Block>,
     ),
-    (sc_finality_grandpa::SharedVoterState, PendingTransactions, Option<FilterPool>, Arc<fc_db::Backend<Block>>),
+    sc_finality_grandpa::SharedVoterState,
   )
 >, ServiceError> {
   let inherent_data_providers = sp_inherents::InherentDataProviders::new();
@@ -92,22 +87,22 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
   let filter_pool: Option<FilterPool>
       = Some(Arc::new(Mutex::new(BTreeMap::new())));
 
-  let frontier_backend = open_frontier_backend(config)?;
+//  let frontier_backend = open_frontier_backend(config)?;
 
   let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
     client.clone(), &(client.clone() as Arc<_>), select_chain.clone(),
   )?;
 
   let justification_import = grandpa_block_import.clone();
-  let frontier_block_import = FrontierBlockImport::new(
-      grandpa_block_import.clone(),
-      client.clone(),
-      frontier_backend.clone(),
-    );
+  //let frontier_block_import = FrontierBlockImport::new(
+  //    grandpa_block_import.clone(),
+  //    client.clone(),
+  //    frontier_backend.clone(),
+  //  );
 
   let (block_import, babe_link) = sc_consensus_babe::block_import(
     sc_consensus_babe::Config::get_or_compute(&*client)?,
-    frontier_block_import,
+    grandpa_block_import.clone(),
     client.clone(),
   )?;
 
@@ -150,7 +145,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 
     let pending = pending_transactions.clone();
     let filter_pool_clone = filter_pool.clone();
-    let backend = frontier_backend.clone();
+    // let backend = frontier_backend.clone();
 
     let rpc_extensions_builder = move |deny_unsafe, _subscription_executor: sc_rpc::SubscriptionTaskExecutor, network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>| {
 
@@ -172,9 +167,9 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
           subscription_executor: _subscription_executor.clone(),
           finality_provider: finality_proof_provider.clone(),
         },
-        pending_transactions: pending.clone(),
-        filter_pool: filter_pool_clone.clone(),
-        backend: backend.clone(),
+        // pending_transactions: pending.clone(),
+        // filter_pool: filter_pool_clone.clone(),
+        // backend: backend.clone(),
         is_authority,
         network: network,
       };
@@ -189,16 +184,14 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
   Ok(sc_service::PartialComponents {
     client, backend, task_manager, keystore_container, select_chain, import_queue, transaction_pool,
     inherent_data_providers,
-    other: (rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool, frontier_backend))
+    other: (rpc_extensions_builder, import_setup, rpc_setup)
   })
 }
 
 /// Builds a new service for a full client.
 pub fn new_full_base(mut config: Configuration,
   with_startup_data: impl FnOnce(
-    &sc_consensus_babe::BabeBlockImport<Block, FullClient,
-      FrontierBlockImport<Block, FullGrandpaBlockImport, FullClient>,
-    >,
+    &sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
     &sc_consensus_babe::BabeLink<Block>,
   )
 ) -> Result<(
@@ -209,8 +202,7 @@ pub fn new_full_base(mut config: Configuration,
   let sc_service::PartialComponents {
     client, backend, mut task_manager, import_queue, keystore_container, select_chain, transaction_pool,
     inherent_data_providers,
-    other: (partial_rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool,
-    frontier_backend)),
+    other: (partial_rpc_extensions_builder, import_setup, rpc_setup),
   } = new_partial(&config)?;
 
   let shared_voter_state = rpc_setup;
@@ -253,16 +245,16 @@ pub fn new_full_base(mut config: Configuration,
     partial_rpc_extensions_builder(deny_unsafe, subscription_executor, network_clone.clone())
   };
 
-  task_manager.spawn_essential_handle().spawn(
-		"frontier-mapping-sync-worker",
-		MappingSyncWorker::new(
-			client.import_notification_stream(),
-			Duration::new(6, 0),
-			client.clone(),
-			backend.clone(),
-			frontier_backend.clone(),
-		).for_each(|()| futures::future::ready(()))
-	);
+//  task_manager.spawn_essential_handle().spawn(
+//		"frontier-mapping-sync-worker",
+//		MappingSyncWorker::new(
+//			client.import_notification_stream(),
+//			Duration::new(6, 0),
+//			client.clone(),
+//			backend.clone(),
+//			frontier_backend.clone(),
+//		).for_each(|()| futures::future::ready(()))
+//	);
 
   let (_rpc_handlers, telemetry_connection_notifier) = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
     config,
@@ -279,57 +271,57 @@ pub fn new_full_base(mut config: Configuration,
     system_rpc_tx,
   })?;
 
-  // Spawn Frontier EthFilterApi maintenance task.
-  if filter_pool.is_some() {
-    // Each filter is allowed to stay in the pool for 100 blocks.
-    const FILTER_RETAIN_THRESHOLD: u64 = 100;
-    task_manager.spawn_essential_handle().spawn(
-      "frontier-filter-pool",
-      client.import_notification_stream().for_each(move |notification| {
-        if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
-          let imported_number: u64 = notification.header.number as u64;
-          for (k, v) in locked.clone().iter() {
-            let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
-            if lifespan_limit <= imported_number {
-              locked.remove(&k);
-            }
-          }
-        }
-        futures::future::ready(())
-      })
-    );
-  }
+//  // Spawn Frontier EthFilterApi maintenance task.
+//  if filter_pool.is_some() {
+//    // Each filter is allowed to stay in the pool for 100 blocks.
+//    const FILTER_RETAIN_THRESHOLD: u64 = 100;
+//    task_manager.spawn_essential_handle().spawn(
+//      "frontier-filter-pool",
+//      client.import_notification_stream().for_each(move |notification| {
+//        if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
+//          let imported_number: u64 = notification.header.number as u64;
+//          for (k, v) in locked.clone().iter() {
+//            let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
+//            if lifespan_limit <= imported_number {
+//              locked.remove(&k);
+//            }
+//          }
+//        }
+//        futures::future::ready(())
+//      })
+//    );
+//  }
 
-  // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
-  if pending_transactions.is_some() {
-    const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
-    task_manager.spawn_essential_handle().spawn(
-      "frontier-pending-transactions",
-      client.import_notification_stream().for_each(move |notification| {
-        if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
-          // As pending transactions have a finite lifespan anyway
-          // we can ignore MultiplePostRuntimeLogs error checks.
-          let log = fp_consensus::find_log(&notification.header.digest).ok();
-					let post_hashes = log.map(|log| log.into_hashes());
-
-          if let Some(post_hashes) = post_hashes {
-            // Retain all pending transactions that were not
-            // processed in the current block.
-            locked.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
-          }
-
-          let imported_number: u64 = notification.header.number as u64;
-
-          locked.retain(|_, v| {
-            // Drop all the transactions that exceeded the given lifespan.
-            let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
-            lifespan_limit > imported_number
-          });
-        }
-        futures::future::ready(())
-      })
-    );
-  }
+//  // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
+//  if pending_transactions.is_some() {
+//    const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
+//    task_manager.spawn_essential_handle().spawn(
+//      "frontier-pending-transactions",
+//      client.import_notification_stream().for_each(move |notification| {
+//        if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
+//          // As pending transactions have a finite lifespan anyway
+//          // we can ignore MultiplePostRuntimeLogs error checks.
+//          let log = fp_consensus::find_log(&notification.header.digest).ok();
+//					let post_hashes = log.map(|log| log.into_hashes());
+//
+//          if let Some(post_hashes) = post_hashes {
+//            // Retain all pending transactions that were not
+//            // processed in the current block.
+//            locked.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
+//          }
+//
+//          let imported_number: u64 = notification.header.number as u64;
+//
+//          locked.retain(|_, v| {
+//            // Drop all the transactions that exceeded the given lifespan.
+//            let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
+//            lifespan_limit > imported_number
+//          });
+//        }
+//        futures::future::ready(())
+//      })
+//    );
+//  }
 
   let (block_import, grandpa_link, babe_link) = import_setup;
 

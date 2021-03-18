@@ -4,7 +4,7 @@ use clover_runtime::{
   AccountId, BabeConfig, Balance, AuthorityDiscoveryConfig, BalancesConfig, ContractsConfig, IndicesConfig, GenesisConfig, ImOnlineId,
   GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
   Signature, StakerStatus,
-  EVMConfig, EthereumConfig, DOLLARS
+  DOLLARS
 };
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
@@ -376,6 +376,96 @@ pub fn iris_testnet_config() -> Result<ChainSpec, String> {
   ))
 }
 
+pub fn ivy_config() -> Result<ChainSpec, String> {
+  let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+
+  Ok(ChainSpec::from_genesis(
+    // Name
+    "Clover Ivy",
+    // ID
+    "clover_ivy",
+    ChainType::Live,
+    move || testnet_genesis(
+      wasm_binary,
+      // Initial PoA authorities
+      vec![
+        // SECRET="..."
+        // 5H14XVgazykT5sz2hUPkEBmj3N4wzj5Zej9QVmVwCzN4iYVL
+        // subkey inspect "$SECRET//clover//1//validator"
+        // subkey inspect "$SECRET//clover//1//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//1//grandpa"
+        // subkey inspect "$SECRET//clover//1//imonline"
+        // subkey inspect "$SECRET//clover//1//discovery"
+        (
+          hex!["da65c3df9f86fbfb2b301282a5c0807d501e265354b5badd475eb4e28960aa55"].into(),
+          hex!["da65c3df9f86fbfb2b301282a5c0807d501e265354b5badd475eb4e28960aa55"].into(),
+          hex!["e254d4a170f065a4c76128d5b70da167b93550e26f61c16c36268fd0703d7e0b"].unchecked_into(), // babe key
+          hex!["730ef78d56adfbbd2889a794dd358b35d0b5573415b79baccbc213c688ee3e32"].unchecked_into(), // grandpa
+          hex!["8815cb09de848860956ee58c6900161b9491ed955d83c10d6f11bbc4bf5a3627"].unchecked_into(), // imonline
+          hex!["321514a7b080dfc016c134fe531fbd338a5ce4128ebc9f09611b14a42c2b9e6a"].unchecked_into(), // discovery
+        ),
+        // 5H6bu5PdTY2WovY4tqUWLi9pHyTuXXkRwR4XZ4N5YNfUJdpY
+        // subkey inspect "$SECRET//clover//2//validator"
+        // subkey inspect "$SECRET//clover//2//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//2//grandpa"
+        // subkey inspect "$SECRET//clover//2//imonline"
+        // subkey inspect "$SECRET//clover//2//discovery"
+        (
+          hex!["de9f999ad12043c5793eddbb4189b0a82d3225c4b65468ef689a8b42bacb261a"].into(),
+          hex!["de9f999ad12043c5793eddbb4189b0a82d3225c4b65468ef689a8b42bacb261a"].into(),
+          hex!["4a86c546231758db8c648f616d3c5c45d5851275dd03ef174e9d42b06b657c6b"].unchecked_into(), // babe
+          hex!["2f2534068447782f49f51827355c069c3b61cf3cea9bff5060d45cfe754dd386"].unchecked_into(), // grandpa
+          hex!["a6a4614a1bc934d19c15fec123d1bac6c3d1e67bf88439567ea7444114e47c12"].unchecked_into(), // imonline
+          hex!["10d5fede129511e883414f6a17457eca1bae6e5cc8c8d8a59efa810e68f4326e"].unchecked_into(), // discovery
+        ),
+        // 5Gdi2r42Sx2Kka7Us4sJePdRLaogZH4MRCvKLqYVuEmLwrjC
+        // subkey inspect "$SECRET//clover//3//validator"
+        // subkey inspect "$SECRET//clover//3//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//3//grandpa"
+        // subkey inspect "$SECRET//clover//3//imonline"
+        // subkey inspect "$SECRET//clover//3//discovery"
+        (
+          hex!["ca1c9f747fe1f7ea25c521e63bc521d825922ae1724c569556616ee6d173284b"].into(),
+          hex!["ca1c9f747fe1f7ea25c521e63bc521d825922ae1724c569556616ee6d173284b"].into(),
+          hex!["84bfc5961ccce24c4348e96cba5ce476c3864d1b37523105c908433517413e0f"].unchecked_into(), // babe
+          hex!["bd1a9c279e81f75b682e67e9a75f4c466af318a6ab0cd7721ceb7a8bee6a1376"].unchecked_into(), // grandpa
+          hex!["106bfca82987d1c44638e2b7b7a433d62c38b8e463471b4a6770a23ee5af3b0a"].unchecked_into(), // imonline
+          hex!["c0ff707d2849e3ea00803824ba50ed38f284bd84841cc5c8ff890406d048f90d"].unchecked_into(), // discovery
+        ),
+      ],
+      // 5HToWGk4935P9VWS8VCTKLbCiG1jT9g2JM6b6ThcS79GJ1xT
+      // subkey inspect "$SECRET//clover//root"
+      hex!["eecad357d3e3f702947770e84211cf47eaf2d62611eb5642a7e266a829bfb35c"].into(),
+      // Pre-funded accounts
+      vec![
+        // 5HToWGk4935P9VWS8VCTKLbCiG1jT9g2JM6b6ThcS79GJ1xT
+        hex!["eecad357d3e3f702947770e84211cf47eaf2d62611eb5642a7e266a829bfb35c"].into(),
+      ],
+      true,
+      BTreeMap::new(), // evm accounts
+    ),
+    // Bootnodes
+    vec![
+      "/dns/seed1.ivy.clover.finance/tcp/30333/p2p/12D3KooWAw6GLPuBsatTjmwhqq4vjEEiVMmttSS3V56ZWX7J9Yh5"
+        .parse()
+        .unwrap(),
+      "/dns/seed2.ivy.clover.finance/tcp/30333/p2p/12D3KooWCNnKzKHrPB5LcddhjA9epkq81pdkcaxm2berU7pgYmEN"
+        .parse()
+        .unwrap(),
+    ],
+    // Telemetry
+    TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
+    // Protocol ID
+    Some("ivy"),
+    // Properties
+    Some(json!({
+      "tokenDecimals": 18,
+      "tokenSymbol": "CLV"
+    }).as_object().expect("Created an object").clone()),
+    // Extensions
+    None,
+  ))
+}
 
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
@@ -411,10 +501,6 @@ fn testnet_genesis(
         ..Default::default()
       },
     }),
-    pallet_evm: Some(EVMConfig {
-      accounts: endowed_eth_accounts,
-    }),
-    pallet_ethereum: Some(EthereumConfig {}),
     pallet_indices: Some(IndicesConfig {
       indices: vec![],
     }),
@@ -452,12 +538,12 @@ fn testnet_genesis(
       // Assign network admin rights.
       key: root_key,
     }),
-    pallet_collective_Instance1: Some(Default::default()),
-    pallet_collective_Instance2: Some(Default::default()),
-    pallet_democracy: Some(Default::default()),
+    // pallet_collective_Instance1: Some(Default::default()),
+    // pallet_collective_Instance2: Some(Default::default()),
+    // pallet_democracy: Some(Default::default()),
     pallet_treasury: Some(Default::default()),
-    pallet_elections_phragmen: Some(Default::default()),
-    pallet_membership_Instance1: Some(Default::default()),
+    // pallet_elections_phragmen: Some(Default::default()),
+    // pallet_membership_Instance1: Some(Default::default()),
     pallet_vesting: Some(Default::default()),
   }
 }

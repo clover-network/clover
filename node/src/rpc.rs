@@ -78,12 +78,12 @@ pub struct FullDeps<C, P, SC, B> {
   pub babe: BabeDeps,
   /// GRANDPA specific dependencies.
   pub grandpa: GrandpaDeps<B>,
-  /// Ethereum pending transactions.
-	pub pending_transactions: PendingTransactions,
-	/// EthFilterApi pool.
-	pub filter_pool: Option<FilterPool>,
-  /// Backend.
-	pub backend: Arc<fc_db::Backend<Block>>,
+  // /// Ethereum pending transactions.
+	// pub pending_transactions: PendingTransactions,
+//	/// EthFilterApi pool.
+//	pub filter_pool: Option<FilterPool>,
+//  /// Backend.
+//	pub backend: Arc<fc_db::Backend<Block>>,
   /// The Node authority flag
   pub is_authority: bool,
   /// Network service
@@ -105,7 +105,7 @@ pub fn create_full<C, P, SC, B>(
   C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
   C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
   C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-  C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
+//  C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
   C::Api: BabeApi<Block>,
   C::Api: BlockBuilder<Block>,
   P: TransactionPool<Block=Block> + 'static,
@@ -113,10 +113,6 @@ pub fn create_full<C, P, SC, B>(
   B: sc_client_api::Backend<Block> + Send + Sync + 'static,
   B::State: sc_client_api::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
-  use fc_rpc::{
-    EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
-    Web3Api, Web3ApiServer, EthDevSigner, EthSigner, HexEncodedIdProvider,
-  };
   use substrate_frame_rpc_system::{FullSystem, SystemApi};
   use pallet_contracts_rpc::{Contracts, ContractsApi};
   use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -131,9 +127,9 @@ pub fn create_full<C, P, SC, B>(
     babe,
     grandpa,
     network,
-    pending_transactions,
-		filter_pool,
-    backend,
+//    pending_transactions,
+//		filter_pool,
+//    backend,
     is_authority,
   } = deps;
 
@@ -193,53 +189,53 @@ pub fn create_full<C, P, SC, B>(
 		)
 	);
 
-  let mut signers = Vec::new();
-  signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
-  io.extend_with(EthApiServer::to_delegate(EthApi::new(
-    client.clone(),
-    pool.clone(),
-    clover_runtime::TransactionConverter,
-    network.clone(),
-    pending_transactions.clone(),
-    signers,
-    backend,
-    is_authority,
-  )));
+//  let mut signers = Vec::new();
+//  signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
+//  io.extend_with(EthApiServer::to_delegate(EthApi::new(
+//    client.clone(),
+//    pool.clone(),
+//    clover_runtime::TransactionConverter,
+//    network.clone(),
+//    pending_transactions.clone(),
+//    signers,
+//    backend,
+//    is_authority,
+//  )));
 
-  if let Some(filter_pool) = filter_pool {
-		io.extend_with(
-			EthFilterApiServer::to_delegate(EthFilterApi::new(
-				client.clone(),
-				filter_pool.clone(),
-				500 as usize, // max stored filters
-			))
-		);
-	}
+ // if let Some(filter_pool) = filter_pool {
+	//	io.extend_with(
+	//		EthFilterApiServer::to_delegate(EthFilterApi::new(
+	//			client.clone(),
+	//			filter_pool.clone(),
+	//			500 as usize, // max stored filters
+	//		))
+	//	);
+	//}
 
-  io.extend_with(
-    NetApiServer::to_delegate(NetApi::new(
-      client.clone(),
-      network.clone(),
-    ))
-  );
+ // io.extend_with(
+ //   NetApiServer::to_delegate(NetApi::new(
+ //     client.clone(),
+ //     network.clone(),
+ //   ))
+ // );
 
-  io.extend_with(
-    Web3ApiServer::to_delegate(Web3Api::new(
-      client.clone(),
-    ))
-  );
+//  io.extend_with(
+//    Web3ApiServer::to_delegate(Web3Api::new(
+//      client.clone(),
+//    ))
+//  );
 
-  io.extend_with(
-    EthPubSubApiServer::to_delegate(EthPubSubApi::new(
-      pool.clone(),
-      client.clone(),
-      network.clone(),
-      SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
-        HexEncodedIdProvider::default(),
-        Arc::new(subscription_task_executor)
-      ),
-    ))
-  );
+  // io.extend_with(
+  //   EthPubSubApiServer::to_delegate(EthPubSubApi::new(
+  //     pool.clone(),
+  //     client.clone(),
+  //     network.clone(),
+  //     SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
+  //       HexEncodedIdProvider::default(),
+  //       Arc::new(subscription_task_executor)
+  //     ),
+  //   ))
+  // );
 
   io
 }
