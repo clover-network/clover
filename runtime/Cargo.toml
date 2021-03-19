@@ -14,10 +14,10 @@ targets = ['x86_64-unknown-linux-gnu']
 clover-traits = { path = "../modules/traits", default-features = false }
 clover-rpc-runtime-api = { path = "../rpc/runtime-api", default-features = false }
 evm = { git = "https://github.com/clover-network/evm.git", tag = "v0.24.0-clover", default-features = false, features = ["with-codec"] }
-pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover-2", default-features = false }
-pallet-evm-precompile-simple = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover-2", default-features = false }
-pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover-2", default-features = false }
-fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover-2", default-features = false }
+pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover-3-sync-fix", default-features = false }
+pallet-evm-precompile-simple = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover-3-sync-fix", default-features = false }
+pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover-3-sync-fix", default-features = false }
+fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover-3-sync-fix", default-features = false }
 evm-accounts = { path = "../modules/evm-accounts", default-features = false }
 primitives = { default-features = false, package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
 
