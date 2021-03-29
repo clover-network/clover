@@ -3,6 +3,7 @@
 use std::{sync::{Arc, Mutex}, time::Duration, collections::{HashMap, BTreeMap}};
 use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use fc_rpc::EthTask;
 use clover_runtime::{self, opaque::Block, RuntimeApi};
 use sc_network::{Event, };
 use sc_service::{BasePath, error::Error as ServiceError, Configuration, RpcHandlers, TaskManager};
@@ -301,33 +302,15 @@ pub fn new_full_base(mut config: Configuration,
   }
 
   // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
-  if pending_transactions.is_some() {
-    const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
+  if let Some(pending_transactions) = pending_transactions {
+    const TRANSACTION_RETAIN_THRESHOLD: u64 = 15;
     task_manager.spawn_essential_handle().spawn(
       "frontier-pending-transactions",
-      client.import_notification_stream().for_each(move |notification| {
-        if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
-          // As pending transactions have a finite lifespan anyway
-          // we can ignore MultiplePostRuntimeLogs error checks.
-          let log = fp_consensus::find_log(&notification.header.digest).ok();
-					let post_hashes = log.map(|log| log.into_hashes());
-
-          if let Some(post_hashes) = post_hashes {
-            // Retain all pending transactions that were not
-            // processed in the current block.
-            locked.retain(|&k, _| !post_hashes.transaction_hashes.contains(&k));
-          }
-
-          let imported_number: u64 = notification.header.number as u64;
-
-          locked.retain(|_, v| {
-            // Drop all the transactions that exceeded the given lifespan.
-            let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
-            lifespan_limit > imported_number
-          });
-        }
-        futures::future::ready(())
-      })
+      EthTask::pending_transaction_task(
+				Arc::clone(&client),
+					pending_transactions,
+					TRANSACTION_RETAIN_THRESHOLD,
+				)
     );
   }
 

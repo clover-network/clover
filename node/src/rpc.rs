@@ -6,6 +6,7 @@
 #![warn(missing_docs)]
 use std::sync::Arc;
 
+use std::collections::BTreeMap;
 use primitives::{Block, BlockNumber, AccountId, Index, Balance, Hash, };
 use fc_rpc_core::types::{PendingTransactions, FilterPool};
 use sc_consensus_babe::{Config, Epoch};
@@ -24,6 +25,8 @@ use sp_consensus_babe::BabeApi;
 use sp_transaction_pool::TransactionPool;
 use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
+use pallet_ethereum::EthereumStorageSchema;
+use fc_rpc::{StorageOverride, SchemaV1Override};
 
 
 /// Light client extra dependencies.
@@ -195,6 +198,13 @@ pub fn create_full<C, P, SC, B>(
 
   let mut signers = Vec::new();
   signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
+
+  let mut overrides = BTreeMap::new();
+	overrides.insert(
+		EthereumStorageSchema::V1,
+		Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>
+	);
+
   io.extend_with(EthApiServer::to_delegate(EthApi::new(
     client.clone(),
     pool.clone(),
@@ -202,6 +212,7 @@ pub fn create_full<C, P, SC, B>(
     network.clone(),
     pending_transactions.clone(),
     signers,
+    overrides,
     backend,
     is_authority,
   )));
