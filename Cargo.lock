@@ -1797,7 +1797,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "0.1.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "derive_more",
  "fc-db",
@@ -1821,7 +1821,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "0.1.0"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "kvdb",
  "kvdb-rocksdb",
@@ -1836,7 +1836,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "0.1.0"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -1854,7 +1854,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "0.1.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "ethereum",
  "ethereum-types 0.11.0",
@@ -1894,7 +1894,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "0.1.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "ethereum-types 0.11.0",
  "jsonrpc-core 15.1.0",
@@ -2010,7 +2010,7 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "0.1.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "ethereum",
  "parity-scale-codec 2.0.1",
@@ -2024,7 +2024,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "0.8.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "evm",
  "impl-trait-for-tuples 0.1.3",
@@ -2037,7 +2037,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "0.1.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "ethereum",
  "ethereum-types 0.11.0",
@@ -2053,7 +2053,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "0.1.0"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "ethereum",
  "ethereum-types 0.9.2",
@@ -2074,7 +2074,7 @@ dependencies = [
  "frame-system",
  "linregress",
  "parity-scale-codec 2.0.1",
- "paste 1.0.4",
+ "paste 1.0.5",
  "sp-api 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
  "sp-io 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
  "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
@@ -2122,7 +2122,7 @@ dependencies = [
  "log",
  "once_cell",
  "parity-scale-codec 2.0.1",
- "paste 1.0.4",
+ "paste 1.0.5",
  "serde",
  "smallvec 1.6.1",
  "sp-arithmetic 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
@@ -3025,9 +3025,9 @@ dependencies = [
 
 [[package]]
 name = "js-sys"
-version = "0.3.48"
+version = "0.3.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc9f84f9b115ce7843d60706df1422a916680bfdfcbdb0447c5614ff9d7e4d78"
+checksum = "dc15e39392125075f60c95ba416f5381ff6c3a948ff02ab12464715adf56c821"
 dependencies = [
  "wasm-bindgen",
 ]
@@ -4086,9 +4086,9 @@ dependencies = [
 
 [[package]]
 name = "multimap"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1255076139a83bb467426e7f8d0134968a8118844faa755985e077cf31850333"
+checksum = "e5ce46fe64a9d73be07dcbe690a38ce1b293be448fd8ce1e6c1b8062c9f72c6a"
 
 [[package]]
 name = "multistream-select"
@@ -4517,7 +4517,7 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "0.1.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "ethereum",
  "ethereum-types 0.11.0",
@@ -4545,7 +4545,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "3.0.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "evm",
  "evm-gasometer",
@@ -4570,7 +4570,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "3.0.0"
-source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-3-sync-fix#e48e324d97f19d47af80d4c40e26978cf3cc202e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v0.1.0-clover-6-sync#56c009ce88c3320efe435807c24c8b254c111b61"
 dependencies = [
  "evm",
  "fp-evm",
@@ -4925,9 +4925,9 @@ dependencies = [
 
 [[package]]
 name = "parity-multiaddr"
-version = "0.11.1"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2c6805f98667a3828afb2ec2c396a8d610497e8d546f5447188aae47c5a79ec"
+checksum = "58341485071825827b7f03cf7efd1cb21e6a709bea778fb50227fd45d2f361b4"
 dependencies = [
  "arrayref",
  "bs58",
@@ -5156,9 +5156,9 @@ dependencies = [
 
 [[package]]
 name = "paste"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5d65c4d95931acda4498f675e332fcbdc9a06705cd07086c510e9b6009cd1c1"
+checksum = "acbf547ad0c65e31259204bd90935776d1c693cec2f4ff7abb7a1bbbd40dfe58"
 
 [[package]]
 name = "paste-impl"
@@ -5840,14 +5840,13 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.4.3"
+version = "1.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9251239e129e16308e70d853559389de218ac275b515068abc96829d05b948a"
+checksum = "957056ecddbeba1b26965114e191d2e8589ce74db242b6ea25fc4062427a5c19"
 dependencies = [
  "aho-corasick",
  "memchr",
  "regex-syntax",
- "thread_local",
 ]
 
 [[package]]
@@ -5862,9 +5861,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.6.22"
+version = "0.6.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5eb417147ba9860a96cfe72a0b93bf88fee1744b5636ec99ab20c1aa9376581"
+checksum = "24d5f089152e60f62d28b835fbff2cd2e8dc0baf1ac13343bef92ab7eed84548"
 
 [[package]]
 name = "region"
@@ -7293,9 +7292,9 @@ checksum = "7fdf1b9db47230893d76faad238fd6097fd6d6a9245cd7a4d90dbd639536bbd2"
 
 [[package]]
 name = "signal-hook"
-version = "0.3.6"
+version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a7f3f92a1da3d6b1d32245d0cbcbbab0cfc45996d8df619c42bccfa6d2bbb5f"
+checksum = "6aa894ef3fade0ee7243422f4fbbd6c2b48e6de767e621d37ef65f2310f53cea"
 dependencies = [
  "libc",
  "signal-hook-registry",
@@ -7973,7 +7972,7 @@ dependencies = [
  "log",
  "parity-scale-codec 2.0.1",
  "parity-util-mem",
- "paste 1.0.4",
+ "paste 1.0.5",
  "rand 0.7.3",
  "serde",
  "sp-application-crypto 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
@@ -7994,7 +7993,7 @@ dependencies = [
  "log",
  "parity-scale-codec 2.0.1",
  "parity-util-mem",
- "paste 1.0.4",
+ "paste 1.0.5",
  "rand 0.7.3",
  "serde",
  "sp-application-crypto 3.0.0 (git+https://github.com/paritytech/substrate.git?branch=frontier)",
@@ -8591,9 +8590,9 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "target-lexicon"
-version = "0.11.2"
+version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "422045212ea98508ae3d28025bc5aaa2bd4a9cdaecd442a08da2ee620ee9ea95"
+checksum = "62b29e388d11a2c0605bdc806ce6ed1d623a5bdbbdd5b423053444999331184e"
 
 [[package]]
 name = "tempfile"
@@ -9011,9 +9010,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-attributes"
-version = "0.1.13"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8a9bd1db7706f2373a190b0d067146caa39350c486f3d455b0e33b431f94c07"
+checksum = "c42e6fa53307c8a17e4ccd4dc81cf5ec38db9209f59b222210375b54ee40d1e2"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
@@ -9062,9 +9061,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.2.16"
+version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ab8966ac3ca27126141f7999361cc97dd6fb4b71da04c02044fa9045d98bb96"
+checksum = "705096c6f83bf68ea5d357a6aa01829ddbdac531b357b45abeca842938085baa"
 dependencies = [
  "ansi_term 0.12.1",
  "chrono",
@@ -9133,9 +9132,9 @@ dependencies = [
 
 [[package]]
 name = "typenum"
-version = "1.12.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "373c8a200f9e67a0c95e62a4f52fbf80c23b4381c05a17845531982fa99e6b33"
+checksum = "879f6906492a7cd215bfa4cf595b600146ccfac0c79bcbd1f3000162af5e8b06"
 
 [[package]]
 name = "ucd-trie"
@@ -9316,9 +9315,9 @@ checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "version_check"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5a972e5669d67ba988ce3dc826706fb0a8b01471c088cb0b6110b805cc36aed"
+checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
 
 [[package]]
 name = "void"
@@ -9378,9 +9377,9 @@ checksum = "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.71"
+version = "0.2.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ee1280240b7c461d6a0071313e08f34a60b0365f14260362e5a2b17d1d31aa7"
+checksum = "8fe8f61dba8e5d645a4d8132dc7a0a66861ed5e1045d2c0ed940fab33bac0fbe"
 dependencies = [
  "cfg-if 1.0.0",
  "wasm-bindgen-macro",
@@ -9388,9 +9387,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-backend"
-version = "0.2.71"
+version = "0.2.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b7d8b6942b8bb3a9b0e73fc79b98095a27de6fa247615e59d096754a3bc2aa8"
+checksum = "046ceba58ff062da072c7cb4ba5b22a37f00a302483f7e2a6cdc18fedbdc1fd3"
 dependencies = [
  "bumpalo",
  "lazy_static",
@@ -9403,9 +9402,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-futures"
-version = "0.4.21"
+version = "0.4.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e67a5806118af01f0d9045915676b22aaebecf4178ae7021bc171dab0b897ab"
+checksum = "73157efb9af26fb564bb59a009afd1c7c334a44db171d280690d0c3faaec3468"
 dependencies = [
  "cfg-if 1.0.0",
  "js-sys",
@@ -9415,9 +9414,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.71"
+version = "0.2.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5ac38da8ef716661f0f36c0d8320b89028efe10c7c0afde65baffb496ce0d3b"
+checksum = "0ef9aa01d36cda046f797c57959ff5f3c615c9cc63997a8d545831ec7976819b"
 dependencies = [
  "quote 1.0.9",
  "wasm-bindgen-macro-support",
@@ -9425,9 +9424,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.71"
+version = "0.2.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc053ec74d454df287b9374ee8abb36ffd5acb95ba87da3ba5b7d3fe20eb401e"
+checksum = "96eb45c1b2ee33545a813a92dbb53856418bf7eb54ab34f7f7ff1448a5b3735d"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
@@ -9438,9 +9437,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.71"
+version = "0.2.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d6f8ec44822dd71f5f221a5847fb34acd9060535c1211b70a05844c0f6383b1"
+checksum = "b7148f4696fb4960a346eaa60bbfb42a1ac4ebba21f750f75fc1375b098d5ffa"
 
 [[package]]
 name = "wasm-gc-api"
@@ -9704,9 +9703,9 @@ dependencies = [
 
 [[package]]
 name = "web-sys"
-version = "0.3.48"
+version = "0.3.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec600b26223b2948cedfde2a0aa6756dcf1fef616f43d7b3097aaf53a6c4d92b"
+checksum = "59fe19d70f5dacc03f6e46777213facae5ac3801575d56ca6cbd4c93dcd12310"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
