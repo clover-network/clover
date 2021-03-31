@@ -42,7 +42,7 @@ impl<T> WeightToFeePolynomial for WeightToFee<T> where
 
   fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
     smallvec::smallvec!(WeightToFeeCoefficient {
-      coeff_integer: 10_000_000u32.into(),
+      coeff_integer: 10_000u32.into(),
       coeff_frac: Perbill::zero(),
       negative: false,
       degree: 1,
