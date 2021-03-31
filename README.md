@@ -11,7 +11,7 @@
   <p align="center">
     Clover network is a connector between decentralized assets and centralized exchanges. Powered by Polkadot parachain technology, Clover provides a platform for DeFi applications and cross-chain asset interactions.
     <br />
-    <a href="https://cloverdefi.com"><strong>Explore the docs »</strong></a>
+    <a href="https://docs.clover.finance"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/clover-network/clover/issues">Report Bug</a>
