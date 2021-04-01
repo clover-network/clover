@@ -26,6 +26,9 @@ pub use pallet::*;
 pub mod ethereum_address;
 
 #[cfg(test)]
+mod mock;
+
+#[cfg(test)]
 mod tests;
 
 pub use ethereum_address::*;
@@ -118,7 +121,7 @@ pub mod pallet {
 
     #[pallet::weight(T::DbWeight::get().writes(2))]
     #[frame_support::transactional]
-    fn set_claim_limit(origin: OriginFor<T>, limit: BalanceOf<T>) -> DispatchResultWithPostInfo {
+    pub fn set_claim_limit(origin: OriginFor<T>, limit: BalanceOf<T>) -> DispatchResultWithPostInfo {
       ensure_root(origin)?;
 
       ClaimLimit::<T>::put(limit.clone());
@@ -129,7 +132,7 @@ pub mod pallet {
 
     #[pallet::weight(T::DbWeight::get().writes(3))]
     #[frame_support::transactional]
-    fn mint_claim(origin: OriginFor<T>, tx: EthereumTxHash, who: EthereumAddress, value: BalanceOf<T>)
+    pub fn mint_claim(origin: OriginFor<T>, tx: EthereumTxHash, who: EthereumAddress, value: BalanceOf<T>)
         -> DispatchResultWithPostInfo {
         let signer = ensure_signed(origin)?;
         let bridge_account = Self::bridge_account();
@@ -151,7 +154,7 @@ pub mod pallet {
 
     #[pallet::weight(0)]
     #[frame_support::transactional]
-    fn claim(origin: OriginFor<T>, dest: T::AccountId, tx: EthereumTxHash, sig: EcdsaSignature) -> DispatchResultWithPostInfo {
+    pub fn claim(origin: OriginFor<T>, dest: T::AccountId, tx: EthereumTxHash, sig: EcdsaSignature) -> DispatchResultWithPostInfo {
       ensure_none(origin)?;
       let tx_info = Self::claims(&tx);
       ensure!(tx_info.is_some(), Error::<T>::TxNotMinted);
