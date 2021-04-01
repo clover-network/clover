@@ -56,7 +56,7 @@ impl sp_std::fmt::Debug for EcdsaSignature {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Encode, Decode, Default, RuntimeDebug)]
-pub struct EthereumTxHash([u8; 32]);
+pub struct EthereumTxHash(pub [u8; 32]);
 
 #[cfg(feature = "std")]
 impl Serialize for EthereumTxHash {
