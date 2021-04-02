@@ -118,7 +118,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 11,
+  spec_version: 12,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -1006,6 +1006,16 @@ impl pallet_contracts::Config for Runtime {
 }
 
 parameter_types! {
+	pub Prefix: &'static [u8] = b"Pay CLVs to the Clover account:";
+}
+
+impl clover_claims::Config for Runtime {
+  type Event = Event;
+  type Currency = Balances;
+  type Prefix = Prefix;
+}
+
+parameter_types! {
   pub const GetStableCurrencyId: CurrencyId = CurrencyId::CUSDT;
   pub StableCurrencyFixedPrice: Price = Price::saturating_from_rational(1, 1);
   pub const MinimumCount: u32 = 1;
@@ -1069,6 +1079,8 @@ construct_runtime!(
 
     // account module
     EvmAccounts: evm_accounts::{Module, Call, Storage, Event<T>},
+
+    CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
   }
 );
 

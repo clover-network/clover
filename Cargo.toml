@@ -8,6 +8,7 @@ members = [
     'runtime',
     'modules/evm-accounts',
     'modules/traits',
+    'modules/claims',
 ]
 
 [patch.crates-io]
