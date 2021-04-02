@@ -1,9 +1,7 @@
 // Copyright (C) 2021 Clover Network
 // This file is part of Clover.
 
-/// An Ethereum address (i.e. 20 bytes, used to represent an Ethereum account).
-///
-/// This gets serialized to the 0x-prefixed hex representation.
+use sp_std::prelude::*;
 use codec::{Encode, Decode};
 use sp_runtime::{
   RuntimeDebug,
@@ -11,6 +9,9 @@ use sp_runtime::{
 #[cfg(feature = "std")]
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 
+/// An Ethereum address (i.e. 20 bytes, used to represent an Ethereum account).
+///
+/// This gets serialized to the 0x-prefixed hex representation.
 #[derive(Clone, Copy, PartialEq, Eq, Encode, Decode, Default, RuntimeDebug)]
 pub struct EthereumAddress(pub [u8; 20]);
 

@@ -19,6 +19,7 @@ pallet-evm-precompile-simple = { git = "https://github.com/clover-network/fronti
 pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
 fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.0-clover", default-features = false }
 evm-accounts = { path = "../modules/evm-accounts", default-features = false }
+clover-claims = { path = "../modules/claims", default-features = false }
 primitives = { default-features = false, package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
 
 enum-iterator = "0.6.0"
@@ -139,6 +140,7 @@ std = [
     "pallet-evm-precompile-simple/std",
     "pallet-ethereum/std",
     "fp-rpc/std",
+    "clover-claims/std",
     "evm-accounts/std",
 ]
 clover-testnet = []

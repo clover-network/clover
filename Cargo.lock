@@ -886,10 +886,10 @@ dependencies = [
  "parity-scale-codec 2.0.1",
  "rustc-hex",
  "serde",
- "sp-core 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
- "sp-io 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
- "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
- "sp-std 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -942,6 +942,7 @@ dependencies = [
 name = "clover-runtime"
 version = "0.9.0"
 dependencies = [
+ "clover-claims",
  "clover-primitives",
  "clover-rpc-runtime-api",
  "clover-traits",

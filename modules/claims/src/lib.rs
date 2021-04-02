@@ -11,7 +11,7 @@ use frame_support::{
   traits::{Currency, Get}
 };
 use frame_system::{ensure_signed};
-use codec::{Encode, Decode};
+use codec::{Encode, };
 use sp_runtime::{
   traits::{
     Saturating
@@ -55,14 +55,6 @@ pub mod pallet {
   impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
   }
 
-  #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
-  pub enum BanReasons {
-    /// banned by system account
-    BySystem = 1,
-    /// banned by contract owner
-    ByOwner = 2,
-  }
-
   #[pallet::error]
   pub enum Error<T> {
     NoPermission,
@@ -100,7 +92,6 @@ pub mod pallet {
   #[pallet::getter(fn claims)]
   pub(super) type Claims<T: Config> = StorageMap<_, Blake2_128Concat, EthereumTxHash, Option<(EthereumAddress, BalanceOf<T>, bool)>, ValueQuery>;
 
-  /// ban a address
   #[pallet::call]
   impl<T: Config> Pallet<T> {
 
