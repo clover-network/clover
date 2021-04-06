@@ -79,7 +79,13 @@ frame_support::construct_runtime!(
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+    let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+    pallet_balances::GenesisConfig::<Test> {
+      balances: vec![(4, 100), (5, 100)],
+    }.assimilate_storage(&mut t).unwrap();
+
+    t.into()
 }
 
 pub fn get_legal_tx_hash() -> EthereumTxHash {
