@@ -4,6 +4,7 @@
 use super::*;
 use crate::{mock::*, Error};
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
+use pallet_balances::Error as BalancesError;
 
 #[test]
 fn mint_and_claim_should_works () {
@@ -173,5 +174,25 @@ fn claim_limit_should_work() {
         // Claim amount with limitation should be ok
         assert_ok!(CloverClaims::mint_claim(Origin::signed(2), tx_hash.clone(), eth_addr.clone(), 10));
         assert_eq!(CloverClaims::claim_limit(), 0);
+    });
+}
+
+#[test]
+fn burn_should_work() {
+    new_test_ext().execute_with(|| {
+        let eth_addr = get_legal_eth_addr();
+
+        // should burn balance from account 4
+        assert_ok!(CloverClaims::burn(Origin::signed(4), eth_addr, 40));
+        assert_eq!(Balances::free_balance(4), 60);
+
+        assert_ok!(CloverClaims::burn(Origin::signed(4), eth_addr, 40));
+        assert_eq!(Balances::free_balance(4), 20);
+
+        // should failed if burn all the balances from an account
+        assert_noop!(
+          CloverClaims::burn(Origin::signed(5), eth_addr, 100),
+          BalancesError::<Test, _>::KeepAlive);
+        assert_eq!(Balances::free_balance(5), 100);
     });
 }

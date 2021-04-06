@@ -8,7 +8,7 @@ use sp_std::{
   prelude::*,
 };
 use frame_support::{
-  traits::{Currency, Get}
+  traits::{Currency, Get, WithdrawReasons, ExistenceRequirement, }
 };
 use frame_system::{ensure_signed};
 use codec::{Encode, };
@@ -78,6 +78,8 @@ pub mod pallet {
     ClaimLimitUpdated(BalanceOf<T>),
     /// CLV claimed
     Claimed(T::AccountId, EthereumAddress, BalanceOf<T>),
+    // burned some balance and will bridge to bsc
+    Burned(T::AccountId, EthereumAddress, BalanceOf<T>),
   }
 
   #[pallet::storage]
@@ -164,6 +166,16 @@ pub mod pallet {
 
       Self::deposit_event(Event::Claimed(dest, signer, amount));
 
+      Ok(().into())
+    }
+
+    #[pallet::weight(T::DbWeight::get().reads_writes(2, 3))]
+    #[frame_support::transactional]
+    pub fn burn(origin: OriginFor<T>, dest: EthereumAddress, amount: BalanceOf<T>) -> DispatchResultWithPostInfo {
+      let who = ensure_signed(origin)?;
+      T::Currency::withdraw(&who, amount, WithdrawReasons::TRANSFER, ExistenceRequirement::KeepAlive)?;
+
+      Self::deposit_event(Event::Burned(who, dest, amount));
       Ok(().into())
     }
   }
