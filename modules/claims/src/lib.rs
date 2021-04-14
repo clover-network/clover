@@ -212,9 +212,10 @@ pub mod pallet {
       ensure!(!claimed, Error::<T>::AlreadyClaimed);
 
       let data = dest.using_encoded(to_ascii_hex);
+      let tx_data = tx.using_encoded(to_ascii_hex);
 
       let signer =
-        Self::eth_recover(&sig, &data, &[][..]).ok_or(Error::<T>::InvalidEthereumSignature)?;
+        Self::eth_recover(&sig, &data, &tx_data).ok_or(Error::<T>::InvalidEthereumSignature)?;
 
       ensure!(address == signer, Error::<T>::SignatureNotMatch);
 
@@ -284,7 +285,8 @@ pub mod pallet {
 
       if let Call::claim(account, tx, sig) = call {
         let data = account.using_encoded(to_ascii_hex);
-        let signer = Self::eth_recover(&sig, &data, &[][..]).ok_or(InvalidTransaction::Custom(
+        let tx_data = tx.using_encoded(to_ascii_hex);
+        let signer = Self::eth_recover(&sig, &data, &tx_data).ok_or(InvalidTransaction::Custom(
           ValidityError::InvalidEthereumSignature.into(),
         ))?;
 
