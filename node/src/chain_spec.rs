@@ -381,7 +381,7 @@ pub fn ivy_config() -> Result<ChainSpec, String> {
 
   Ok(ChainSpec::from_genesis(
     // Name
-    "Clover Ivy",
+    "Clover Mainnet",
     // ID
     "clover_ivy",
     ChainType::Live,

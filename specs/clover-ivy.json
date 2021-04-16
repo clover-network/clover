@@ -1,5 +1,5 @@
 {
-  "name": "Clover Ivy",
+  "name": "Clover Mainnet",
   "id": "clover_ivy",
   "chainType": "Live",
   "bootNodes": [
@@ -7,10 +7,7 @@
     "/dns/seed2.ivy.clover.finance/tcp/30333/p2p/12D3KooWCNnKzKHrPB5LcddhjA9epkq81pdkcaxm2berU7pgYmEN"
   ],
   "telemetryEndpoints": [
-    [
-      "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F",
-      0
-    ]
+    ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
   ],
   "protocolId": "ivy",
   "properties": {
