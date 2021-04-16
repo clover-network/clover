@@ -2,16 +2,13 @@ name: Clover chain deploy
 on:
   push:
     tags:
-      - iris-*
       - ivy-*
 jobs:
-  build-and-deploy:
+  build-and-publish-ivy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@master
-      - name: Set release name env
-        run: echo "RELEASE_NAME=$(echo ${GITHUB_REF#refs/*/}  | cut -d '-' -f 1 )" >> $GITHUB_ENV
       - name: Set release version env
         run: echo "RELEASE_VER=$(echo ${GITHUB_REF#refs/*/}  | cut -d '-' -f 2 )" >> $GITHUB_ENV
       - uses: actions/cache@v2
@@ -27,7 +24,7 @@ jobs:
           toolchain: stable
 
       - run: rustup install nightly-2021-03-25 && rustup default nightly-2021-03-25 && rustup target add wasm32-unknown-unknown --toolchain nightly-2021-03-25
-      - run: cargo build --release && cp -f target/release/clover docker/
+      - run: cargo build --release --features clover-mainnet && cp -f target/release/clover docker/
       - run: rm -rf docker/specs && cp -r specs/ docker/
 
       - name: Set up Docker Buildx
@@ -47,4 +44,4 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile
           push: true
-          tags: cloverio/clover-${RELEASE_NAME}:${RELEASE_VER}
+          tags: cloverio/clover-ivy:${{ env.RELEASE_VER }}
