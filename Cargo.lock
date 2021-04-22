@@ -890,6 +890,7 @@ dependencies = [
  "sp-io 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
  "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
  "sp-std 3.0.0 (git+https://github.com/paritytech/substrate.git?tag=v3.0.0)",
+ "type-utils",
 ]
 
 [[package]]
@@ -9148,6 +9149,10 @@ dependencies = [
  "rand 0.7.3",
  "static_assertions",
 ]
+
+[[package]]
+name = "type-utils"
+version = "0.9.0"
 
 [[package]]
 name = "typenum"
