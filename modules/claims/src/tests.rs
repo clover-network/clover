@@ -400,6 +400,23 @@ fn elastic_burn_fee_should_work() {
   });
 }
 
+#[cfg(test)]
+pub fn init_mock_data(
+  account: &<Test as frame_system::Config>::AccountId,
+  fee_mint: BalanceOf<Test>,
+  fee_burn: BalanceOf<Test>,
+  limit: BalanceOf<Test>,
+  claims: Vec<(EthereumTxHash, EthereumAddress, BalanceOf<Test>, bool)>,
+) {
+  BridgeAccount::<Test>::put(account.clone().some());
+  MintFee::<Test>::put(fee_mint.some());
+  BurnFee::<Test>::put(fee_burn.some());
+  ClaimLimit::<Test>::put(limit);
+  for (tx, addr, amount, claimed) in claims {
+    Claims::<Test>::insert(tx, (addr, amount, claimed).some());
+  }
+}
+
 #[test]
 fn runtime_upgrade_should_copy_data() {
   new_test_ext().execute_with(|| {
@@ -414,7 +431,7 @@ fn runtime_upgrade_should_copy_data() {
       (tx2, get_legal_eth_addr(), 50, true),
     ];
 
-    CloverClaims::init_mock_data(&1u64, 1000u32.into(), 500u32.into(), 2000u32.into(), claims);
+    init_mock_data(&1u64, 1000u32.into(), 500u32.into(), 2000u32.into(), claims);
     assert_eq!(CloverClaims::mint_fee(), 1000u64.some());
     assert_eq!(CloverClaims::burn_fee(), 500u64.some());
     assert_eq!(CloverClaims::claim_limit(), 2000);
