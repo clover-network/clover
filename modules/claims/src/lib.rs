@@ -226,21 +226,6 @@ pub mod pallet {
 
   #[pallet::call]
   impl<T: Config> Pallet<T> {
-    #[pallet::weight(T::DbWeight::get().writes(2))]
-    #[frame_support::transactional]
-    pub(super) fn set_bridge_account(
-      origin: OriginFor<T>,
-      to: T::AccountId,
-    ) -> DispatchResultWithPostInfo {
-      ensure_root(origin)?;
-
-      <BridgeAccount<T>>::put(Some(to.clone()));
-
-      Self::deposit_event(Event::BridgeAccountChanged(to));
-
-      Ok(().into())
-    }
-
     /// update the bridge account for the target network
     #[pallet::weight(T::DbWeight::get().writes(2))]
     #[frame_support::transactional]
@@ -255,20 +240,6 @@ pub mod pallet {
 
       Self::deposit_event(Event::ElasticBridgeAccountChanged(network, to));
 
-      Ok(().into())
-    }
-
-    #[pallet::weight(T::DbWeight::get().writes(2))]
-    #[frame_support::transactional]
-    pub fn set_claim_limit(
-      origin: OriginFor<T>,
-      limit: BalanceOf<T>,
-    ) -> DispatchResultWithPostInfo {
-      ensure_root(origin)?;
-
-      ClaimLimit::<T>::put(limit.clone());
-
-      Self::deposit_event(Event::ClaimLimitUpdated(limit));
       Ok(().into())
     }
 
@@ -300,23 +271,6 @@ pub mod pallet {
       BridgeFees::<T>::insert(network, (mint_fee.clone(), burn_fee.clone()));
 
       Self::deposit_event(Event::ElasticFeeUpdated(network, mint_fee, burn_fee));
-
-      Ok(().into())
-    }
-
-    #[pallet::weight(T::DbWeight::get().writes(3))]
-    #[frame_support::transactional]
-    pub fn mint_claim(
-      origin: OriginFor<T>,
-      tx: EthereumTxHash,
-      who: EthereumAddress,
-      value: BalanceOf<T>,
-    ) -> DispatchResultWithPostInfo {
-      let signer = ensure_signed(origin)?;
-
-      let claim_amount = Self::do_mint_claim(signer, BridgeNetworks::BSC, tx, who, value)?;
-
-      Self::deposit_event(Event::MintSuccess(tx, who, claim_amount));
 
       Ok(().into())
     }
