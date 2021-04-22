@@ -438,23 +438,6 @@ pub mod pallet {
       T::ModuleId::get().into_account()
     }
 
-    #[cfg(test)]
-    pub fn init_mock_data(
-      account: &T::AccountId,
-      fee_mint: BalanceOf<T>,
-      fee_burn: BalanceOf<T>,
-      limit: BalanceOf<T>,
-      claims: Vec<(EthereumTxHash, EthereumAddress, BalanceOf<T>, bool)>,
-    ) {
-      BridgeAccount::<T>::put(account.clone().some());
-      MintFee::<T>::put(fee_mint.some());
-      BurnFee::<T>::put(fee_burn.some());
-      ClaimLimit::<T>::put(limit);
-      for (tx, addr, amount, claimed) in claims {
-        Claims::<T>::insert(tx, (addr, amount, claimed).some());
-      }
-    }
-
     fn do_validate(
       network: &BridgeNetworks,
       account: &T::AccountId,
