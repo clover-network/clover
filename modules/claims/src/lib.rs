@@ -17,6 +17,7 @@ use sp_std::prelude::*;
 
 pub use pallet::*;
 pub mod ethereum_address;
+pub use type_utils::option_utils::OptionExt;
 
 #[cfg(test)]
 mod mock;
@@ -47,7 +48,51 @@ pub mod pallet {
   pub struct Pallet<T>(sp_std::marker::PhantomData<T>);
 
   #[pallet::hooks]
-  impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+  impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+    fn on_runtime_upgrade() -> Weight {
+      if Self::pallet_storage_version() >= 2 {
+        sp_runtime::print("claims storage version is latest");
+        return 0;
+      }
+
+      sp_runtime::print("clover claims runtime upgrade");
+      // copy existing claims to elastic claims storage
+      for (k, v) in Claims::<T>::iter() {
+        if !ElasticClaims::<T>::contains_key(BridgeNetworks::BSC, k) {
+          if let Some(v) = v {
+            ElasticClaims::<T>::insert(BridgeNetworks::BSC, k, v);
+          }
+        } else {
+          debug::error!("key: {:?} already exists in elastic claims!", k);
+        }
+      }
+
+      let limit = Self::claim_limit();
+      if limit > 0u32.into() {
+        ElasticClaimLimits::<T>::insert(BridgeNetworks::BSC, limit);
+      }
+
+      // copy bridge accounts into elastic storage
+      if let Some(account) = Self::bridge_account() {
+        if !ElasticBridgeAccounts::<T>::contains_key(BridgeNetworks::BSC) {
+          ElasticBridgeAccounts::<T>::insert(BridgeNetworks::BSC, account.some());
+        }
+      }
+
+      // copy fees configuration to elastic fees storage
+      let mint_fee = Self::mint_fee().unwrap_or(0u32.into());
+      let burn_fee = Self::burn_fee().unwrap_or(0u32.into());
+      if mint_fee > 0u32.into() || burn_fee > 0u32.into() {
+        if !BridgeFees::<T>::contains_key(BridgeNetworks::BSC) {
+          BridgeFees::<T>::insert(BridgeNetworks::BSC, (mint_fee, burn_fee));
+        }
+      }
+
+      PalletStorageVersion::<T>::put(2);
+
+      100
+    }
+  }
 
   #[pallet::error]
   pub enum Error<T> {
@@ -78,6 +123,34 @@ pub mod pallet {
 
     MintFeeUpdated(BalanceOf<T>),
     BurnFeeUpdated(BalanceOf<T>),
+
+    /// Elastic bridge account changed
+    ElasticBridgeAccountChanged(BridgeNetworks, T::AccountId),
+    /// Elastic mint claim successfully
+    ElasticMintSuccess(
+      BridgeNetworks,
+      EthereumTxHash,
+      EthereumAddress,
+      BalanceOf<T>,
+    ),
+    /// Elastic claim limit updated for network
+    ElasticClaimLimitUpdated(BridgeNetworks, BalanceOf<T>),
+    /// CLV claimed for network
+    ElasticClaimed(BridgeNetworks, T::AccountId, EthereumAddress, BalanceOf<T>),
+    /// burned some balance and will bridge to specified network
+    ElasticBurned(BridgeNetworks, T::AccountId, EthereumAddress, BalanceOf<T>),
+
+    /// elastic fee updated event, (network, mint fee, burn fee)
+    ElasticFeeUpdated(BridgeNetworks, BalanceOf<T>, BalanceOf<T>),
+  }
+
+  /// Supported bridge networks By Clover
+  #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+  pub enum BridgeNetworks {
+    /// Binance Smart Chain
+    BSC = 0,
+    /// Ethereum
+    Ethereum = 1,
   }
 
   #[pallet::storage]
@@ -106,6 +179,51 @@ pub mod pallet {
   #[pallet::getter(fn burn_fee)]
   pub(super) type BurnFee<T: Config> = StorageValue<_, Option<BalanceOf<T>>, ValueQuery>;
 
+  /// bridge account to mint bridge transactions
+  /// it's a good practice to configure a separate bridge account for one bridge network
+  #[pallet::storage]
+  #[pallet::getter(fn elastic_bridge_accounts)]
+  pub(super) type ElasticBridgeAccounts<T: Config> =
+    StorageMap<_, Blake2_128Concat, BridgeNetworks, Option<T::AccountId>, ValueQuery>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn elastic_claim_limits)]
+  pub(super) type ElasticClaimLimits<T: Config> =
+    StorageMap<_, Blake2_128Concat, BridgeNetworks, BalanceOf<T>, ValueQuery>;
+
+  #[pallet::storage]
+  #[pallet::getter(fn bridge_fees)]
+  pub(super) type BridgeFees<T: Config> = StorageMap<
+    _,
+    Blake2_128Concat,
+    BridgeNetworks,
+    (BalanceOf<T>, BalanceOf<T>), // Configuration for MintFee and BurnFee
+    ValueQuery,
+  >;
+
+  /// claims that supports multiple ethereum compatible chains
+  #[pallet::storage]
+  #[pallet::getter(fn elastic_claims)]
+  pub type ElasticClaims<T> = StorageDoubleMap<
+    _,
+    Blake2_128Concat,
+    BridgeNetworks,
+    Blake2_128Concat,
+    EthereumTxHash,
+    (EthereumAddress, BalanceOf<T>, bool),
+  >;
+
+  pub struct VersionDefault;
+  impl Get<u32> for VersionDefault {
+    fn get() -> u32 {
+      1
+    }
+  }
+
+  #[pallet::storage]
+  #[pallet::getter(fn pallet_storage_version)]
+  pub type PalletStorageVersion<T> = StorageValue<_, u32, ValueQuery, VersionDefault>;
+
   #[pallet::call]
   impl<T: Config> Pallet<T> {
     #[pallet::weight(T::DbWeight::get().writes(2))]
@@ -119,6 +237,23 @@ pub mod pallet {
       <BridgeAccount<T>>::put(Some(to.clone()));
 
       Self::deposit_event(Event::BridgeAccountChanged(to));
+
+      Ok(().into())
+    }
+
+    /// update the bridge account for the target network
+    #[pallet::weight(T::DbWeight::get().writes(2))]
+    #[frame_support::transactional]
+    pub(super) fn set_bridge_account_elastic(
+      origin: OriginFor<T>,
+      network: BridgeNetworks,
+      to: T::AccountId,
+    ) -> DispatchResultWithPostInfo {
+      ensure_root(origin)?;
+
+      ElasticBridgeAccounts::<T>::insert(network, to.clone().some());
+
+      Self::deposit_event(Event::ElasticBridgeAccountChanged(network, to));
 
       Ok(().into())
     }
@@ -137,23 +272,35 @@ pub mod pallet {
       Ok(().into())
     }
 
-    #[pallet::weight(T::DbWeight::get().writes(1))]
+    #[pallet::weight(T::DbWeight::get().writes(2))]
     #[frame_support::transactional]
-    pub fn set_mint_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResultWithPostInfo {
+    pub fn set_claim_limit_elastic(
+      origin: OriginFor<T>,
+      network: BridgeNetworks,
+      limit: BalanceOf<T>,
+    ) -> DispatchResultWithPostInfo {
       ensure_root(origin)?;
 
-      MintFee::<T>::put(Some(fee.clone()));
-      Self::deposit_event(Event::MintFeeUpdated(fee));
+      ElasticClaimLimits::<T>::insert(network, limit);
+
+      Self::deposit_event(Event::ElasticClaimLimitUpdated(network, limit));
       Ok(().into())
     }
 
     #[pallet::weight(T::DbWeight::get().writes(1))]
     #[frame_support::transactional]
-    pub fn set_burn_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResultWithPostInfo {
+    pub fn set_bridge_fee_elastic(
+      origin: OriginFor<T>,
+      network: BridgeNetworks,
+      mint_fee: BalanceOf<T>,
+      burn_fee: BalanceOf<T>,
+    ) -> DispatchResultWithPostInfo {
       ensure_root(origin)?;
 
-      BurnFee::<T>::put(Some(fee.clone()));
-      Self::deposit_event(Event::BurnFeeUpdated(fee));
+      BridgeFees::<T>::insert(network, (mint_fee.clone(), burn_fee.clone()));
+
+      Self::deposit_event(Event::ElasticFeeUpdated(network, mint_fee, burn_fee));
+
       Ok(().into())
     }
 
@@ -166,33 +313,28 @@ pub mod pallet {
       value: BalanceOf<T>,
     ) -> DispatchResultWithPostInfo {
       let signer = ensure_signed(origin)?;
-      let bridge_account = Self::bridge_account();
 
-      // mint must be orginated from bridge account
-      ensure!(
-        Some(&signer) == bridge_account.as_ref(),
-        Error::<T>::NoPermission
-      );
-      // Check if this tx already be mint or be claimed
-      ensure!(!Claims::<T>::contains_key(&tx), Error::<T>::AlreadyMinted);
-      // Check claim limit
-      ensure!(Self::claim_limit() >= value, Error::<T>::ClaimLimitExceeded);
-      let mut claim_amount = value.clone();
-      let mut mint_fee = 0u32.into();
-      if let Some(fee) = Self::mint_fee() {
-        ensure!(value > fee, Error::<T>::InvalidAmount);
-        claim_amount = value.saturating_sub(fee);
-        mint_fee = fee;
-      }
-      // insert into claims
-      Claims::<T>::insert(tx.clone(), Some((who.clone(), claim_amount.clone(), false)));
-      // update claim limit
-      ClaimLimit::<T>::mutate(|l| *l = l.saturating_sub(claim_amount));
-      if mint_fee > 0u32.into() {
-        T::Currency::deposit_creating(&Self::account_id(), mint_fee);
-      }
+      let claim_amount = Self::do_mint_claim(signer, BridgeNetworks::BSC, tx, who, value)?;
 
       Self::deposit_event(Event::MintSuccess(tx, who, claim_amount));
+
+      Ok(().into())
+    }
+
+    #[pallet::weight(T::DbWeight::get().writes(3))]
+    #[frame_support::transactional]
+    pub fn mint_claim_elastic(
+      origin: OriginFor<T>,
+      network: BridgeNetworks,
+      tx: EthereumTxHash,
+      who: EthereumAddress,
+      value: BalanceOf<T>,
+    ) -> DispatchResultWithPostInfo {
+      let signer = ensure_signed(origin)?;
+
+      let claim_amount = Self::do_mint_claim(signer, network, tx, who, value)?;
+
+      Self::deposit_event(Event::ElasticMintSuccess(network, tx, who, claim_amount));
       Ok(().into())
     }
 
@@ -205,24 +347,26 @@ pub mod pallet {
       sig: EcdsaSignature,
     ) -> DispatchResultWithPostInfo {
       ensure_none(origin)?;
-      let tx_info = Self::claims(&tx);
-      ensure!(tx_info.is_some(), Error::<T>::TxNotMinted);
-      let (address, amount, claimed) = tx_info.unwrap();
-
-      ensure!(!claimed, Error::<T>::AlreadyClaimed);
-
-      let data = dest.using_encoded(to_ascii_hex);
-      let tx_data = tx.using_encoded(to_ascii_hex);
-
-      let signer =
-        Self::eth_recover(&sig, &data, &tx_data).ok_or(Error::<T>::InvalidEthereumSignature)?;
-
-      ensure!(address == signer, Error::<T>::SignatureNotMatch);
-
-      T::Currency::deposit_creating(&dest, amount);
-      Claims::<T>::insert(tx, Some((address, amount, true)));
+      let (signer, amount) = Self::do_claim(BridgeNetworks::BSC, dest.clone(), tx, sig)?;
 
       Self::deposit_event(Event::Claimed(dest, signer, amount));
+
+      Ok(().into())
+    }
+
+    #[pallet::weight(0)]
+    #[frame_support::transactional]
+    pub fn claim_elastic(
+      origin: OriginFor<T>,
+      network: BridgeNetworks,
+      dest: T::AccountId,
+      tx: EthereumTxHash,
+      sig: EcdsaSignature,
+    ) -> DispatchResultWithPostInfo {
+      ensure_none(origin)?;
+      let (signer, amount) = Self::do_claim(network, dest.clone(), tx, sig)?;
+
+      Self::deposit_event(Event::ElasticClaimed(network, dest, signer, amount));
 
       Ok(().into())
     }
@@ -235,25 +379,22 @@ pub mod pallet {
       amount: BalanceOf<T>,
     ) -> DispatchResultWithPostInfo {
       let who = ensure_signed(origin)?;
-      let mut burn_amount = amount.clone();
-      let mut burn_fee = 0u32.into();
-      if let Some(fee) = Self::burn_fee() {
-        ensure!(amount > fee, Error::<T>::InvalidAmount);
-        burn_amount = amount.saturating_sub(fee);
-        burn_fee = fee;
-      }
-
-      T::Currency::withdraw(
-        &who,
-        amount,
-        WithdrawReasons::TRANSFER,
-        ExistenceRequirement::KeepAlive,
-      )?;
-      if burn_fee > 0u32.into() {
-        T::Currency::deposit_creating(&Self::account_id(), burn_fee);
-      }
-
+      let burn_amount = Self::do_burn(who.clone(), BridgeNetworks::BSC, amount)?;
       Self::deposit_event(Event::Burned(who, dest, burn_amount));
+      Ok(().into())
+    }
+
+    #[pallet::weight(T::DbWeight::get().reads_writes(2, 3))]
+    #[frame_support::transactional]
+    pub fn burn_elastic(
+      origin: OriginFor<T>,
+      network: BridgeNetworks,
+      dest: EthereumAddress,
+      amount: BalanceOf<T>,
+    ) -> DispatchResultWithPostInfo {
+      let who = ensure_signed(origin)?;
+      let burn_amount = Self::do_burn(who.clone(), network, amount)?;
+      Self::deposit_event(Event::ElasticBurned(network, who, dest, burn_amount));
       Ok(().into())
     }
   }
@@ -281,33 +422,10 @@ pub mod pallet {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-      const PRIORITY: u64 = 100;
-
       if let Call::claim(account, tx, sig) = call {
-        let data = account.using_encoded(to_ascii_hex);
-        let tx_data = tx.using_encoded(to_ascii_hex);
-        let signer = Self::eth_recover(&sig, &data, &tx_data).ok_or(InvalidTransaction::Custom(
-          ValidityError::InvalidEthereumSignature.into(),
-        ))?;
-
-        let e = InvalidTransaction::Custom(ValidityError::SignerHasNoClaim.into());
-        let tx_info = Self::claims(&tx);
-        ensure!(tx_info.is_some(), e);
-
-        let (address, _, claimed) = tx_info.unwrap();
-        let e = InvalidTransaction::Custom(ValidityError::SignatureNotMatch.into());
-        ensure!(address == signer, e);
-
-        let e = InvalidTransaction::Custom(ValidityError::AlreadyClaimed.into());
-        ensure!(!claimed, e);
-
-        Ok(ValidTransaction {
-          priority: PRIORITY,
-          requires: vec![],
-          provides: vec![("claims", signer).encode()],
-          longevity: TransactionLongevity::max_value(),
-          propagate: true,
-        })
+        Self::do_validate(&BridgeNetworks::BSC, account, tx, sig)
+      } else if let Call::claim_elastic(network, account, tx, sig) = call {
+        Self::do_validate(network, account, tx, sig)
       } else {
         InvalidTransaction::Call.into()
       }
@@ -318,6 +436,154 @@ pub mod pallet {
     /// the account to store the mint/claim fees
     pub fn account_id() -> T::AccountId {
       T::ModuleId::get().into_account()
+    }
+
+    #[cfg(test)]
+    pub fn init_mock_data(
+      account: &T::AccountId,
+      fee_mint: BalanceOf<T>,
+      fee_burn: BalanceOf<T>,
+      limit: BalanceOf<T>,
+      claims: Vec<(EthereumTxHash, EthereumAddress, BalanceOf<T>, bool)>,
+    ) {
+      BridgeAccount::<T>::put(account.clone().some());
+      MintFee::<T>::put(fee_mint.some());
+      BurnFee::<T>::put(fee_burn.some());
+      ClaimLimit::<T>::put(limit);
+      for (tx, addr, amount, claimed) in claims {
+        Claims::<T>::insert(tx, (addr, amount, claimed).some());
+      }
+    }
+
+    fn do_validate(
+      network: &BridgeNetworks,
+      account: &T::AccountId,
+      tx: &EthereumTxHash,
+      sig: &EcdsaSignature,
+    ) -> TransactionValidity {
+      const PRIORITY: u64 = 100;
+
+      let data = account.using_encoded(to_ascii_hex);
+      let tx_data = tx.using_encoded(to_ascii_hex);
+      let signer = Self::eth_recover(&sig, &data, &tx_data).ok_or(InvalidTransaction::Custom(
+        ValidityError::InvalidEthereumSignature.into(),
+      ))?;
+
+      let e = InvalidTransaction::Custom(ValidityError::SignerHasNoClaim.into());
+      let tx_info = Self::elastic_claims(network, tx);
+      ensure!(tx_info.is_some(), e);
+
+      let (address, _, claimed) = tx_info.unwrap();
+      let e = InvalidTransaction::Custom(ValidityError::SignatureNotMatch.into());
+      ensure!(address == signer, e);
+
+      let e = InvalidTransaction::Custom(ValidityError::AlreadyClaimed.into());
+      ensure!(!claimed, e);
+
+      Ok(ValidTransaction {
+        priority: PRIORITY,
+        requires: vec![],
+        provides: vec![("claims", signer).encode()],
+        longevity: TransactionLongevity::max_value(),
+        propagate: true,
+      })
+    }
+
+    fn do_mint_claim(
+      from: T::AccountId,
+      network: BridgeNetworks,
+      tx: EthereumTxHash,
+      who: EthereumAddress,
+      value: BalanceOf<T>,
+    ) -> Result<BalanceOf<T>, DispatchError> {
+      let bridge_account = Self::elastic_bridge_accounts(network);
+
+      // mint must be orginated from bridge account
+      ensure!(
+        Some(&from) == bridge_account.as_ref(),
+        Error::<T>::NoPermission
+      );
+      // Check if this tx already be mint or be claimed
+      ensure!(
+        !ElasticClaims::<T>::contains_key(&network, &tx),
+        Error::<T>::AlreadyMinted
+      );
+      // Check claim limit
+      ensure!(
+        Self::elastic_claim_limits(&network) >= value,
+        Error::<T>::ClaimLimitExceeded
+      );
+      let mut claim_amount = value.clone();
+      let mut mint_fee = 0u32.into();
+      let (fee, _) = Self::bridge_fees(&network);
+      if fee > 0u32.into() {
+        ensure!(value > fee, Error::<T>::InvalidAmount);
+        claim_amount = value.saturating_sub(fee);
+        mint_fee = fee;
+      }
+      // insert into claims
+      ElasticClaims::<T>::insert(
+        network.clone(),
+        tx.clone(),
+        (who.clone(), claim_amount.clone(), false),
+      );
+      // update claim limit
+      ElasticClaimLimits::<T>::mutate(&network, |l| *l = l.saturating_sub(claim_amount));
+      if mint_fee > 0u32.into() {
+        T::Currency::deposit_creating(&Self::account_id(), mint_fee);
+      }
+      Ok(claim_amount)
+    }
+
+    fn do_claim(
+      network: BridgeNetworks,
+      dest: T::AccountId,
+      tx: EthereumTxHash,
+      sig: EcdsaSignature,
+    ) -> Result<(EthereumAddress, BalanceOf<T>), DispatchError> {
+      let tx_info = Self::elastic_claims(network, &tx);
+      ensure!(tx_info.is_some(), Error::<T>::TxNotMinted);
+      let (address, amount, claimed) = tx_info.unwrap();
+
+      ensure!(!claimed, Error::<T>::AlreadyClaimed);
+
+      let data = dest.using_encoded(to_ascii_hex);
+      let tx_data = tx.using_encoded(to_ascii_hex);
+
+      let signer =
+        Self::eth_recover(&sig, &data, &tx_data).ok_or(Error::<T>::InvalidEthereumSignature)?;
+
+      ensure!(address == signer, Error::<T>::SignatureNotMatch);
+
+      T::Currency::deposit_creating(&dest, amount);
+      ElasticClaims::<T>::insert(network, tx, (address, amount, true));
+      Ok((signer, amount))
+    }
+
+    fn do_burn(
+      who: T::AccountId,
+      network: BridgeNetworks,
+      amount: BalanceOf<T>,
+    ) -> Result<BalanceOf<T>, DispatchError> {
+      let mut burn_amount = amount.clone();
+      let mut burn_fee = 0u32.into();
+      let (_, fee) = Self::bridge_fees(&network);
+      if fee > 0u32.into() {
+        ensure!(amount > fee, Error::<T>::InvalidAmount);
+        burn_amount = amount.saturating_sub(fee);
+        burn_fee = fee;
+      }
+
+      T::Currency::withdraw(
+        &who,
+        amount,
+        WithdrawReasons::TRANSFER,
+        ExistenceRequirement::KeepAlive,
+      )?;
+      if burn_fee > 0u32.into() {
+        T::Currency::deposit_creating(&Self::account_id(), burn_fee);
+      }
+      Ok(burn_amount)
     }
 
     // Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.

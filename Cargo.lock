@@ -890,6 +890,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "type-utils",
 ]
 
 [[package]]
@@ -8787,6 +8788,10 @@ dependencies = [
  "rand 0.7.3",
  "static_assertions",
 ]
+
+[[package]]
+name = "type-utils"
+version = "0.9.0"
 
 [[package]]
 name = "typenum"
