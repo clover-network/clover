@@ -63,8 +63,9 @@ fn mint_and_claim_should_works() {
     // Pay CLVs to the TEST account:0100000000000000
     let sig = get_legal_eth_sig();
     assert_eq!(Balances::free_balance(1), 0);
-    assert_ok!(CloverClaims::claim(
+    assert_ok!(CloverClaims::claim_elastic(
       Origin::none(),
+      BridgeNetworks::BSC,
       1,
       tx_hash.clone(),
       sig.clone()
@@ -211,8 +212,9 @@ fn mint_fee_should_work() {
     // Pay CLVs to the TEST account:0100000000000000
     let sig = get_legal_eth_sig();
     assert_eq!(Balances::free_balance(1), 0);
-    assert_ok!(CloverClaims::claim(
+    assert_ok!(CloverClaims::claim_elastic(
       Origin::none(),
+      BridgeNetworks::BSC,
       1,
       tx_hash.clone(),
       sig.clone()
@@ -263,7 +265,7 @@ fn non_exist_tx_should_fail() {
     let tx_hash = get_legal_tx_hash();
     let sig = get_legal_eth_sig();
     assert_noop!(
-      CloverClaims::claim(Origin::none(), 1, tx_hash, sig),
+      CloverClaims::claim_elastic(Origin::none(), BridgeNetworks::BSC, 1, tx_hash, sig),
       Error::<Test>::TxNotMinted
     );
   });
@@ -303,14 +305,26 @@ fn illegal_sig_claim_should_fail() {
     // Claim it with illegal sig
     let sig1 = get_another_account_eth_sig();
     assert_noop!(
-      CloverClaims::claim(Origin::none(), 1, tx_hash.clone(), sig1.clone()),
+      CloverClaims::claim_elastic(
+        Origin::none(),
+        BridgeNetworks::BSC,
+        1,
+        tx_hash.clone(),
+        sig1.clone()
+      ),
       Error::<Test>::SignatureNotMatch
     );
 
     // Sig with wrong message should failed
     let sig2 = get_wrong_msg_eth_sig();
     assert_noop!(
-      CloverClaims::claim(Origin::none(), 1, tx_hash.clone(), sig2.clone()),
+      CloverClaims::claim_elastic(
+        Origin::none(),
+        BridgeNetworks::BSC,
+        1,
+        tx_hash.clone(),
+        sig2.clone()
+      ),
       Error::<Test>::SignatureNotMatch
     );
   });
@@ -389,8 +403,9 @@ fn claim_twice_should_fail() {
     // Pay CLVs to the TEST account:0100000000000000
     let sig = get_legal_eth_sig();
     assert_eq!(Balances::free_balance(1), 0);
-    assert_ok!(CloverClaims::claim(
+    assert_ok!(CloverClaims::claim_elastic(
       Origin::none(),
+      BridgeNetworks::BSC,
       1,
       tx_hash.clone(),
       sig.clone()
@@ -399,7 +414,13 @@ fn claim_twice_should_fail() {
 
     // failed on the second try
     assert_noop!(
-      CloverClaims::claim(Origin::none(), 1, tx_hash.clone(), sig.clone()),
+      CloverClaims::claim_elastic(
+        Origin::none(),
+        BridgeNetworks::BSC,
+        1,
+        tx_hash.clone(),
+        sig.clone()
+      ),
       Error::<Test>::AlreadyClaimed
     );
     assert_eq!(Balances::free_balance(1), 100);
@@ -455,15 +476,25 @@ fn burn_should_work() {
     let eth_addr = get_legal_eth_addr();
 
     // should burn balance from account 4
-    assert_ok!(CloverClaims::burn(Origin::signed(4), eth_addr, 40));
+    assert_ok!(CloverClaims::burn_elastic(
+      Origin::signed(4),
+      BridgeNetworks::BSC,
+      eth_addr,
+      40
+    ));
     assert_eq!(Balances::free_balance(4), 60);
 
-    assert_ok!(CloverClaims::burn(Origin::signed(4), eth_addr, 40));
+    assert_ok!(CloverClaims::burn_elastic(
+      Origin::signed(4),
+      BridgeNetworks::BSC,
+      eth_addr,
+      40
+    ));
     assert_eq!(Balances::free_balance(4), 20);
 
     // should failed if burn all the balances from an account
     assert_noop!(
-      CloverClaims::burn(Origin::signed(5), eth_addr, 100),
+      CloverClaims::burn_elastic(Origin::signed(5), BridgeNetworks::BSC, eth_addr, 100),
       BalancesError::<Test, _>::KeepAlive
     );
     assert_eq!(Balances::free_balance(5), 100);
@@ -495,12 +526,17 @@ fn burn_fee_should_work() {
 
     // burn should failed if there is not enough balance to pay fee
     assert_noop!(
-      CloverClaims::burn(Origin::signed(4), eth_addr, 20),
+      CloverClaims::burn_elastic(Origin::signed(4), BridgeNetworks::BSC, eth_addr, 20),
       Error::<Test>::InvalidAmount
     );
     assert_eq!(Balances::free_balance(4), 100);
 
-    assert_ok!(CloverClaims::burn(Origin::signed(5), eth_addr, 40));
+    assert_ok!(CloverClaims::burn_elastic(
+      Origin::signed(5),
+      BridgeNetworks::BSC,
+      eth_addr,
+      40
+    ));
     assert_eq!(Balances::free_balance(5), 60);
 
     // module has the fee deposited

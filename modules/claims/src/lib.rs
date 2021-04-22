@@ -88,6 +88,11 @@ pub mod pallet {
         }
       }
 
+      MintFee::<T>::kill();
+      BurnFee::<T>::kill();
+      Claims::<T>::remove_all();
+      BridgeAccount::<T>::kill();
+
       PalletStorageVersion::<T>::put(2);
 
       100
@@ -294,22 +299,6 @@ pub mod pallet {
 
     #[pallet::weight(0)]
     #[frame_support::transactional]
-    pub fn claim(
-      origin: OriginFor<T>,
-      dest: T::AccountId,
-      tx: EthereumTxHash,
-      sig: EcdsaSignature,
-    ) -> DispatchResultWithPostInfo {
-      ensure_none(origin)?;
-      let (signer, amount) = Self::do_claim(BridgeNetworks::BSC, dest.clone(), tx, sig)?;
-
-      Self::deposit_event(Event::Claimed(dest, signer, amount));
-
-      Ok(().into())
-    }
-
-    #[pallet::weight(0)]
-    #[frame_support::transactional]
     pub fn claim_elastic(
       origin: OriginFor<T>,
       network: BridgeNetworks,
@@ -322,19 +311,6 @@ pub mod pallet {
 
       Self::deposit_event(Event::ElasticClaimed(network, dest, signer, amount));
 
-      Ok(().into())
-    }
-
-    #[pallet::weight(T::DbWeight::get().reads_writes(2, 3))]
-    #[frame_support::transactional]
-    pub fn burn(
-      origin: OriginFor<T>,
-      dest: EthereumAddress,
-      amount: BalanceOf<T>,
-    ) -> DispatchResultWithPostInfo {
-      let who = ensure_signed(origin)?;
-      let burn_amount = Self::do_burn(who.clone(), BridgeNetworks::BSC, amount)?;
-      Self::deposit_event(Event::Burned(who, dest, burn_amount));
       Ok(().into())
     }
 
@@ -376,9 +352,7 @@ pub mod pallet {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-      if let Call::claim(account, tx, sig) = call {
-        Self::do_validate(&BridgeNetworks::BSC, account, tx, sig)
-      } else if let Call::claim_elastic(network, account, tx, sig) = call {
+      if let Call::claim_elastic(network, account, tx, sig) = call {
         Self::do_validate(network, account, tx, sig)
       } else {
         InvalidTransaction::Call.into()
