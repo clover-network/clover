@@ -64,15 +64,15 @@ sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git",  ta
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"   }
 hex-literal = { version = '0.3.1' }
 sc-telemetry = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
-pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover"  }
-pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover" }
-fc-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover", features = ["rpc_binary_search_estimate"] }
-fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover" }
-fc-consensus = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover" }
-fp-consensus = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover" }
-fc-db = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover" }
-fc-rpc-core = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover" }
-fc-mapping-sync = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.3-clover" }
+pallet-evm = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover"  }
+pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover" }
+fc-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover", features = ["rpc_binary_search_estimate"] }
+fp-rpc = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover" }
+fc-consensus = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover" }
+fp-consensus = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover" }
+fc-db = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover" }
+fc-rpc-core = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover" }
+fc-mapping-sync = { git = "https://github.com/clover-network/frontier.git", tag = "v0.1.4-clover" }
 primitive-types = { version = "0.9", default-features = false, features = ["rlp", "byteorder"] }
 
 [build-dependencies]
