@@ -414,7 +414,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
 }
 
 parameter_types! {
-  pub BlockGasLimit: U256 = U256::from(u32::max_value());
+  pub BlockGasLimit: U256 = U256::from(30_000_000); // double the ethereum block limit
 }
 
 impl pallet_ethereum::Config for Runtime {
@@ -530,7 +530,7 @@ impl pallet_staking::Config for Runtime {
 }
 
 parameter_types! {
-  pub const ExistentialDeposit: u128 = 500;
+  pub const ExistentialDeposit: u128 = 0;
   pub const MaxLocks: u32 = 50;
 }
 
