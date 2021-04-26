@@ -1,4 +1,4 @@
-[![Substrate version](https://img.shields.io/badge/Substrate-2.0.0-blue?logo=Parity%20Substrate)](https://substrate.dev/)
+[![Substrate version](https://img.shields.io/badge/Substrate-3.0.0-blue?logo=Parity%20Substrate)](https://substrate.dev/)
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]

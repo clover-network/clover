@@ -1,0 +1,10 @@
+[package]
+name = "type-utils"
+authors = ['Clover Network <https://github.com/clover-network>']
+edition = '2018'
+license = 'GPL-3.0'
+homepage = 'https://clover.finance'
+repository = 'https://github.com/clover-network/clover'
+version = '0.9.0'
+
+[dependencies]
