@@ -23,6 +23,7 @@ sp-std = {default-features = false, git = "https://github.com/paritytech/substra
 sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" }
 
 log = { version = "0.4.14", default-features = false }
+type-utils = { path = "../type-utils" }
 
 [dev-dependencies]
 pallet-balances = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }

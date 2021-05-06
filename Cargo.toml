@@ -9,6 +9,7 @@ members = [
     'modules/evm-accounts',
     'modules/traits',
     'modules/claims',
+    'modules/type-utils',
 ]
 
 [patch.crates-io]
