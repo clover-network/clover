@@ -17,6 +17,8 @@ use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::MappingSyncWorker;
 use futures::StreamExt;
 
+use crate::cli::Cli;
+
 // Our native executor instance.
 native_executor_instance!(
   pub Executor,
@@ -48,7 +50,7 @@ pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backen
   })?))
 }
 
-pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponents<
+pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::PartialComponents<
   FullClient, FullBackend, FullSelectChain,
   sp_consensus::DefaultImportQueue<Block, FullClient>,
   sc_transaction_pool::FullPool<Block, FullClient>,
@@ -152,6 +154,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
     let pending = pending_transactions.clone();
     let filter_pool_clone = filter_pool.clone();
     let backend = frontier_backend.clone();
+    let max_past_logs = cli.run.max_past_logs;
 
     let rpc_extensions_builder = move |deny_unsafe, _subscription_executor: sc_rpc::SubscriptionTaskExecutor, network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>| {
 
@@ -177,6 +180,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
         filter_pool: filter_pool_clone.clone(),
         backend: backend.clone(),
         is_authority,
+        max_past_logs,
         network: network,
       };
 
@@ -196,6 +200,7 @@ pub fn new_partial(config: &Configuration) -> Result<sc_service::PartialComponen
 
 /// Builds a new service for a full client.
 pub fn new_full_base(mut config: Configuration,
+  cli: &Cli,
   with_startup_data: impl FnOnce(
     &sc_consensus_babe::BabeBlockImport<Block, FullClient,
       FrontierBlockImport<Block, FullGrandpaBlockImport, FullClient>,
@@ -212,7 +217,7 @@ pub fn new_full_base(mut config: Configuration,
     inherent_data_providers,
     other: (partial_rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool,
     frontier_backend)),
-  } = new_partial(&config)?;
+  } = new_partial(&config, cli)?;
 
   let shared_voter_state = rpc_setup;
 
@@ -417,9 +422,9 @@ pub fn new_full_base(mut config: Configuration,
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(config: Configuration)
+pub fn new_full(config: Configuration, cli: &Cli)
 -> Result<TaskManager, ServiceError> {
-  new_full_base(config, |_, _| ()).map(|(task_manager, _, _, _, _)| {
+  new_full_base(config, cli, |_, _| ()).map(|(task_manager, _, _, _, _)| {
     task_manager
   })
 }
