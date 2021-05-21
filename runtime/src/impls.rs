@@ -8,15 +8,15 @@ use frame_support::weights::{
     WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use pallet_transaction_payment::{Multiplier, MultiplierUpdate, };
-use crate::{AccountId, Balances, Authorship, NegativeImbalance};
+use crate::{AccountId, Balances, NegativeImbalance};
 use clover_traits::account::MergeAccount;
 
-pub struct Author;
-impl OnUnbalanced<NegativeImbalance> for Author {
-  fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-    Balances::resolve_creating(&Authorship::author(), amount);
-  }
-}
+// pub struct Author;
+// impl OnUnbalanced<NegativeImbalance> for Author {
+//   fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+//     Balances::resolve_creating(&Authorship::author(), amount);
+//   }
+// }
 
 pub struct MergeAccountEvm;
 impl MergeAccount<AccountId> for MergeAccountEvm {
