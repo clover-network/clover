@@ -19,7 +19,6 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_runtime::traits::BlakeTwo256;
 use sp_transaction_pool::TransactionPool;
-use sc_transaction_graph::{ChainApi, Pool};
 use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use pallet_ethereum::EthereumStorageSchema;
@@ -31,7 +30,7 @@ pub struct FullDeps<C, P> {
   pub client: Arc<C>,
   /// Transaction pool instance.
   pub pool: Arc<P>,
-	pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
+	// pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
   /// Whether to deny unsafe calls
   pub deny_unsafe: DenyUnsafe,
   /// Ethereum pending transactions.
@@ -81,7 +80,7 @@ pub fn create_full<C, P, B>(
   let FullDeps {
     client,
     pool,
-    chain_spec,
+    // chain_spec: _,
     deny_unsafe,
     network,
     pending_transactions,

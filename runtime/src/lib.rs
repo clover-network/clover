@@ -7,10 +7,11 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::Decode;
-use sp_core::{crypto::KeyTypeId, crypto::Public, OpaqueMetadata, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
+use sp_arithmetic::{PerThing,};
 use sp_runtime::curve::PiecewiseLinear;
 use sp_runtime::traits::{
-  BlakeTwo256, Block as BlockT, Convert, ConvertInto, NumberFor, OpaqueKeys, SaturatedConversion,
+  BlakeTwo256, Block as BlockT, Convert, ConvertInto, SaturatedConversion,
   StaticLookup,
 };
 use sp_runtime::{
@@ -23,12 +24,9 @@ use sp_std::{marker::PhantomData, prelude::*};
 use sp_api::impl_runtime_apis;
 
 use pallet_contracts::weights::WeightInfo;
-use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use pallet_session::historical as pallet_session_historical;
 pub use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
-use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
-use sp_core::u32_trait::{_1, _2, _3, _4, _5};
+use sp_core::u32_trait::{_1, _2, _4, _5};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -45,7 +43,7 @@ use fp_rpc::TransactionStatus;
 pub use frame_support::{
   construct_runtime, debug, log, ensure, parameter_types, PalletId,
   traits::{
-    Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, LockIdentifier, OnUnbalanced, Randomness,
+    Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, LockIdentifier, Randomness,
     U128CurrencyToVote,
   },
   transactional,
@@ -426,10 +424,9 @@ parameter_types! {
   pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
   pub const MaxNominatorRewardedPerValidator: u32 = 64;
   pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
-  pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
   pub const MaxIterations: u32 = 10;
   // 0.05%. The higher the value, the more strict solution acceptance becomes.
-  pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
+  pub MinSolutionScoreBump: Perbill = PerThing::from_rational(5u32, 10_000);
   pub OffchainSolutionWeightLimit: Weight = BlockWeights::get()
     .get(DispatchClass::Normal)
     .max_extrinsic
@@ -593,7 +590,7 @@ where
   R::Balance: Into<u128>,
 {
   fn factor() -> u128 {
-    let issuance: u128 = <pallet_balances::Module<R>>::total_issuance().into();
+    let issuance: u128 = <pallet_balances::Pallet<R>>::total_issuance().into();
     (issuance / u64::max_value() as u128).max(1)
   }
 }
@@ -747,8 +744,6 @@ impl pallet_tips::Config for Runtime {
   type WeightInfo = pallet_tips::weights::SubstrateWeight<Runtime>;
 }
 
-type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
-
 parameter_types! {
   pub const TransactionByteFee: Balance = MILLICENTS;
   pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
@@ -850,7 +845,7 @@ parameter_types! {
   pub const DepositPerContract: Balance = TombstoneDeposit::get();
   pub const DepositPerStorageByte: Balance = deposit(0, 1);
   pub const DepositPerStorageItem: Balance = deposit(1, 0);
-  pub RentFraction: Perbill = Perbill::from_rational_approximation(1u32, 30 * DAYS);
+  pub RentFraction: Perbill = PerThing::from_rational(1u32, 30 * DAYS);
   // The lazy deletion runs inside on_initialize.
   pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
     BlockWeights::get().max_block;
@@ -1001,7 +996,7 @@ pub type Executive = frame_executive::Executive<
   Block,
   frame_system::ChainContext<Runtime>,
   Runtime,
-  AllModules,
+  AllPallets,
 >;
 
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;

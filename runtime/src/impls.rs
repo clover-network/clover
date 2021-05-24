@@ -3,12 +3,12 @@ use sp_arithmetic::{traits::{BaseArithmetic, Unsigned}};
 use sp_runtime::traits::Convert;
 use sp_runtime::{ DispatchResult, FixedPointNumber, Perquintill, Perbill, };
 use frame_support::transactional;
-use frame_support::traits::{Get, OnUnbalanced, Currency, ReservableCurrency, };
+use frame_support::traits::{Get, ReservableCurrency, };
 use frame_support::weights::{
     WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
 use pallet_transaction_payment::{Multiplier, MultiplierUpdate, };
-use crate::{AccountId, Balances, NegativeImbalance};
+use crate::{AccountId, Balances, };
 use clover_traits::account::MergeAccount;
 
 // pub struct Author;

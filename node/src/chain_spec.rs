@@ -5,31 +5,28 @@ use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public, sr25519, U256};
 use clover_runtime::{
   AccountId, Balance, BalancesConfig, ContractsConfig, IndicesConfig, GenesisConfig,
-  SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
-  Signature, StakerStatus,
+  SudoConfig, SystemConfig, WASM_BINARY,
+  Signature,
   EVMConfig, EthereumConfig, DOLLARS
 };
-use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
-use sp_runtime::{traits::{IdentifyAccount, Verify}, Perbill};
+use sp_runtime::{traits::{IdentifyAccount, Verify}, };
 use sc_service::ChainType;
 use hex_literal::hex;
-use sp_runtime::traits::BlakeTwo256;
-use sp_core::crypto::UncheckedInto;
 use std::collections::BTreeMap;
 use pallet_evm::GenesisAccount;
 use primitive_types::H160;
 use std::str::FromStr;
 
 // The URL for the telemetry server.
-const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+// const TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-fn session_keys(
-) -> SessionKeys {
-  SessionKeys { }
-}
+// fn session_keys(
+// ) -> SessionKeys {
+//   SessionKeys { }
+// }
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -309,7 +306,7 @@ fn testnet_genesis(
   let enable_println = true;
 
   const ENDOWMENT: Balance = 1_000 * DOLLARS;
-  const STASH: Balance = 100 * DOLLARS;
+  // const STASH: Balance = 100 * DOLLARS;
   const AUTHOR_BALANCE: Balance = 200 * DOLLARS;
 
   GenesisConfig {

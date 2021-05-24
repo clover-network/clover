@@ -116,12 +116,12 @@ decl_module! {
 					// merge balance from `evm padded address` to `origin`
 					T::MergeAccount::merge_account(&account_id, &who)?;
 
-					nonce = frame_system::Module::<T>::account_nonce(&account_id);
+					nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 					// finally kill the account
 					let _ = T::KillAccount::killed(&account_id);
 				}
 				//	make the origin nonce the max between origin amd evm padded address
-				let origin_nonce = frame_system::Module::<T>::account_nonce(&who);
+				let origin_nonce = frame_system::Pallet::<T>::account_nonce(&who);
 				if origin_nonce < nonce {
 					frame_system::Account::<T>::mutate(&who, |v| {
 						v.nonce = nonce;

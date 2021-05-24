@@ -11,17 +11,12 @@ use cumulus_client_service::{
 };
 
 use polkadot_primitives::v0::CollatorPair;
-use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
+use sc_client_api::{BlockchainEvents};
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use fc_rpc::EthTask;
 use clover_runtime::{self, opaque::Block, RuntimeApi};
-use sc_network::{Event, };
-use sc_service::{BasePath, error::Error as ServiceError, Configuration, Role, RpcHandlers, TaskManager, TFullBackend, TFullClient};
-use sp_api::ConstructRuntimeApi;
-use sp_inherents::{InherentDataProvider, InherentIdentifier, InherentData};
+use sc_service::{BasePath, error::Error as ServiceError, Configuration, Role, TaskManager, TFullClient};
 use sp_runtime::traits::Block as BlockT;
-use sp_runtime::traits::BlakeTwo256;
-use sp_trie::PrefixedMemoryDB;
 use sc_executor::native_executor_instance;
 use sc_cli::SubstrateCli;
 pub use sc_executor::NativeExecutor;
@@ -41,7 +36,7 @@ native_executor_instance!(
 
 type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;
 type FullBackend = sc_service::TFullBackend<Block>;
-type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
+// type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
   let config_dir = config.base_path.as_ref()
@@ -99,8 +94,6 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 			telemetry
 		});
 
-  let select_chain = sc_consensus::LongestChain::new(backend.clone());
-
   let transaction_pool = sc_transaction_pool::BasicPool::new_full(
     config.transaction_pool.clone(),
     config.role.is_authority().into(),
@@ -134,9 +127,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
   let rpc_extensions_builder = {
     let client = client.clone();
     let pool = transaction_pool.clone();
-    let select_chain = select_chain.clone();
-    let keystore = keystore_container.sync_keystore();
-    let chain_spec = config.chain_spec.cloned_box();
+    // let chain_spec = config.chain_spec.cloned_box();
     let is_authority = config.role.is_authority();
     let subscription_task_executor = sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
@@ -150,7 +141,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
       let deps = crate::rpc::FullDeps {
         client: client.clone(),
         pool: pool.clone(),
-        chain_spec: chain_spec.cloned_box(),
+        // chain_spec: chain_spec.cloned_box(),
         deny_unsafe,
         pending_transactions: pending.clone(),
         filter_pool: filter_pool_clone.clone(),
@@ -200,8 +191,8 @@ where
   let parachain_config = prepare_node_config(parachain_config);
 
   let sc_service::PartialComponents {
-    client, backend, mut task_manager, import_queue, keystore_container, select_chain, transaction_pool,
-    other: (partial_rpc_extensions_builder, frontier_block_import,
+    client, backend, mut task_manager, import_queue, keystore_container, select_chain: _, transaction_pool,
+    other: (partial_rpc_extensions_builder, _,
             pending_transactions, filter_pool,
             frontier_backend, mut telemetry, telemetry_worker_handle),
   } = new_partial(&parachain_config, cli)?;
@@ -224,7 +215,7 @@ where
     relay_chain_full_node.backend.clone(),
   );
 
-  let prometheus_registry = parachain_config.prometheus_registry().cloned();
+//  let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
   let (network, network_status_sinks, system_rpc_tx, start_network) =
     sc_service::build_network(sc_service::BuildNetworkParams {
@@ -237,17 +228,15 @@ where
       block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
     })?;
 
-  let is_authority = parachain_config.role.is_authority();
-
   if parachain_config.offchain_worker.enabled {
     sc_service::build_offchain_workers(
       &parachain_config, task_manager.spawn_handle(), client.clone(), network.clone(),
     );
   }
 
-  let role = parachain_config.role.clone();
-  let force_authoring = parachain_config.force_authoring;
-  let name = parachain_config.network.node_name.clone();
+  // let role = parachain_config.role.clone();
+  // let force_authoring = parachain_config.force_authoring;
+  // let name = parachain_config.network.node_name.clone();
 
   let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
@@ -322,14 +311,6 @@ where
 				)
     );
   }
-
-  // if the node isn't actively participating in consensus then it doesn't
-  // need a keystore, regardless of which protocol we use below.
-  let keystore = if role.is_authority() {
-    Some(keystore_container.sync_keystore())
-  } else {
-    None
-  };
 
   if validator {
     let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
