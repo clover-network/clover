@@ -118,7 +118,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
       client.clone(),
       frontier_block_import.clone(),
       move |_, ()| async move {
-        Ok(())
+        Ok(sp_timestamp::InherentDataProvider::from_system_time())
       },
       &task_manager.spawn_essential_handle(),
       registry.clone(),
@@ -340,13 +340,15 @@ where
 					         		id,
 					         );
 								    async move {
+                      let time = sp_timestamp::InherentDataProvider::from_system_time();
+
 								    	let parachain_inherent =
 								    		parachain_inherent.ok_or_else(|| {
 								    			Box::<dyn std::error::Error + Send + Sync>::from(
 								    				"Failed to create parachain inherent",
 								    			)
 								    		})?;
-									    Ok(parachain_inherent)
+									    Ok((time, parachain_inherent))
 								    }
 							},
 			block_import: client.clone(),
