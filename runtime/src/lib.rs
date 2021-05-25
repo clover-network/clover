@@ -926,7 +926,7 @@ construct_runtime!(
     Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>},
     Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 
-    ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>},
+    ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, ValidateUnsigned},
 
     TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 
