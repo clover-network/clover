@@ -9,13 +9,13 @@ version = '0.9.0'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.1" , default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.1" , default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate.git",  branch = "master" , default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate.git",  branch = "master" , default-features = false }
 libsecp256k1 = { version = "0.3.4", default-features = false, features = ["hmac"] }
-sp-core = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.1" , default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.1" , default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.1" , default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.1" , default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate.git",  branch = "master" , default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git",  branch = "master" , default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate.git",  branch = "master" , default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git",  branch = "master" , default-features = false }
 fp-evm = { default-features = false, git = "https://github.com/clover-network/frontier.git", branch = "pangwa/parachain" }
 pallet-evm = { default-features = false, git = "https://github.com/clover-network/frontier.git", branch = "pangwa/parachain" }
 orml-utilities = { git = 'https://github.com/open-web3-stack/open-runtime-module-library.git', rev = 'fb405b1', default-features = false }
@@ -23,7 +23,7 @@ impl-trait-for-tuples = "0.1.3"
 clover-traits = { path = "../../modules/traits", default-features = false }
 
 [dev-dependencies]
-pallet-balances = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.1"  }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git",  branch = "master"  }
 
 [features]
 default = ["std"]

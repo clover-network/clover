@@ -857,6 +857,7 @@ parameter_types! {
     )) / 5) as u32;
 
   pub const MaxCodeSize: u32 = 2 * 1024 * 1024;
+  pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
 impl pallet_contracts::Config for Runtime {
@@ -873,13 +874,14 @@ impl pallet_contracts::Config for Runtime {
   type RentFraction = RentFraction;
   type SurchargeReward = SurchargeReward;
   type CallStack = [pallet_contracts::Frame<Self>; 31];
-  type MaxValueSize = MaxValueSize;
+  // type MaxValueSize = MaxValueSize;
   type WeightPrice = pallet_transaction_payment::Module<Self>;
   type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
   type ChainExtension = ();
   type DeletionQueueDepth = DeletionQueueDepth;
   type DeletionWeightLimit = DeletionWeightLimit;
-  type MaxCodeSize = MaxCodeSize;
+  // type MaxCodeSize = MaxCodeSize;
+  type Schedule = Schedule;
 }
 
 // parameter_types! {
@@ -941,7 +943,7 @@ construct_runtime!(
     Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>, Config},
 
     // Smart contracts modules
-    Contracts: pallet_contracts::{Pallet, Call, Config<T>, Storage, Event<T>},
+    Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
     EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
     Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
 
@@ -1085,7 +1087,7 @@ impl_runtime_apis! {
       gas_limit: u64,
       input_data: Vec<u8>,
     ) -> pallet_contracts_primitives::ContractExecResult {
-        Contracts::bare_call(origin, dest.into(), value, gas_limit, input_data)
+        Contracts::bare_call(origin, dest.into(), value, gas_limit, input_data, true)
     }
 
     fn instantiate(
@@ -1097,7 +1099,7 @@ impl_runtime_apis! {
 			salt: Vec<u8>,
 		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, BlockNumber>
 		{
-			Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, true)
+			Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, true, true)
 		}
 
     fn get_storage(

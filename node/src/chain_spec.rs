@@ -4,7 +4,7 @@ use serde_json::json;
 use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public, sr25519, U256};
 use clover_runtime::{
-  AccountId, Balance, BalancesConfig, ContractsConfig, IndicesConfig, GenesisConfig,
+  AccountId, Balance, BalancesConfig, IndicesConfig, GenesisConfig,
   SudoConfig, SystemConfig, WASM_BINARY,
   Signature,
   EVMConfig, EthereumConfig, DOLLARS
@@ -322,10 +322,10 @@ fn testnet_genesis(
             .chain(initial_authorities.iter().map(|x| (x.0.clone(), AUTHOR_BALANCE)))
             .collect(),
     },
-    pallet_contracts: ContractsConfig {
-      current_schedule: pallet_contracts::Schedule::default()
-      .enable_println(enable_println),
-    },
+    // pallet_contracts: ContractsConfig {
+    //   current_schedule: pallet_contracts::Schedule::default()
+    //   .enable_println(enable_println),
+    // },
     pallet_evm: EVMConfig {
       accounts: endowed_eth_accounts,
     },
