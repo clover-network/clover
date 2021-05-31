@@ -1697,9 +1697,10 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 
 [[package]]
 name = "evm"
-version = "0.26.0-clover"
-source = "git+https://github.com/clover-network/evm.git?tag=v0.26.1-clover#43e01a6f5e2d4580c2959ca24b314c181e9a3f32"
+version = "0.27.0-clover"
+source = "git+https://github.com/clover-network/evm.git?tag=v0.27.1-clover#acb8e1ecb589220d8aae2aa9b0a7f2607dcd54ea"
 dependencies = [
+ "environmental",
  "ethereum",
  "evm-core",
  "evm-gasometer",
@@ -1734,8 +1735,8 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.26.1-clover"
-source = "git+https://github.com/clover-network/evm.git?tag=v0.26.1-clover#43e01a6f5e2d4580c2959ca24b314c181e9a3f32"
+version = "0.27.1-clover"
+source = "git+https://github.com/clover-network/evm.git?tag=v0.27.1-clover#acb8e1ecb589220d8aae2aa9b0a7f2607dcd54ea"
 dependencies = [
  "funty",
  "parity-scale-codec",
@@ -1745,9 +1746,10 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.26.0-clover"
-source = "git+https://github.com/clover-network/evm.git?tag=v0.26.1-clover#43e01a6f5e2d4580c2959ca24b314c181e9a3f32"
+version = "0.27.0-clover"
+source = "git+https://github.com/clover-network/evm.git?tag=v0.27.1-clover#acb8e1ecb589220d8aae2aa9b0a7f2607dcd54ea"
 dependencies = [
+ "environmental",
  "evm-core",
  "evm-runtime",
  "primitive-types",
@@ -1755,9 +1757,10 @@ dependencies = [
 
 [[package]]
 name = "evm-runtime"
-version = "0.26.0-clover"
-source = "git+https://github.com/clover-network/evm.git?tag=v0.26.1-clover#43e01a6f5e2d4580c2959ca24b314c181e9a3f32"
+version = "0.27.0-clover"
+source = "git+https://github.com/clover-network/evm.git?tag=v0.27.1-clover#acb8e1ecb589220d8aae2aa9b0a7f2607dcd54ea"
 dependencies = [
+ "environmental",
  "evm-core",
  "primitive-types",
  "sha3 0.8.2",
@@ -1817,8 +1820,8 @@ dependencies = [
 
 [[package]]
 name = "fc-consensus"
-version = "1.0.1-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+version = "2.0.0-clover"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "derive_more",
  "fc-db",
@@ -1842,7 +1845,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "1.0.0"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "kvdb",
  "kvdb-rocksdb",
@@ -1856,8 +1859,8 @@ dependencies = [
 
 [[package]]
 name = "fc-mapping-sync"
-version = "1.1.0-dev"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+version = "2.0.0-dev"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -1875,7 +1878,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -1916,7 +1919,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "ethereum-types",
  "jsonrpc-core 15.1.0",
@@ -2019,8 +2022,8 @@ dependencies = [
 
 [[package]]
 name = "fp-consensus"
-version = "1.0.0-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+version = "1.0.1-clover"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -2033,8 +2036,8 @@ dependencies = [
 
 [[package]]
 name = "fp-evm"
-version = "1.0.1-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+version = "2.0.0-clover"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "evm",
  "impl-trait-for-tuples 0.1.3",
@@ -2046,8 +2049,8 @@ dependencies = [
 
 [[package]]
 name = "fp-rpc"
-version = "1.0.1-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+version = "2.0.0-clover"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2063,7 +2066,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "1.0.1-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -4561,8 +4564,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-ethereum"
-version = "1.0.1-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+version = "2.0.0-clover"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -4589,8 +4592,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm"
-version = "3.0.1-clover"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+version = "4.0.0-clover"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "evm",
  "evm-gasometer",
@@ -4615,8 +4618,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-simple"
-version = "1.0.1-dev"
-source = "git+https://github.com/clover-network/frontier.git?tag=v1.0.1-clover#1b29c6494a687798f59e7da1de826f2575b04d5e"
+version = "2.0.0-dev"
+source = "git+https://github.com/clover-network/frontier.git?tag=v2.0.1-clover#a943c0e08f7bd6e6c220ad5f48f9cfcb6f62e6df"
 dependencies = [
  "evm",
  "fp-evm",
