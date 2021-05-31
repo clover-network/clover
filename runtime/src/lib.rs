@@ -107,7 +107,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 16,
+  spec_version: 17,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -377,6 +377,10 @@ parameter_types! {
 
 static CLOVER_EVM_CONFIG: evm::Config = clover_evm_config::CloverEvmConfig::config();
 
+parameter_types! {
+  pub BlockGasLimit: U256 = U256::from(30_000_000); // double the ethereum block limit
+}
+
 impl pallet_evm::Config for Runtime {
   type FeeCalculator = FixedGasPrice;
   type GasWeightMapping = ();
@@ -393,6 +397,8 @@ impl pallet_evm::Config for Runtime {
     pallet_evm_precompile_simple::Identity,
   );
   type ChainId = ChainId;
+  type BlockGasLimit = BlockGasLimit;
+  type BanlistChecker = ();
   type OnChargeTransaction = ();
   fn config() -> &'static evm::Config {
     &CLOVER_EVM_CONFIG
@@ -413,15 +419,10 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
   }
 }
 
-parameter_types! {
-  pub BlockGasLimit: U256 = U256::from(30_000_000); // double the ethereum block limit
-}
-
 impl pallet_ethereum::Config for Runtime {
   type Event = Event;
   type FindAuthor = EthereumFindAuthor<Babe>;
   type StateRoot = pallet_ethereum::IntermediateStateRoot;
-  type BlockGasLimit = BlockGasLimit;
 }
 
 pub struct TransactionConverter;

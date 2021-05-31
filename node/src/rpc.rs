@@ -26,7 +26,7 @@ use sp_transaction_pool::TransactionPool;
 use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use pallet_ethereum::EthereumStorageSchema;
-use fc_rpc::{StorageOverride, SchemaV1Override};
+use fc_rpc::{StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorageOverride};
 
 
 /// Light client extra dependencies.
@@ -87,6 +87,8 @@ pub struct FullDeps<C, P, SC, B> {
 	pub filter_pool: Option<FilterPool>,
   /// Backend.
 	pub backend: Arc<fc_db::Backend<Block>>,
+  /// Maximum number of logs in a query.
+	pub max_past_logs: u32,
   /// The Node authority flag
   pub is_authority: bool,
   /// Network service
@@ -137,6 +139,7 @@ pub fn create_full<C, P, SC, B>(
     pending_transactions,
 		filter_pool,
     backend,
+    max_past_logs,
     is_authority,
   } = deps;
 
@@ -199,11 +202,16 @@ pub fn create_full<C, P, SC, B>(
   let mut signers = Vec::new();
   signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
 
-  let mut overrides = BTreeMap::new();
-	overrides.insert(
+  let mut overrides_map = BTreeMap::new();
+	overrides_map.insert(
 		EthereumStorageSchema::V1,
 		Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>
 	);
+
+  let overrides = Arc::new(OverrideHandle {
+		schemas: overrides_map,
+		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
+	});
 
   io.extend_with(EthApiServer::to_delegate(EthApi::new(
     client.clone(),
@@ -212,9 +220,10 @@ pub fn create_full<C, P, SC, B>(
     network.clone(),
     pending_transactions.clone(),
     signers,
-    overrides,
+    overrides.clone(),
     backend,
     is_authority,
+    max_past_logs,
   )));
 
   if let Some(filter_pool) = filter_pool {
@@ -223,6 +232,8 @@ pub fn create_full<C, P, SC, B>(
 				client.clone(),
 				filter_pool.clone(),
 				500 as usize, // max stored filters
+        overrides.clone(),
+        max_past_logs,
 			))
 		);
 	}
@@ -231,6 +242,7 @@ pub fn create_full<C, P, SC, B>(
     NetApiServer::to_delegate(NetApi::new(
       client.clone(),
       network.clone(),
+      true
     ))
   );
 
@@ -249,6 +261,7 @@ pub fn create_full<C, P, SC, B>(
         HexEncodedIdProvider::default(),
         Arc::new(subscription_task_executor)
       ),
+      overrides
     ))
   );
 

@@ -1,4 +1,4 @@
-use sc_cli::{KeySubcommand, RunCmd, SignCmd, VanityCmd, VerifyCmd};
+use sc_cli::{KeySubcommand, SignCmd, VanityCmd, VerifyCmd};
 use structopt::StructOpt;
 
 /// Possible subcommands of the main binary.
@@ -37,6 +37,19 @@ pub enum Subcommand {
 
   /// Revert the chain to a previous state.
   Revert(sc_cli::RevertCmd),
+}
+
+#[allow(missing_docs)]
+#[derive(Debug, StructOpt)]
+pub struct RunCmd {
+	#[allow(missing_docs)]
+	#[structopt(flatten)]
+	pub base: sc_cli::RunCmd,
+
+	/// Maximum number of logs in a query.
+	#[structopt(long, default_value = "10000")]
+	pub max_past_logs: u32,
+
 }
 
 #[derive(Debug, StructOpt)]
