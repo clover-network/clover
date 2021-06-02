@@ -4,8 +4,8 @@ use serde_json::json;
 use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public, sr25519, U256};
 use clover_runtime::{
-  AccountId, Balance, BalancesConfig, IndicesConfig, GenesisConfig,
-  SudoConfig, SystemConfig, WASM_BINARY,
+  AccountId, AuraId, Balance, BalancesConfig, IndicesConfig, GenesisConfig,
+  SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
   Signature,
   EVMConfig, EthereumConfig, DOLLARS
 };
@@ -23,16 +23,24 @@ use std::str::FromStr;
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-// fn session_keys(
-// ) -> SessionKeys {
-//   SessionKeys { }
-// }
+fn session_keys(
+  aura_id: AuraId
+) -> SessionKeys {
+  SessionKeys { aura: aura_id }
+}
 
 /// Generate a crypto pair from seed.
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
   TPublic::Pair::from_string(&format!("//{}", seed), None)
     .expect("static values are valid; qed")
     .public()
+}
+
+/// Generate collator keys from seed.
+///
+/// This function's return type must always match the session keys of the chain in tuple format.
+pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
+	get_from_seed::<AuraId>(seed)
 }
 
 /// The extensions for the [`ChainSpec`].
@@ -61,11 +69,11 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId where
   AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-/// Generate an Babe authority key.
-pub fn authority_keys_from_seed(s: &str) -> (AccountId, AccountId) {
+/// Generate authority key.
+pub fn authority_keys_from_seed(s: &str) -> (AccountId, AuraId) {
   (
     get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", s)),
-    get_account_id_from_seed::<sr25519::Public>(s),
+    get_from_seed::<AuraId>(s),
   )
 }
 
@@ -222,38 +230,11 @@ pub fn sakura_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
       wasm_binary,
       // Initial PoA authorities
       vec![
-        // SECRET="..."
-        // 5CqWfdrRGdZe6bwxZMiHfdcNAVePjkUJpSh2rpKgcNWciTFP
-        // subkey inspect "$SECRET//clover//1//validator"
-        // subkey inspect "$SECRET//clover//1//babe"
-        // subkey inspect --scheme ed25519 "$SECRET//clover//1//grandpa"
-        // subkey inspect "$SECRET//clover//1//imonline"
-        // subkey inspect "$SECRET//clover//1//discovery"
         (
-          hex!["222c5fa244583b1734ceb6515916efc5e103f65b869ebec4e56b989d9dbb446e"].into(),
-          hex!["222c5fa244583b1734ceb6515916efc5e103f65b869ebec4e56b989d9dbb446e"].into(),
-        ),
-        // 5FNQoCoibJMAyqC77og9tSbhGUtaVt51SD7GdCxmMeWxPBvX
-        // subkey inspect "$SECRET//clover//2//validator"5FNQoCoibJMAyqC77og9tSbhGUtaVt51SD7GdCxmMeWxPBvX
-        // subkey inspect "$SECRET//clover//2//babe"
-        // subkey inspect --scheme ed25519 "$SECRET//clover//2//grandpa"
-        // subkey inspect "$SECRET//clover//2//imonline"
-        // subkey inspect "$SECRET//clover//2//discovery"
-        (
-          hex!["9235b080b6ca2e7b2a7af7a46ac4f677bfa394e29d83611324046c38eb14ee49"].into(),
-          hex!["9235b080b6ca2e7b2a7af7a46ac4f677bfa394e29d83611324046c38eb14ee49"].into(),
-        ),
-        // 5HQDFanwYwt3QtkAvaBHbaaLgSRER42PWAXCJqNoxyQFZXZJ
-        // subkey inspect "$SECRET//clover//3//validator"
-        // subkey inspect "$SECRET//clover//3//babe"
-        // subkey inspect --scheme ed25519 "$SECRET//clover//3//grandpa"
-        // subkey inspect "$SECRET//clover//3//imonline"
-        // subkey inspect "$SECRET//clover//3//discovery"
-        (
-          hex!["ec0dc859299bcc7146d9ba74956ff67334454e23c0d9fd3e55302f94b09a742b"].into(),
-          hex!["ec0dc859299bcc7146d9ba74956ff67334454e23c0d9fd3e55302f94b09a742b"].into(),
-        ),
-      ],
+          get_account_id_from_seed::<sr25519::Public>("Alice"),
+          get_collator_keys_from_seed("Alice"),
+        )
+       ],
       // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
       // subkey inspect "$SECRET//clover//root"
       hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
@@ -267,14 +248,7 @@ pub fn sakura_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
       id,
     ),
     // Bootnodes
-    vec![
-      "/dns/seed1.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWFtshqoFL1hAwseGc4WuFeREKicjFR15JiVEaJiHnDvn2"
-        .parse()
-        .unwrap(),
-      "/dns/seed2.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWBcU1EShS2azLwQhKVKyeXU2cc3CWyhuN8wJwEKaRVNe8"
-        .parse()
-        .unwrap(),
-    ],
+    vec![],
     // Telemetry
     None,
     // Protocol ID
@@ -296,7 +270,7 @@ pub fn sakura_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
   wasm_binary: &[u8],
-  initial_authorities: Vec<(AccountId, AccountId, )>,
+  initial_authorities: Vec<(AccountId, AuraId)>,
   root_key: AccountId,
   endowed_accounts: Vec<AccountId>,
   _enable_println: bool,
@@ -338,6 +312,11 @@ fn testnet_genesis(
       key: root_key,
     },
     parachain_info: clover_runtime::ParachainInfoConfig { parachain_id: id },
+    pallet_collator_selection: clover_runtime::CollatorSelectionConfig {
+			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
+			candidacy_bond: 1 * DOLLARS,
+			..Default::default()
+		},
     pallet_collective_Instance1: Default::default(),
     pallet_collective_Instance2: Default::default(),
     pallet_democracy: Default::default(),
@@ -345,5 +324,14 @@ fn testnet_genesis(
     pallet_elections_phragmen: Default::default(),
     pallet_membership_Instance1: Default::default(),
     pallet_vesting: Default::default(),
+    pallet_session: clover_runtime::SessionConfig {
+			keys: initial_authorities.iter().cloned().map(|(acc, aura)| (
+				acc.clone(), // account id
+				acc.clone(), // validator id
+				session_keys(aura), // session keys
+			)).collect()
+		},
+    pallet_aura: Default::default(),
+		cumulus_pallet_aura_ext: Default::default(),
   }
 }

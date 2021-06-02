@@ -53,6 +53,7 @@ sp-authority-discovery = { git = "https://github.com/paritytech/substrate.git", 
 sp-block-builder = { git = "https://github.com/paritytech/substrate.git",  branch = "master"  }
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git",  branch = "master"  }
 sp-consensus = { git = "https://github.com/paritytech/substrate.git",  branch = "master"  }
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git",  branch = "master"  }
 sp-core = { git = "https://github.com/paritytech/substrate.git",  branch = "master"  }
 sp-inherents = { git = "https://github.com/paritytech/substrate.git",  branch = "master"  }
 sp-keystore = { git = "https://github.com/paritytech/substrate.git",  branch = "master"  }

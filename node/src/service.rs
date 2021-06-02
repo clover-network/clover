@@ -2,6 +2,10 @@
 
 use std::{sync::{Arc, Mutex}, time::Duration, collections::{HashMap, BTreeMap}};
 
+use cumulus_client_consensus_aura::{
+	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
+};
+
 use cumulus_client_consensus_relay_chain::{
 	build_relay_chain_consensus, BuildRelayChainConsensusParams,
 };
@@ -11,12 +15,13 @@ use cumulus_client_service::{
 };
 
 use polkadot_primitives::v0::CollatorPair;
-use sc_client_api::{BlockchainEvents};
+use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use fc_rpc::EthTask;
 use clover_runtime::{self, opaque::Block, RuntimeApi};
 use sc_service::{BasePath, error::Error as ServiceError, Configuration, Role, TaskManager, TFullClient};
 use sp_runtime::traits::Block as BlockT;
+use sp_consensus::SlotData;
 use sc_executor::native_executor_instance;
 use sc_cli::SubstrateCli;
 pub use sc_executor::NativeExecutor;
@@ -102,6 +107,8 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
     client.clone(),
   );
 
+  let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
   let pending_transactions: PendingTransactions
       = Some(Arc::new(Mutex::new(HashMap::new())));
 
@@ -114,15 +121,33 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
     client.clone(),
     frontier_backend.clone());
 
-  let import_queue = cumulus_client_consensus_relay_chain::import_queue(
-      client.clone(),
-      frontier_block_import.clone(),
-      move |_, ()| async move {
-        Ok(sp_timestamp::InherentDataProvider::from_system_time())
+  let import_queue = cumulus_client_consensus_aura::import_queue::<
+      sp_consensus_aura::sr25519::AuthorityPair,
+      _,
+      _,
+      _,
+      _,
+      _,
+      _,
+    >(cumulus_client_consensus_aura::ImportQueueParams {
+      block_import: frontier_block_import.clone(),
+      client: client.clone(),
+      create_inherent_data_providers: move |_, _| async move {
+        let time = sp_timestamp::InherentDataProvider::from_system_time();
+
+        let slot =
+          sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+            *time,
+            slot_duration.slot_duration(),
+          );
+
+        Ok((time, slot))
       },
-      &task_manager.spawn_essential_handle(),
-      registry.clone(),
-    )?;
+      registry: config.prometheus_registry().clone(),
+      can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
+      spawner: &task_manager.spawn_essential_handle(),
+      telemetry: telemetry.as_ref().map(|telemetry| telemetry.handle()),
+    })?;
 
   let rpc_extensions_builder = {
     let client = client.clone();
@@ -192,7 +217,7 @@ where
 
   let sc_service::PartialComponents {
     client, backend, mut task_manager, import_queue, keystore_container, select_chain: _, transaction_pool,
-    other: (partial_rpc_extensions_builder, _,
+    other: (partial_rpc_extensions_builder, frontier_block_import,
             pending_transactions, filter_pool,
             frontier_backend, mut telemetry, telemetry_worker_handle),
   } = new_partial(&parachain_config, cli)?;
@@ -235,7 +260,7 @@ where
   }
 
   // let role = parachain_config.role.clone();
-  // let force_authoring = parachain_config.force_authoring;
+  let force_authoring = parachain_config.force_authoring;
   // let name = parachain_config.network.node_name.clone();
 
   let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -313,6 +338,8 @@ where
   }
 
   if validator {
+    let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
+
     let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 			task_manager.spawn_handle(),
 			client.clone(),
@@ -326,34 +353,57 @@ where
     let relay_chain_backend = relay_chain_full_node.backend.clone();
     let relay_chain_client = relay_chain_full_node.client.clone();
 
-    let parachain_consensus = build_relay_chain_consensus(BuildRelayChainConsensusParams {
-			para_id: id,
+    let parachain_consensus = build_aura_consensus::<
+			sp_consensus_aura::sr25519::AuthorityPair,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+			_,
+		>(BuildAuraConsensusParams {
 			proposer_factory,
-      create_inherent_data_providers:
-							move |_, (relay_parent, validation_data)| {
-								let parachain_inherent =
-					         cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-					         	relay_parent,
-					         	&relay_chain_client,
-					         	&*relay_chain_backend,
-					         		&validation_data,
-					         		id,
-					         );
-								    async move {
-                      let time = sp_timestamp::InherentDataProvider::from_system_time();
+			create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+				let parachain_inherent =
+				cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
+					relay_parent,
+					&relay_chain_client,
+					&*relay_chain_backend,
+					&validation_data,
+					id,
+				);
+				async move {
+					let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-								    	let parachain_inherent =
-								    		parachain_inherent.ok_or_else(|| {
-								    			Box::<dyn std::error::Error + Send + Sync>::from(
-								    				"Failed to create parachain inherent",
-								    			)
-								    		})?;
-									    Ok((time, parachain_inherent))
-								    }
-							},
-			block_import: client.clone(),
+					let slot =
+					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+						*time,
+						slot_duration.slot_duration(),
+					);
+
+					let parachain_inherent = parachain_inherent.ok_or_else(|| {
+						Box::<dyn std::error::Error + Send + Sync>::from(
+							"Failed to create parachain inherent",
+						)
+					})?;
+					Ok((time, slot, parachain_inherent))
+				}
+			},
+			block_import: frontier_block_import.clone(),
 			relay_chain_client: relay_chain_full_node.client.clone(),
 			relay_chain_backend: relay_chain_full_node.backend.clone(),
+			para_client: client.clone(),
+			backoff_authoring_blocks: Option::<()>::None,
+			sync_oracle: network.clone(),
+			keystore: keystore_container.sync_keystore(),
+			force_authoring,
+			slot_duration,
+			// We got around 500ms for proposing
+			block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+			telemetry: telemetry.map(|t| t.handle()),
 		});
 
     //let polkadot_backend = polkadot_full_node.backend.clone();

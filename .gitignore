@@ -16,3 +16,4 @@ ev/
 docker/clover
 node_modules
 runtime.log
+.vscode
