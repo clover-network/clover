@@ -158,8 +158,6 @@ std = [
     "fp-rpc/std",
     "evm-accounts/std",
 ]
-clover-testnet = []
-clover-mainnet = []
 
 [build-dependencies]
 substrate-wasm-builder = "4.0.0"

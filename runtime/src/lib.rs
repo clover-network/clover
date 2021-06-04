@@ -293,10 +293,7 @@ impl FeeCalculator for FixedGasPrice {
   }
 }
 
-#[cfg(feature = "clover-mainnet")]
-const CHAIN_ID: u64 = 1024;
-#[cfg(feature = "clover-testnet")]
-const CHAIN_ID: u64 = 1023;
+const CHAIN_ID: u64 = 1022;
 
 parameter_types! {
   pub const ChainId: u64 = CHAIN_ID;
@@ -983,11 +980,11 @@ construct_runtime!(
     ParachainInfo: parachain_info::{Pallet, Storage, Config},
 
     // Collator support. the order of these 4 are important and shall not change.
-		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
-		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
-		Aura: pallet_aura::{Pallet, Config<T>} = 23,
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 24,
+		Authorship: pallet_authorship::{Pallet, Call, Storage},
+		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>},
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+		Aura: pallet_aura::{Pallet, Config<T>},
+		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
 
     // Governance.
     Democracy: pallet_democracy::{Pallet, Call, Storage, Config, Event<T>},
