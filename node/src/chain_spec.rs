@@ -2,7 +2,7 @@ use cumulus_primitives_core::ParaId;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use serde_json::json;
 use serde::{Deserialize, Serialize};
-use sp_core::{Pair, Public, sr25519, U256};
+use sp_core::{Pair, Public, crypto::UncheckedInto, sr25519, U256};
 use clover_runtime::{
   AccountId, AuraId, Balance, BalancesConfig, IndicesConfig, GenesisConfig,
   SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
@@ -233,16 +233,27 @@ pub fn sakura_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
       wasm_binary,
       // Initial PoA authorities
       vec![
-        authority_keys_from_seed("Alice"),
-        authority_keys_from_seed("Bob"),
-       ],
-      // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
+        (
+          // subkey inspect "$SECRET//clover//1//aura"
+          hex!("60cd3f03542883d516031f18b6e6dc9c3eb5d58aebdd01f52485a2e4a7d5a958").into(),
+          hex!("60cd3f03542883d516031f18b6e6dc9c3eb5d58aebdd01f52485a2e4a7d5a958").unchecked_into()
+        ),
+        (
+          // subkey inspect "$SECRET//clover//2//aura"
+          hex!("d066e8c5ec33604991169d213d44a86575e664893e02382351dc8c1b0148811c").into(),
+          hex!("d066e8c5ec33604991169d213d44a86575e664893e02382351dc8c1b0148811c").unchecked_into()
+        ),
+        (
+          // subkey inspect "$SECRET//clover//3//aura"
+          hex!("206564a45a6ea6f32c5e3280a834b698b309f6031e15d7646e6ec0a2c162a00d").into(),
+          hex!("206564a45a6ea6f32c5e3280a834b698b309f6031e15d7646e6ec0a2c162a00d").unchecked_into()
+        ),
+      ],
       // subkey inspect "$SECRET//clover//root"
-      hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
+      hex!("7aee8f965656f7280d97fc684e3bf0d3bb6d9a32d4021bbcbf3cfa3b7da5626a").into(),
       // Pre-funded accounts
       vec![
-        // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
-        hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
+        hex!("7aee8f965656f7280d97fc684e3bf0d3bb6d9a32d4021bbcbf3cfa3b7da5626a").into()
       ],
       true,
       endowed_evm_account(),
