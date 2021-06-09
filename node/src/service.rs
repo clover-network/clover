@@ -222,10 +222,11 @@ where
             frontier_backend, mut telemetry, telemetry_worker_handle),
   } = new_partial(&parachain_config, cli)?;
 
+  let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
+
   let relay_chain_full_node =
   cumulus_client_service::build_polkadot_full_node(
     polkadot_config,
-    collator_key.clone(),
     telemetry_worker_handle).map_err(
     |e| match e {
       polkadot_service::Error::Sub(x) => x,
@@ -242,13 +243,13 @@ where
 
 //  let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
-  let (network, network_status_sinks, system_rpc_tx, start_network) =
+  let (network, system_rpc_tx, start_network) =
     sc_service::build_network(sc_service::BuildNetworkParams {
       config: &parachain_config,
       client: client.clone(),
       transaction_pool: transaction_pool.clone(),
       spawn_handle: task_manager.spawn_handle(),
-      import_queue,
+      import_queue: import_queue.clone(),
       on_demand: None,
       block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
     })?;
@@ -293,7 +294,6 @@ where
     keystore: keystore_container.sync_keystore(),
     backend,
     network: network.clone(),
-    network_status_sinks: network_status_sinks.clone(),
     system_rpc_tx,
     telemetry: telemetry.as_mut(),
   })?;
@@ -414,10 +414,10 @@ where
       announce_block,
       client: client.clone(),
       task_manager: &mut task_manager,
-      collator_key,
       relay_chain_full_node: relay_chain_full_node,
       spawner,
       parachain_consensus,
+      import_queue,
     };
 
     start_collator(params).await?;
@@ -427,7 +427,7 @@ where
       announce_block,
       task_manager: &mut task_manager,
       para_id: id,
-      polkadot_full_node: relay_chain_full_node,
+      relay_chain_full_node,
     };
 
     start_full_node(params)?;

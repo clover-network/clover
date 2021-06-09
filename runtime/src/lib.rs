@@ -433,6 +433,7 @@ parameter_types! {
 parameter_types! {
   pub const ExistentialDeposit: u128 = 0;
   pub const MaxLocks: u32 = 50;
+  pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -987,7 +988,7 @@ construct_runtime!(
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
 
     // Governance.
-    Democracy: pallet_democracy::{Pallet, Call, Storage, Config, Event<T>},
+    Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>},
     Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
     TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
     ElectionsPhragmen: pallet_elections_phragmen::{Pallet, Call, Storage, Event<T>, Config<T>},

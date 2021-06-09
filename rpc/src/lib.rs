@@ -16,6 +16,7 @@ pub enum Error {
   RuntimeError,
 }
 
+
 impl From<Error> for i64 {
   fn from(e: Error) -> i64 {
     match e {
