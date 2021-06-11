@@ -248,6 +248,16 @@ pub fn sakura_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
           hex!("206564a45a6ea6f32c5e3280a834b698b309f6031e15d7646e6ec0a2c162a00d").into(),
           hex!("206564a45a6ea6f32c5e3280a834b698b309f6031e15d7646e6ec0a2c162a00d").unchecked_into()
         ),
+        (
+          // subkey inspect "$SECRET//clover//4//aura"
+          hex!("e4ce8803ffe0f08dbbf645e540d5b8bbd1d5862f2aa8441d3eb1e73c7d0c0b7e").into(),
+          hex!("e4ce8803ffe0f08dbbf645e540d5b8bbd1d5862f2aa8441d3eb1e73c7d0c0b7e").unchecked_into()
+        ),
+        (
+          // subkey inspect "$SECRET//clover//5//aura"
+          hex!("ee64a09b2457926ca96a86d53a215a92987eb043284a233390193b85a0753667").into(),
+          hex!("ee64a09b2457926ca96a86d53a215a92987eb043284a233390193b85a0753667").unchecked_into()
+        ),
       ],
       // subkey inspect "$SECRET//clover//root"
       hex!("7aee8f965656f7280d97fc684e3bf0d3bb6d9a32d4021bbcbf3cfa3b7da5626a").into(),
