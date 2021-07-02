@@ -306,12 +306,12 @@ fn testnet_genesis(
   const AUTHOR_BALANCE: Balance = 200 * DOLLARS;
 
   GenesisConfig {
-    frame_system: SystemConfig {
+    system: SystemConfig {
       // Add Wasm runtime to storage.
       code: wasm_binary.to_vec(),
       changes_trie_config: Default::default(),
     },
-    pallet_balances: BalancesConfig {
+    balances: BalancesConfig {
       // Configure endowed accounts with initial balance of 1 << 60.
       balances: endowed_accounts.iter().cloned()
             .map(|k| (k, ENDOWMENT))
@@ -322,38 +322,38 @@ fn testnet_genesis(
     //   current_schedule: pallet_contracts::Schedule::default()
     //   .enable_println(enable_println),
     // },
-    pallet_evm: EVMConfig {
+    evm: EVMConfig {
       accounts: endowed_eth_accounts,
     },
-    pallet_ethereum: EthereumConfig {},
-    pallet_indices: IndicesConfig {
+    ethereum: EthereumConfig {},
+    indices: IndicesConfig {
       indices: vec![],
     },
-    pallet_sudo: SudoConfig {
+    sudo: SudoConfig {
       // Assign network admin rights.
       key: root_key,
     },
     parachain_info: clover_runtime::ParachainInfoConfig { parachain_id: id },
-    pallet_collator_selection: clover_runtime::CollatorSelectionConfig {
+    collator_selection: clover_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: 1 * DOLLARS,
 			..Default::default()
 		},
-    pallet_collective_Instance1: Default::default(),
-    pallet_collective_Instance2: Default::default(),
-    pallet_democracy: Default::default(),
-    pallet_treasury: Default::default(),
-    pallet_elections_phragmen: Default::default(),
-    pallet_membership_Instance1: Default::default(),
-    pallet_vesting: Default::default(),
-    pallet_session: clover_runtime::SessionConfig {
+    council: Default::default(),
+    technical_committee: Default::default(),
+    democracy: Default::default(),
+    treasury: Default::default(),
+    elections_phragmen: Default::default(),
+    technical_membership: Default::default(),
+    vesting: Default::default(),
+    session: clover_runtime::SessionConfig {
 			keys: initial_authorities.iter().cloned().map(|(acc, aura)| (
 				acc.clone(), // account id
 				acc.clone(), // validator id
 				session_keys(aura), // session keys
 			)).collect()
 		},
-    pallet_aura: Default::default(),
-		cumulus_pallet_aura_ext: Default::default(),
+    aura: Default::default(),
+		aura_ext: Default::default(),
   }
 }
