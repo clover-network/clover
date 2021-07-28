@@ -44,4 +44,4 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile
           push: true
-          tags: cloverio/clover-sakura:${RELEASE_VER}
+          tags: cloverio/clover-sakura:${{ env.RELEASE_VER }}
