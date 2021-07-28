@@ -467,6 +467,115 @@ pub fn ivy_config() -> Result<ChainSpec, String> {
   ))
 }
 
+pub fn sakura_config() -> Result<ChainSpec, String> {
+  let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+
+  Ok(ChainSpec::from_genesis(
+    // Name
+    "Clover Sakura",
+    // ID
+    "clover_sakura",
+    ChainType::Live,
+    move || testnet_genesis(
+      wasm_binary,
+      // Initial PoA authorities
+      vec![
+        // SECRET="..."
+        // 5HQmPz3YxBzPUDgTcoUFPFUoCWXqpL8moWA6UEK5tUhx6x43
+        // subkey inspect "$SECRET//clover//1//validator"
+        // subkey inspect "$SECRET//clover//1//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//1//grandpa"
+        // subkey inspect "$SECRET//clover//1//imonline"
+        // subkey inspect "$SECRET//clover//1//discovery"
+        (
+          hex!["ec79fde678cafa87f384ca80652ec970651da82b27f55c43551ed3245455b96b"].into(),
+          hex!["ec79fde678cafa87f384ca80652ec970651da82b27f55c43551ed3245455b96b"].into(),
+          hex!["5067997ce7b5633d7ad42145fbee3f50940184af5019f0897282313973fa702a"].unchecked_into(), // babe key
+          hex!["09ae15b0c63a55fdfd993646deb1bb728d438966ab21aee83e8ee2ca0acb55a0"].unchecked_into(), // grandpa
+          hex!["a4575c110408bc0669fbfabe9dd126920d02086facc758d3ef17e484b6ed6225"].unchecked_into(), // imonline
+          hex!["765e7b2c7128c03447a97ecfa9130a1640775046b167fcb587f088eece695b00"].unchecked_into(), // discovery
+        ),
+        // 5Gn93GEEeQYygbfy7bTbnXGECTKBMffGonYZVgT96AaJXoV1
+        // subkey inspect "$SECRET//clover//2//validator"
+        // subkey inspect "$SECRET//clover//2//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//2//grandpa"
+        // subkey inspect "$SECRET//clover//2//imonline"
+        // subkey inspect "$SECRET//clover//2//discovery"
+        (
+          hex!["d08ac48e96c8241906a7abbac58c68b2b1f4aed209def90cc6e9de4951bea17f"].into(),
+          hex!["d08ac48e96c8241906a7abbac58c68b2b1f4aed209def90cc6e9de4951bea17f"].into(),
+          hex!["ea3c0611970124ec98614fcf762183b224a07b6eb7f1427f71b84c60fa971c2e"].unchecked_into(), // babe
+          hex!["d32fb5e7bf1a7b4c3fd4b7beb0916a37f3687f30da827e4346d2c40fbf7b0104"].unchecked_into(), // grandpa
+          hex!["42d24b594fe1374a85271bfd26c3c76c611db9a038f558741ede09aa223dcc7e"].unchecked_into(), // imonline
+          hex!["b03454e741bc21ab9500dc1cc8dec38f341f243fc791bf6c174973a59f781653"].unchecked_into(), // discovery
+        ),
+        // 5CorEwdvU8XK9jZAnMYjmzzc3tco5RgGVcncGU3Cf9bfcdxK
+        // subkey inspect "$SECRET//clover//3//validator"
+        // subkey inspect "$SECRET//clover//3//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//3//grandpa"
+        // subkey inspect "$SECRET//clover//3//imonline"
+        // subkey inspect "$SECRET//clover//3//discovery"
+        (
+          hex!["20e7c68b9ccdd7414e4dc5244cdc7eeea07aadefb457ff6f421307d43f34da74"].into(),
+          hex!["20e7c68b9ccdd7414e4dc5244cdc7eeea07aadefb457ff6f421307d43f34da74"].into(),
+          hex!["caa488f11bdaf0738fd1e64c38d19128095adf01c11d23b10b3a67e037eef36a"].unchecked_into(), // babe
+          hex!["4d42707a9b8dbe4663e9667eb6a97f82b977d17fa980566cca516629bbf1ce75"].unchecked_into(), // grandpa
+          hex!["96660be940add8c01200eed269a7d47d4f56e0ce43a7c3d57d2528f09b9ae601"].unchecked_into(), // imonline
+          hex!["7eaf0ea6f44912b943cbfb067fc9b03d6128eb405ccf7f618004afa8af5e3b4d"].unchecked_into(), // discovery
+        ),
+        // 5GjVbrgsgoaq3ZBKH2eMJPPRA6regzV5AMawAZ6QUtcxfawd
+        // subkey inspect "$SECRET//clover//4//validator"
+        // subkey inspect "$SECRET//clover//4//babe"
+        // subkey inspect --scheme ed25519 "$SECRET//clover//4//grandpa"
+        // subkey inspect "$SECRET//clover//4//imonline"
+        // subkey inspect "$SECRET//clover//4//discovery"
+        (
+          hex!["ce863fd4cff7c0ea4a3b9d8b98a8963bb0e98580b94d17bd0ea092513653de76"].into(),
+          hex!["ce863fd4cff7c0ea4a3b9d8b98a8963bb0e98580b94d17bd0ea092513653de76"].into(),
+          hex!["e043b6d8186df2e3235f4237afb4b20a100ccc08f1d729ee6b18922e69bfb10c"].unchecked_into(), // babe
+          hex!["9f4704c675abfce8477fd2ef1f315c62159cc92721ebe4586107c2addd5c31f9"].unchecked_into(), // grandpa
+          hex!["50eb473ec7d0dc79f3cd86d375d5d51ed4adaa1b37a429be3060f64c287dff6f"].unchecked_into(), // imonline
+          hex!["5462d50800eb975a72da5e56c8d140d21182606c1f85d3135b8264945597d731"].unchecked_into(), // discovery
+        ),
+
+      ],
+      // SECRET="..."
+      // 5H1WEhpfuUFBpMRHebEw7pH2fVVMVh7KDsEvB8zqhLHFjduK
+      // subkey inspect "$SECRET//clover//root"
+      hex!["dabc507cf0f964d8b79751b09ae7912c6688582f313c5e25edf43cc294d01409"].into(),
+      // Pre-funded accounts
+      vec![
+        // 5H1WEhpfuUFBpMRHebEw7pH2fVVMVh7KDsEvB8zqhLHFjduK
+        hex!["dabc507cf0f964d8b79751b09ae7912c6688582f313c5e25edf43cc294d01409"].into(),
+      ],
+      true,
+      BTreeMap::new(), // evm accounts
+    ),
+    // Bootnodes
+    vec![
+      "/dns/seed1.sakura.clover.finance/tcp/30333/p2p/12D3KooWJ9AN445XL66USkmHpA5BSRnjUXD218Fwq5UKuzYcuVLk"
+        .parse()
+        .unwrap(),
+      "/dns/seed2.sakura.clover.finance/tcp/30333/p2p/12D3KooWErqnfNcKfE1KvHCPSyLn8K2oaRzJx1d62NDHH3tMnmJM"
+        .parse()
+        .unwrap(),
+    ],
+    // Telemetry
+    TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
+    // Protocol ID
+    Some("sakura"),
+    // Properties
+    Some(json!({
+      "tokenDecimals": 18,
+      "tokenSymbol": "SKU"
+    }).as_object().expect("Created an object").clone()),
+    // Extensions
+    None,
+  ))
+}
+
+
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
   wasm_binary: &[u8],

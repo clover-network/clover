@@ -23,7 +23,7 @@ use crate::service::new_partial;
 
 impl SubstrateCli for Cli {
   fn impl_name() -> String {
-    "Clover Node".into()
+    "Sakura Node".into()
   }
 
   fn impl_version() -> String {
@@ -53,6 +53,7 @@ impl SubstrateCli for Cli {
       "rose" => Box::new(chain_spec::local_rose_testnet_config()?),
       "iris" => Box::new(chain_spec::iris_testnet_config()?),
       "ivy" => Box::new(chain_spec::ivy_config()?),
+      "sakura" => Box::new(chain_spec::sakura_config()?),
       path => Box::new(chain_spec::ChainSpec::from_json_file(
         std::path::PathBuf::from(path),
       )?),
