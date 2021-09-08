@@ -910,6 +910,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "clover-evm-interop"
+version = "0.9.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "log",
+ "pallet-balances",
+ "pallet-evm",
+ "parity-scale-codec",
+ "rustc-hex",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "type-utils",
+]
+
+[[package]]
 name = "clover-primitives"
 version = "0.9.0"
 dependencies = [
@@ -960,6 +980,7 @@ name = "clover-runtime"
 version = "0.9.0"
 dependencies = [
  "clover-claims",
+ "clover-evm-interop",
  "clover-primitives",
  "clover-rpc-runtime-api",
  "clover-traits",
