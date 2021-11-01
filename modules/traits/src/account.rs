@@ -1,6 +1,17 @@
 use impl_trait_for_tuples::impl_for_tuples;
-use orml_utilities::with_transaction_result;
-use sp_runtime::DispatchResult;
+use sp_runtime::{ DispatchResult, DispatchError };
+use frame_support::storage::{with_transaction, TransactionOutcome};
+
+fn with_transaction_result<R>(f: impl FnOnce() -> Result<R, DispatchError>) -> Result<R, DispatchError> {
+	with_transaction(|| {
+		let res = f();
+		if res.is_ok() {
+			TransactionOutcome::Commit(res)
+		} else {
+			TransactionOutcome::Rollback(res)
+		}
+	})
+}
 
 pub trait MergeAccount<AccountId> {
 	fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult;

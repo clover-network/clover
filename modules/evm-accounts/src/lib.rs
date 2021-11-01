@@ -10,6 +10,7 @@
 use codec::Encode;
 use frame_support::{
 	decl_error, decl_event, decl_module, decl_storage, ensure,
+  storage::{with_transaction, TransactionOutcome},
 	traits::{Currency, HandleLifetime, OnKilledAccount, ReservableCurrency, },
 	weights::Weight,
 	StorageMap,
@@ -20,12 +21,23 @@ use sp_core::{crypto::AccountId32, ecdsa, H160};
 use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
 use sp_std::marker::PhantomData;
 use sp_std::vec::Vec;
-use orml_utilities::with_transaction_result;
+use sp_runtime::DispatchError;
 use clover_traits::account::MergeAccount;
 
 mod default_weight;
 mod mock;
 mod tests;
+
+pub fn with_transaction_result<R>(f: impl FnOnce() -> Result<R, DispatchError>) -> Result<R, DispatchError> {
+	with_transaction(|| {
+		let res = f();
+		if res.is_ok() {
+			TransactionOutcome::Commit(res)
+		} else {
+			TransactionOutcome::Rollback(res)
+		}
+	})
+}
 
 pub trait WeightInfo {
 	fn claim_account() -> Weight;
@@ -212,16 +224,16 @@ where
 		}
 	}
 
-  fn to_evm_address(account_id: &T::AccountId) -> Option<H160> {
-		EvmAddresses::<T>::get(account_id).or_else(|| {
-			let data: [u8; 32] = account_id.clone().into().into();
-			if data.starts_with(b"evm:") {
-				Some(H160::from_slice(&data[4..24]))
-			} else {
-				None
-			}
-		})
-	}
+//  fn to_evm_address(account_id: &T::AccountId) -> Option<H160> {
+//		EvmAddresses::<T>::get(account_id).or_else(|| {
+//			let data: [u8; 32] = account_id.clone().into().into();
+//			if data.starts_with(b"evm:") {
+//				Some(H160::from_slice(&data[4..24]))
+//			} else {
+//				None
+//			}
+//		})
+//	}
 }
 
 pub struct CallKillAccount<T>(PhantomData<T>);
