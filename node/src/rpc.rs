@@ -11,30 +11,33 @@ use primitives::{Block, BlockNumber, AccountId, Index, Balance, Hash, };
 use sc_client_api::{
 	backend::{Backend, StateBackend,},
 };
-use fc_rpc_core::types::{PendingTransactions, FilterPool};
+use fc_rpc_core::types::FilterPool;
 pub use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderMetadata, HeaderBackend};
 use sp_runtime::traits::BlakeTwo256;
-use sp_transaction_pool::TransactionPool;
+use sc_service::TransactionPool;
+use sc_transaction_pool::{ChainApi, Pool};
 use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use pallet_ethereum::EthereumStorageSchema;
-use fc_rpc::{StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorageOverride};
+use fc_rpc::{EthBlockDataCache, StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorageOverride};
 
 /// Full client dependencies.
-pub struct FullDeps<C, P> {
+pub struct FullDeps<C, P, A: ChainApi> {
   /// The client instance to use.
   pub client: Arc<C>,
   /// Transaction pool instance.
   pub pool: Arc<P>,
+	/// Graph pool instance.
+	pub graph: Arc<Pool<A>>,
 	// pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
   /// Whether to deny unsafe calls
   pub deny_unsafe: DenyUnsafe,
   /// Ethereum pending transactions.
-	pub pending_transactions: PendingTransactions,
+	// pub pending_transactions: PendingTransactions,
 	/// EthFilterApi pool.
 	pub filter_pool: Option<FilterPool>,
   /// Backend.
@@ -51,10 +54,10 @@ pub struct FullDeps<C, P> {
 pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, B>(
-  deps: FullDeps<C, P>,
+pub fn create_full<C, P, B, A>(
+  deps: FullDeps<C, P, A>,
   subscription_task_executor: SubscriptionTaskExecutor
-) -> jsonrpc_core::IoHandler<sc_rpc_api::Metadata> where
+) -> jsonrpc_core::IoHandler<sc_rpc::Metadata> where
   C: ProvideRuntimeApi<Block> + sc_client_api::backend::StorageProvider<Block, B> + sc_client_api::AuxStore,
   C: sc_client_api::client::BlockchainEvents<Block>,
   C: HeaderBackend<Block> + HeaderMetadata<Block, Error=BlockChainError> + 'static,
@@ -67,6 +70,7 @@ pub fn create_full<C, P, B>(
   P: TransactionPool<Block=Block> + 'static,
   B: Backend<Block> + 'static,
   B::State: StateBackend<BlakeTwo256>,
+  A: ChainApi<Block = Block> + 'static,
 {
   use fc_rpc::{
     EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, NetApi, NetApiServer, EthPubSubApi, EthPubSubApiServer,
@@ -80,10 +84,11 @@ pub fn create_full<C, P, B>(
   let FullDeps {
     client,
     pool,
+    graph,
     // chain_spec: _,
     deny_unsafe,
     network,
-    pending_transactions,
+    // pending_transactions,
 		filter_pool,
     backend,
     max_past_logs,
@@ -124,27 +129,33 @@ pub fn create_full<C, P, B>(
 		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
 	});
 
+  let block_data_cache = Arc::new(EthBlockDataCache::new(50, 50));
+
   io.extend_with(EthApiServer::to_delegate(EthApi::new(
     client.clone(),
     pool.clone(),
+    graph,
     clover_runtime::TransactionConverter,
     network.clone(),
-    pending_transactions.clone(),
+    // pending_transactions.clone(),
     signers,
     overrides.clone(),
-    backend,
+    backend.clone(),
     is_authority,
     max_past_logs,
+    block_data_cache.clone(),
   )));
 
   if let Some(filter_pool) = filter_pool {
 		io.extend_with(
 			EthFilterApiServer::to_delegate(EthFilterApi::new(
 				client.clone(),
+        backend,
 				filter_pool.clone(),
 				500 as usize, // max stored filters
         overrides.clone(),
         max_past_logs,
+        block_data_cache.clone(),
 			))
 		);
 	}

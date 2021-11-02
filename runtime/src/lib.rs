@@ -30,6 +30,7 @@ use sp_core::u32_trait::{_1, _2, _4, _5};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 
 // A few exports that help ease life for downstream crates.
 #[cfg(any(feature = "std", test))]
@@ -43,7 +44,7 @@ use fp_rpc::TransactionStatus;
 pub use frame_support::{
   construct_runtime, debug, log, ensure, parameter_types, PalletId,
   traits::{
-    Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, LockIdentifier, Randomness,
+    Currency, Everything, FindAuthor, Imbalance, KeyOwnerProofSystem, LockIdentifier, Nothing, Randomness,
     U128CurrencyToVote,
   },
   transactional,
@@ -163,7 +164,7 @@ parameter_types! {
 
 impl frame_system::Config for Runtime {
   /// The basic call filter to use in dispatchable.
-  type BaseCallFilter = ();
+  type BaseCallFilter = Everything;
   /// The identifier used to distinguish between accounts.
   type AccountId = AccountId;
   /// The aggregated dispatch type that is available for extrinsics.
@@ -197,7 +198,7 @@ impl frame_system::Config for Runtime {
   type OnNewAccount = ();
   /// What to do if an account is fully reaped from the system.
   type OnKilledAccount = (
-    pallet_evm::CallKillAccount<Runtime>,
+    // pallet_evm::CallKillAccount<Runtime>,
     evm_accounts::CallKillAccount<Runtime>,
   );
   /// The data to be stored in an account.
@@ -249,6 +250,7 @@ impl pallet_vesting::Config for Runtime {
   type BlockNumberToBalance = ConvertInto;
   type MinVestedTransfer = MinVestedTransfer;
   type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+  const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
 parameter_types! {
@@ -307,6 +309,7 @@ parameter_types! {
 
 impl pallet_evm::Config for Runtime {
   type FeeCalculator = FixedGasPrice;
+  type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
   type GasWeightMapping = ();
   type CallOrigin = EnsureAddressTruncated;
   type WithdrawOrigin = EnsureAddressTruncated;
@@ -321,8 +324,8 @@ impl pallet_evm::Config for Runtime {
     pallet_evm_precompile_simple::Identity,
   );
   type ChainId = ChainId;
+  type FindAuthor = EthereumFindAuthor<PhantomMockAuthorship>;
   type BlockGasLimit = BlockGasLimit;
-  type BanlistChecker = ();
   type OnChargeTransaction = ();
   fn config() -> &'static evm::Config {
     &CLOVER_EVM_CONFIG
@@ -353,7 +356,7 @@ impl FindAuthor<u32> for PhantomMockAuthorship{
 
 impl pallet_ethereum::Config for Runtime {
   type Event = Event;
-  type FindAuthor = EthereumFindAuthor<PhantomMockAuthorship>;
+  // type FindAuthor = EthereumFindAuthor<PhantomMockAuthorship>;
   type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
 
@@ -361,14 +364,14 @@ pub struct TransactionConverter;
 
 impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
   fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
-    UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into())
+    UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact {transaction}.into())
   }
 }
 
 impl fp_rpc::ConvertTransaction<OpaqueExtrinsic> for TransactionConverter {
   fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> OpaqueExtrinsic {
     let extrinsic = UncheckedExtrinsic::new_unsigned(
-      pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+      pallet_ethereum::Call::<Runtime>::transact {transaction}.into(),
     );
     let encoded = extrinsic.encode();
     OpaqueExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
@@ -491,6 +494,7 @@ impl pallet_democracy::Config for Runtime {
   type Event = Event;
   type Currency = Balances;
   type EnactmentPeriod = EnactmentPeriod;
+  type VoteLockingPeriod = EnactmentPeriod;
   type LaunchPeriod = LaunchPeriod;
   type VotingPeriod = VotingPeriod;
   type MinimumDeposit = MinimumDeposit;
@@ -748,11 +752,13 @@ parameter_types! {
   pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
   pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
   pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
+  pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
   type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
   type TransactionByteFee = TransactionByteFee;
+  type OperationalFeeMultiplier = OperationalFeeMultiplier;
   type WeightToFee = WeightToFee<Balance>;
   type FeeMultiplierUpdate =
     TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
@@ -857,6 +863,10 @@ parameter_types! {
 
   pub const MaxCodeSize: u32 = 2 * 1024 * 1024;
   pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
+  pub ContractDeposit: Balance = deposit(
+		1,
+		<pallet_contracts::Pallet<Runtime>>::contract_info_size(),
+	);
 }
 
 impl pallet_contracts::Config for Runtime {
@@ -864,14 +874,17 @@ impl pallet_contracts::Config for Runtime {
   type Randomness = RandomnessCollectiveFlip;
   type Currency = Balances;
   type Event = Event;
-  type RentPayment = ();
-  type SignedClaimHandicap = SignedClaimHandicap;
-  type TombstoneDeposit = TombstoneDeposit;
-  type DepositPerContract = DepositPerContract;
-  type DepositPerStorageByte = DepositPerStorageByte;
-  type DepositPerStorageItem = DepositPerStorageItem;
-  type RentFraction = RentFraction;
-  type SurchargeReward = SurchargeReward;
+  type Call = Call;
+  type CallFilter = Nothing;
+  type ContractDeposit = ContractDeposit;
+  // type RentPayment = ();
+  // type SignedClaimHandicap = SignedClaimHandicap;
+  // type TombstoneDeposit = TombstoneDeposit;
+  // type DepositPerContract = DepositPerContract;
+  // type DepositPerStorageByte = DepositPerStorageByte;
+  // type DepositPerStorageItem = DepositPerStorageItem;
+  // type RentFraction = RentFraction;
+  // type SurchargeReward = SurchargeReward;
   type CallStack = [pallet_contracts::Frame<Self>; 31];
   // type MaxValueSize = MaxValueSize;
   type WeightPrice = pallet_transaction_payment::Module<Self>;
@@ -919,6 +932,7 @@ parameter_types! {
 	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
+  pub const MaxAuthorities: u32 = 100_000;
 }
 
 impl pallet_session::Config for Runtime {
@@ -938,13 +952,16 @@ impl pallet_session::Config for Runtime {
 
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
+  type DisabledValidators = ();
+	type MaxAuthorities = MaxAuthorities;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
 	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
+  pub const MaxCandidates: u32 = 1000;
+	pub const MinCandidates: u32 = 2;
 	pub const SessionLength: BlockNumber = 6 * HOURS;
 	pub const MaxInvulnerables: u32 = 100;
 }
@@ -958,10 +975,13 @@ impl pallet_collator_selection::Config for Runtime {
 	type UpdateOrigin = CollatorSelectionUpdateOrigin;
 	type PotId = PotId;
 	type MaxCandidates = MaxCandidates;
+  type MinCandidates = MinCandidates;
 	type MaxInvulnerables = MaxInvulnerables;
-	// should be a multiple of session or things will get inconsistent
+  type ValidatorId = <Self as frame_system::Config>::AccountId;
+  type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+	type ValidatorRegistration = Session;
 	type KickThreshold = Period;
-	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
+	type WeightInfo = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -972,7 +992,7 @@ construct_runtime!(
     UncheckedExtrinsic = UncheckedExtrinsic
   {
     System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-    RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+    RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
     Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 
     Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>},
@@ -1002,7 +1022,7 @@ construct_runtime!(
     // Smart contracts modules
     Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
     EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
-    Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
+    Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config, },
 
     Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 
@@ -1066,7 +1086,7 @@ impl_runtime_apis! {
 		}
 
 		fn authorities() -> Vec<AuraId> {
-			Aura::authorities()
+			Aura::authorities().into_inner()
 		}
 	}
 
@@ -1086,7 +1106,7 @@ impl_runtime_apis! {
 
   impl sp_api::Metadata<Block> for Runtime {
     fn metadata() -> OpaqueMetadata {
-      Runtime::metadata().into()
+      OpaqueMetadata::new(Runtime::metadata().into())
     }
   }
 
@@ -1115,8 +1135,9 @@ impl_runtime_apis! {
     fn validate_transaction(
       source: TransactionSource,
       tx: <Block as BlockT>::Extrinsic,
+      block_hash: <Block as BlockT>::Hash,
     ) -> TransactionValidity {
-      Executive::validate_transaction(source, tx)
+      Executive::validate_transaction(source, tx, block_hash)
     }
   }
 
@@ -1164,9 +1185,9 @@ impl_runtime_apis! {
 			code: pallet_contracts_primitives::Code<Hash>,
 			data: Vec<u8>,
 			salt: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, BlockNumber>
+		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
 		{
-			Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, true, true)
+      Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, true)
 		}
 
     fn get_storage(
@@ -1176,11 +1197,11 @@ impl_runtime_apis! {
       Contracts::get_storage(address, key)
     }
 
-    fn rent_projection(
-      address: AccountId,
-    ) -> pallet_contracts_primitives::RentProjectionResult<BlockNumber> {
-      Contracts::rent_projection(address)
-    }
+//    fn rent_projection(
+//      address: AccountId,
+//    ) -> pallet_contracts_primitives::RentProjectionResult<BlockNumber> {
+//      Contracts::rent_projection(address)
+//    }
   }
 
   impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
@@ -1220,7 +1241,7 @@ impl_runtime_apis! {
     }
 
     fn author() -> H160 {
-        <pallet_ethereum::Module<Runtime>>::find_author()
+        <pallet_evm::Module<Runtime>>::find_author()
     }
 
     fn storage_at(address: H160, index: U256) -> H256 {
@@ -1310,6 +1331,15 @@ impl_runtime_apis! {
             Ethereum::current_transaction_statuses()
         )
     }
+
+    fn extrinsic_filter(
+			xts: Vec<<Block as BlockT>::Extrinsic>,
+		) -> Vec<EthereumTransaction> {
+			xts.into_iter().filter_map(|xt| match xt.function {
+				Call::Ethereum(transact{transaction}) => Some(transaction),
+				_ => None
+			}).collect::<Vec<EthereumTransaction>>()
+		}
   }
 }
 

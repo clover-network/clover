@@ -16,30 +16,38 @@ use cumulus_client_service::{
 
 use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
-use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use fc_rpc_core::types::FilterPool;
 use fc_rpc::EthTask;
 use clover_runtime::{self, opaque::Block, RuntimeApi};
 use sc_service::{BasePath, error::Error as ServiceError, Configuration, Role, TaskManager, TFullClient};
 use sp_runtime::traits::Block as BlockT;
 use sp_consensus::SlotData;
-use sc_executor::native_executor_instance;
+pub use sc_executor::NativeElseWasmExecutor;
 use sc_cli::SubstrateCli;
-pub use sc_executor::NativeExecutor;
+// pub use sc_executor::NativeExecutor;
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 use fc_consensus::FrontierBlockImport;
-use fc_mapping_sync::MappingSyncWorker;
+use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use futures::StreamExt;
 
 use crate::cli::Cli;
 
 // Our native executor instance.
-native_executor_instance!(
-  pub Executor,
-  clover_runtime::api::dispatch,
-  clover_runtime::native_version,
-);
+pub struct ExecutorDispatch;
 
-type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;
+impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
+	type ExtendHostFunctions = ();
+
+	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+		clover_runtime::api::dispatch(method, data)
+	}
+
+	fn native_version() -> sc_executor::NativeVersion {
+		clover_runtime::native_version()
+	}
+}
+
+type FullClient = sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
 type FullBackend = sc_service::TFullBackend<Block>;
 // type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
@@ -62,7 +70,7 @@ pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backen
 
 pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::PartialComponents<
   FullClient, FullBackend, (),
-  sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+  sc_consensus::DefaultImportQueue<Block, FullClient>,
   sc_transaction_pool::FullPool<Block, FullClient>,
   (impl Fn(
     crate::rpc::DenyUnsafe,
@@ -70,7 +78,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
     Arc<sc_network::NetworkService<Block, primitives::Hash>>,
   ) -> crate::rpc::IoHandler,
     FrontierBlockImport<Block, Arc<FullClient>, FullClient>,
-    PendingTransactions, Option<FilterPool>,
+    Option<FilterPool>,
     Arc<fc_db::Backend<Block>>, Option<Telemetry>, Option<TelemetryWorkerHandle>,
   )
   >, ServiceError> {
@@ -85,8 +93,18 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 
   let registry = config.prometheus_registry();
 
+  let executor = NativeElseWasmExecutor::<ExecutorDispatch>::new(
+		config.wasm_method,
+		config.default_heap_pages,
+		config.max_runtime_instances,
+	);
+
   let (client, backend, keystore_container, task_manager) =
-    sc_service::new_full_parts::<Block, RuntimeApi, Executor>(&config, telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()))?;
+    sc_service::new_full_parts::<Block, RuntimeApi, _>(
+      &config,
+      telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
+      executor)?;
+
   let client = Arc::new(client);
 
   let telemetry_worker_handle = telemetry
@@ -109,8 +127,8 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 
   let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
-  let pending_transactions: PendingTransactions
-      = Some(Arc::new(Mutex::new(HashMap::new())));
+//  let pending_transactions: PendingTransactions
+      // = Some(Arc::new(Mutex::new(HashMap::new())));
 
   let filter_pool: Option<FilterPool>
       = Some(Arc::new(Mutex::new(BTreeMap::new())));
@@ -156,7 +174,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
     let is_authority = config.role.is_authority();
     let subscription_task_executor = sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 
-    let pending = pending_transactions.clone();
+    // let pending = pending_transactions.clone();
     let filter_pool_clone = filter_pool.clone();
     let backend = frontier_backend.clone();
     let max_past_logs = cli.run.max_past_logs;
@@ -166,9 +184,10 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
       let deps = crate::rpc::FullDeps {
         client: client.clone(),
         pool: pool.clone(),
+        graph: pool.pool().clone(),
         // chain_spec: chain_spec.cloned_box(),
         deny_unsafe,
-        pending_transactions: pending.clone(),
+        // pending_transactions: pending.clone(),
         filter_pool: filter_pool_clone.clone(),
         backend: backend.clone(),
         is_authority,
@@ -187,7 +206,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
     client, backend, task_manager, keystore_container, select_chain: (),
     import_queue, transaction_pool,
     other: (rpc_extensions_builder, frontier_block_import,
-            pending_transactions, filter_pool,
+            filter_pool,
             frontier_backend, telemetry, telemetry_worker_handle),
   })
 }
@@ -204,7 +223,7 @@ async fn start_node_impl<RB>(
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)>
 where
   RB: Fn(
-      Arc<TFullClient<Block, RuntimeApi, Executor>>,
+      Arc<FullClient>,
     ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
     + Send
     + 'static,
@@ -218,7 +237,7 @@ where
   let sc_service::PartialComponents {
     client, backend, mut task_manager, import_queue, keystore_container, select_chain: _, transaction_pool,
     other: (partial_rpc_extensions_builder, frontier_block_import,
-            pending_transactions, filter_pool,
+            /*pending_transactions,*/ filter_pool,
             frontier_backend, mut telemetry, telemetry_worker_handle),
   } = new_partial(&parachain_config, cli)?;
 
@@ -252,6 +271,7 @@ where
       import_queue: import_queue.clone(),
       on_demand: None,
       block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
+      warp_sync: None,
     })?;
 
   if parachain_config.offchain_worker.enabled {
@@ -269,7 +289,9 @@ where
   let network_clone = network.clone();
 
   let rpc_extensions_builder = move |deny_unsafe, subscription_executor| {
-    partial_rpc_extensions_builder(deny_unsafe, subscription_executor, network_clone.clone())
+    let r = partial_rpc_extensions_builder(deny_unsafe, subscription_executor, network_clone.clone());
+
+    Ok(r)
   };
 
   task_manager.spawn_essential_handle().spawn(
@@ -280,6 +302,7 @@ where
 			client.clone(),
 			backend.clone(),
 			frontier_backend.clone(),
+      SyncStrategy::Normal,
 		).for_each(|()| futures::future::ready(()))
 	);
 
@@ -324,18 +347,18 @@ where
     );
   }
 
-  // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
-  if let Some(pending_transactions) = pending_transactions {
-    const TRANSACTION_RETAIN_THRESHOLD: u64 = 15;
-    task_manager.spawn_essential_handle().spawn(
-      "frontier-pending-transactions",
-      EthTask::pending_transaction_task(
-				Arc::clone(&client),
-					pending_transactions,
-					TRANSACTION_RETAIN_THRESHOLD,
-				)
-    );
-  }
+//  // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
+//  if let Some(pending_transactions) = pending_transactions {
+//    const TRANSACTION_RETAIN_THRESHOLD: u64 = 15;
+//    task_manager.spawn_essential_handle().spawn(
+//      "frontier-pending-transactions",
+//      EthTask::pending_transaction_task(
+//				Arc::clone(&client),
+//					pending_transactions,
+//					TRANSACTION_RETAIN_THRESHOLD,
+//				)
+//    );
+//  }
 
   if validator {
     let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
@@ -403,6 +426,7 @@ where
 			slot_duration,
 			// We got around 500ms for proposing
 			block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+      max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
 			telemetry: telemetry.map(|t| t.handle()),
 		});
 
