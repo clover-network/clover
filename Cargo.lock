@@ -1082,6 +1082,7 @@ dependencies = [
  "evm",
  "evm-accounts",
  "fp-rpc",
+ "fp-self-contained",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
