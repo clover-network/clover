@@ -220,15 +220,15 @@ pub fn local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
   ))
 }
 
-pub fn sakura_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
+pub fn clover_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
   let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
 
   Ok(ChainSpec::from_genesis(
     // Name
-    "Skarua",
+    "Clover",
     // ID
-    "skarua",
-    ChainType::Custom(String::from("skarua")),
+    "clover",
+    ChainType::Custom(String::from("clover")),
     move || testnet_genesis(
       wasm_binary,
       // Initial PoA authorities
@@ -278,11 +278,11 @@ pub fn sakura_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
     // Properties
     Some(json!({
       "tokenDecimals": 18,
-      "tokenSymbol": "SKU"
+      "tokenSymbol": "CLV"
     }).as_object().expect("Created an object").clone()),
     // Extensions
     Extensions {
-			relay_chain: "westend-dev".into(),
+			relay_chain: "polkadot-local".into(),
 			para_id: id.into(),
 		},
   ))

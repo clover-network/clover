@@ -102,8 +102,8 @@ impl_opaque_keys! {
 }
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-  spec_name: create_runtime_str!("clover-sakura"),
-  impl_name: create_runtime_str!("clover-sakura"),
+  spec_name: create_runtime_str!("clover-mainnet"),
+  impl_name: create_runtime_str!("clover-mainnet"),
   authoring_version: 1,
   spec_version: 16,
   impl_version: 1,
@@ -158,7 +158,7 @@ parameter_types! {
   .build_or_panic();
   pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
   pub const Version: RuntimeVersion = VERSION;
-  pub const SS58Prefix: u8 = 42;
+  pub const SS58Prefix: u8 = 128;
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -296,7 +296,7 @@ impl FeeCalculator for FixedGasPrice {
   }
 }
 
-const CHAIN_ID: u64 = 1022;
+const CHAIN_ID: u64 = 1024;
 
 parameter_types! {
   pub const ChainId: u64 = CHAIN_ID;
