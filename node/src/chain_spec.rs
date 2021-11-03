@@ -274,7 +274,7 @@ pub fn clover_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
     // Telemetry
     None,
     // Protocol ID
-    Some("skarua"),
+    Some("clover"),
     // Properties
     Some(json!({
       "tokenDecimals": 18,
