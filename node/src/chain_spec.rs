@@ -235,35 +235,35 @@ pub fn clover_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
       vec![
         (
           // subkey inspect "$SECRET//clover//1//aura"
-          hex!("60cd3f03542883d516031f18b6e6dc9c3eb5d58aebdd01f52485a2e4a7d5a958").into(),
-          hex!("60cd3f03542883d516031f18b6e6dc9c3eb5d58aebdd01f52485a2e4a7d5a958").unchecked_into()
+          hex!("a4b3d4f4394427cce13a5b294ac38e667d55dbac58ffc4d443e9bd198c6b342b").into(),
+          hex!("a4b3d4f4394427cce13a5b294ac38e667d55dbac58ffc4d443e9bd198c6b342b").unchecked_into()
         ),
         (
           // subkey inspect "$SECRET//clover//2//aura"
-          hex!("d066e8c5ec33604991169d213d44a86575e664893e02382351dc8c1b0148811c").into(),
-          hex!("d066e8c5ec33604991169d213d44a86575e664893e02382351dc8c1b0148811c").unchecked_into()
+          hex!("564c0e297ca1e490d7101a321383e4f1556a3d07aa14f5a2f50925693bb3a351").into(),
+          hex!("564c0e297ca1e490d7101a321383e4f1556a3d07aa14f5a2f50925693bb3a351").unchecked_into()
         ),
         (
           // subkey inspect "$SECRET//clover//3//aura"
-          hex!("206564a45a6ea6f32c5e3280a834b698b309f6031e15d7646e6ec0a2c162a00d").into(),
-          hex!("206564a45a6ea6f32c5e3280a834b698b309f6031e15d7646e6ec0a2c162a00d").unchecked_into()
+          hex!("06f7a3ade48d14be541dfe94ca64ec479350126e0bf7050b3da1ce4734ea6a7e").into(),
+          hex!("06f7a3ade48d14be541dfe94ca64ec479350126e0bf7050b3da1ce4734ea6a7e").unchecked_into()
         ),
         (
           // subkey inspect "$SECRET//clover//4//aura"
-          hex!("e4ce8803ffe0f08dbbf645e540d5b8bbd1d5862f2aa8441d3eb1e73c7d0c0b7e").into(),
-          hex!("e4ce8803ffe0f08dbbf645e540d5b8bbd1d5862f2aa8441d3eb1e73c7d0c0b7e").unchecked_into()
+          hex!("3a7824fdf9bb3717aafe3b1b3c21f8e3ea3239dfd80e97ab55621df33576cb7d").into(),
+          hex!("3a7824fdf9bb3717aafe3b1b3c21f8e3ea3239dfd80e97ab55621df33576cb7d").unchecked_into()
         ),
         (
           // subkey inspect "$SECRET//clover//5//aura"
-          hex!("ee64a09b2457926ca96a86d53a215a92987eb043284a233390193b85a0753667").into(),
-          hex!("ee64a09b2457926ca96a86d53a215a92987eb043284a233390193b85a0753667").unchecked_into()
+          hex!("aaee08e31c484817239fde12a32b9be6207ab8001102117cd086132ce18ecb79").into(),
+          hex!("aaee08e31c484817239fde12a32b9be6207ab8001102117cd086132ce18ecb79").unchecked_into()
         ),
       ],
       // subkey inspect "$SECRET//clover//root"
-      hex!("7aee8f965656f7280d97fc684e3bf0d3bb6d9a32d4021bbcbf3cfa3b7da5626a").into(),
+      hex!("b6bede6cb32acce92409a782541fa2d8f3edaeeeab74ef28fb002cbec206db1e").into(),
       // Pre-funded accounts
       vec![
-        hex!("7aee8f965656f7280d97fc684e3bf0d3bb6d9a32d4021bbcbf3cfa3b7da5626a").into()
+        hex!("b6bede6cb32acce92409a782541fa2d8f3edaeeeab74ef28fb002cbec206db1e").into()
       ],
       true,
       endowed_evm_account(),
