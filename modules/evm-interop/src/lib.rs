@@ -7,8 +7,6 @@
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use frame_system::ensure_signed;
 use pallet_evm::AddressMapping;
-use sp_runtime::ModuleId;
-use sp_std::prelude::*;
 
 pub use pallet::*;
 pub use type_utils::option_utils::OptionExt;
