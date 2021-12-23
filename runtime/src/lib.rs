@@ -477,9 +477,9 @@ pallet_staking_reward_curve::build! {
 
 parameter_types! {
   // session: 10 minutes
-  pub const SessionsPerEra: sp_staking::SessionIndex = 36;  // 18 sessions in an era, (6 hours)
-  pub const BondingDuration: pallet_staking::EraIndex = 48; // 24 era for unbouding (48 * 6 hours)
-  pub const SlashDeferDuration: pallet_staking::EraIndex = 12; // 1/2 bonding duration
+  pub const SessionsPerEra: sp_staking::SessionIndex = 36;  // 36 sessions in an era, (6 hours)
+  pub const BondingDuration: pallet_staking::EraIndex = 96; // 96 era for unbouding (96 * 6 hours) = 24 days
+  pub const SlashDeferDuration: pallet_staking::EraIndex = 48; // 1/2 bonding duration
   pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
   pub const MaxNominatorRewardedPerValidator: u32 = 64;
   pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
