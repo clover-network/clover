@@ -50,6 +50,9 @@ pub struct RunCmd {
 	#[structopt(long, default_value = "10000")]
 	pub max_past_logs: u32,
 
+    #[structopt(long = "manual-seal")]
+    pub manual_seal: bool,
+
 }
 
 #[derive(Debug, StructOpt)]

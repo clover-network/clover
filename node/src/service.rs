@@ -15,7 +15,11 @@ pub use sc_executor::NativeExecutor;
 use sc_telemetry::TelemetryConnectionNotifier;
 use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::MappingSyncWorker;
+use futures::channel::mpsc::Receiver;
 use futures::StreamExt;
+use sc_consensus_manual_seal::{EngineCommand, ManualSealParams};
+use sc_telemetry::tracing::log;
+use primitives::Hash;
 
 use crate::cli::Cli;
 
@@ -70,7 +74,18 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
       sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
       sc_consensus_babe::BabeLink<Block>,
     ),
-    (sc_finality_grandpa::SharedVoterState, PendingTransactions, Option<FilterPool>, Arc<fc_db::Backend<Block>>),
+    (
+      sc_finality_grandpa::SharedVoterState,
+      PendingTransactions,
+      Option<FilterPool>,
+      Arc<fc_db::Backend<Block>>,
+      Receiver<EngineCommand<Hash>>,
+      FrontierBlockImport<
+        Block,
+        FullGrandpaBlockImport,
+        FullClient,
+      >
+    ),
   )
 >, ServiceError> {
   let inherent_data_providers = sp_inherents::InherentDataProviders::new();
@@ -97,6 +112,17 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 
   let frontier_backend = open_frontier_backend(config)?;
 
+  let manual_seal = cli.run.manual_seal;
+
+  if manual_seal {
+    inherent_data_providers
+        .register_provider(sp_timestamp::InherentDataProvider)
+        .map_err(Into::into)
+        .map_err(sp_consensus::error::Error::InherentData)?;
+  }
+
+  let (command_sink, commands_stream) = futures::channel::mpsc::channel(1000);
+
   let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
     client.clone(), &(client.clone() as Arc<_>), select_chain.clone(),
   )?;
@@ -110,21 +136,29 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 
   let (block_import, babe_link) = sc_consensus_babe::block_import(
     sc_consensus_babe::Config::get_or_compute(&*client)?,
-    frontier_block_import,
+    frontier_block_import.clone(),
     client.clone(),
   )?;
 
-  let import_queue = sc_consensus_babe::import_queue(
-    babe_link.clone(),
-    block_import.clone(),
-    Some(Box::new(justification_import)),
-    client.clone(),
-    select_chain.clone(),
-    inherent_data_providers.clone(),
-    &task_manager.spawn_handle(),
-    config.prometheus_registry(),
-    sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
-  )?;
+  let import_queue = if manual_seal {
+    sc_consensus_manual_seal::import_queue(
+      Box::new(frontier_block_import.clone()),
+      &task_manager.spawn_handle(),
+      config.prometheus_registry(),
+    )
+  } else {
+    sc_consensus_babe::import_queue(
+      babe_link.clone(),
+      block_import.clone(),
+      Some(Box::new(justification_import)),
+      client.clone(),
+      select_chain.clone(),
+      inherent_data_providers.clone(),
+      &task_manager.spawn_handle(),
+      config.prometheus_registry(),
+      sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
+    )?
+  };
 
   let import_setup = (block_import, grandpa_link, babe_link);
 
@@ -182,6 +216,11 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
         is_authority,
         max_past_logs,
         network: network,
+        command_sink: if manual_seal {
+          Some(command_sink.clone())
+        } else {
+          None
+        },
       };
 
       crate::rpc::create_full(deps, subscription_task_executor.clone())
@@ -194,7 +233,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
   Ok(sc_service::PartialComponents {
     client, backend, task_manager, keystore_container, select_chain, import_queue, transaction_pool,
     inherent_data_providers,
-    other: (rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool, frontier_backend))
+    other: (rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool, frontier_backend, commands_stream, frontier_block_import))
   })
 }
 
@@ -216,7 +255,7 @@ pub fn new_full_base(mut config: Configuration,
     client, backend, mut task_manager, import_queue, keystore_container, select_chain, transaction_pool,
     inherent_data_providers,
     other: (partial_rpc_extensions_builder, import_setup, (rpc_setup, pending_transactions, filter_pool,
-    frontier_backend)),
+    frontier_backend, commands_stream,frontier_block_import)),
   } = new_partial(&config, cli)?;
 
   let shared_voter_state = rpc_setup;
@@ -331,26 +370,51 @@ pub fn new_full_base(mut config: Configuration,
       prometheus_registry.as_ref(),
     );
 
-    let can_author_with =
-      sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
+    let manual_seal = cli.run.manual_seal;
 
-    let babe_config = sc_consensus_babe::BabeParams {
-      keystore: keystore_container.sync_keystore(),
-      client: client.clone(),
-      select_chain,
-      env: proposer,
-      block_import,
-      sync_oracle: network.clone(),
-      inherent_data_providers: inherent_data_providers.clone(),
-      force_authoring,
-      backoff_authoring_blocks,
-      babe_link,
-      can_author_with,
-    };
+    if manual_seal {
+      let authorship_future = sc_consensus_manual_seal::run_manual_seal(
+        ManualSealParams {
+          block_import: frontier_block_import,
+          env: proposer,
+          client: client.clone(),
+          pool: transaction_pool.pool().clone(),
+          commands_stream,
+          select_chain,
+          consensus_data_provider: None,
+          inherent_data_providers: inherent_data_providers.clone(),
+        }
+      );
 
-    let babe = sc_consensus_babe::start_babe(babe_config)?;
+      task_manager
+          .spawn_essential_handle()
+          .spawn_blocking("manual-seal", authorship_future);
 
-    task_manager.spawn_essential_handle().spawn_blocking("babe-proposer", babe);
+      log::info!("Manual Seal Ready");
+
+    } else {
+
+      let can_author_with =
+          sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
+
+      let babe_config = sc_consensus_babe::BabeParams {
+        keystore: keystore_container.sync_keystore(),
+        client: client.clone(),
+        select_chain,
+        env: proposer,
+        block_import,
+        sync_oracle: network.clone(),
+        inherent_data_providers: inherent_data_providers.clone(),
+        force_authoring,
+        backoff_authoring_blocks,
+        babe_link,
+        can_author_with,
+      };
+
+      let babe = sc_consensus_babe::start_babe(babe_config)?;
+
+      task_manager.spawn_essential_handle().spawn_blocking("babe-proposer", babe);
+    }
   }
 
   // Spawn authority discovery module.
