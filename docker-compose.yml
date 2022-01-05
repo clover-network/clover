@@ -15,3 +15,18 @@ services:
         source: ./.local
         target: /root/.local
     command: bash -c "cargo build --release && ./target/release/clover --dev --ws-external"
+
+  build:
+    container_name: clover-build
+    image: cloverio/ci-linux-production:nightly-0629
+    working_dir: /var/www/clover
+    ports:
+      - "9944:9944"
+    environment:
+      - CARGO_HOME=/var/www/clover/.cargo
+    volumes:
+      - .:/var/www/clover
+      - type: bind
+        source: ./.local
+        target: /root/.local
+    command: bash -c "rm -rf target_linux && mkdir target_linux && cargo build --release --features $CLOVER_NETWORK && cp ./target/release/clover target_linux"

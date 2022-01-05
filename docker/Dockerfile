@@ -1,7 +1,7 @@
-FROM ubuntu:20.10
+FROM cloverio/runtime-linux-production:bullseye
 
 # Install required dependencies
-RUN apt-get update &&  apt-get upgrade -y && apt-get install -y openssl
+RUN apt-get update && apt-get install ca-certificates  -y
 
 COPY clover /opt/clover/bin/clover
 COPY specs /opt/specs
