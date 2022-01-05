@@ -27,6 +27,7 @@ use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use pallet_ethereum::EthereumStorageSchema;
 use fc_rpc::{StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorageOverride};
+use sc_consensus_manual_seal::{rpc::{ManualSeal, ManualSealApi}};
 
 
 /// Light client extra dependencies.
@@ -93,6 +94,8 @@ pub struct FullDeps<C, P, SC, B> {
   pub is_authority: bool,
   /// Network service
   pub network: Arc<NetworkService<Block, Hash>>,
+  /// Manual seal command sink
+  pub command_sink: Option<futures::channel::mpsc::Sender<sc_consensus_manual_seal::rpc::EngineCommand<Hash>>>,
 }
 
 /// A IO handler that uses all Full RPC extensions.
@@ -141,6 +144,7 @@ pub fn create_full<C, P, SC, B>(
     backend,
     max_past_logs,
     is_authority,
+    command_sink,
   } = deps;
 
   let BabeDeps {
@@ -264,6 +268,15 @@ pub fn create_full<C, P, SC, B>(
       overrides
     ))
   );
+
+  // The final RPC extension receives commands for the manual seal consensus engine.
+  if let Some(command_sink) = command_sink {
+    io.extend_with(
+      // We provide the rpc handler with the sending end of the channel to allow the rpc
+      // send EngineCommands to the background block authorship task.
+      ManualSealApi::to_delegate(ManualSeal::new(command_sink)),
+    );
+  }
 
   io
 }
