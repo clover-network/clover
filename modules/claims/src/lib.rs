@@ -156,6 +156,8 @@ pub mod pallet {
     BSC = 0,
     /// Ethereum
     Ethereum = 1,
+    /// Clover-ParaChain
+    CloverPara = 2,
   }
 
   #[pallet::storage]
