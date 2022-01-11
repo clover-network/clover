@@ -29,4 +29,4 @@ services:
       - type: bind
         source: ./.local
         target: /root/.local
-    command: bash -c "rm -rf target_linux && mkdir target_linux && cargo build --release && cp ./target/release/clover target_linux"
+    command: bash -c "rm -rf target_linux && mkdir target_linux && cargo build --release --features clover-mainnet && cp ./target/release/clover target_linux"
