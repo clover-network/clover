@@ -1022,6 +1022,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "clover-claims"
+version = "0.9.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "type-utils",
+]
+
+[[package]]
 name = "clover-primitives"
 version = "0.9.0"
 dependencies = [
@@ -1071,6 +1091,7 @@ dependencies = [
 name = "clover-runtime"
 version = "0.9.0"
 dependencies = [
+ "clover-claims",
  "clover-primitives",
  "clover-rpc-runtime-api",
  "clover-traits",
