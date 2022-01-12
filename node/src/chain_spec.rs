@@ -289,6 +289,74 @@ pub fn clover_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
 }
 
 
+pub fn sakura_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
+  let wasm_binary = WASM_BINARY.ok_or("Development wasm binary not available".to_string())?;
+
+  Ok(ChainSpec::from_genesis(
+    // Name
+    "Skarua",
+    // ID
+    "skarua",
+    ChainType::Custom(String::from("skarua")),
+    move || testnet_genesis(
+      wasm_binary,
+      // Initial PoA authorities
+      vec![
+        (
+          // subkey inspect "$SECRET//clover//1//aura"
+          hex!("60cd3f03542883d516031f18b6e6dc9c3eb5d58aebdd01f52485a2e4a7d5a958").into(),
+          hex!("60cd3f03542883d516031f18b6e6dc9c3eb5d58aebdd01f52485a2e4a7d5a958").unchecked_into()
+        ),
+        (
+          // subkey inspect "$SECRET//clover//2//aura"
+          hex!("d066e8c5ec33604991169d213d44a86575e664893e02382351dc8c1b0148811c").into(),
+          hex!("d066e8c5ec33604991169d213d44a86575e664893e02382351dc8c1b0148811c").unchecked_into()
+        ),
+        (
+          // subkey inspect "$SECRET//clover//3//aura"
+          hex!("206564a45a6ea6f32c5e3280a834b698b309f6031e15d7646e6ec0a2c162a00d").into(),
+          hex!("206564a45a6ea6f32c5e3280a834b698b309f6031e15d7646e6ec0a2c162a00d").unchecked_into()
+        ),
+        (
+          // subkey inspect "$SECRET//clover//4//aura"
+          hex!("e4ce8803ffe0f08dbbf645e540d5b8bbd1d5862f2aa8441d3eb1e73c7d0c0b7e").into(),
+          hex!("e4ce8803ffe0f08dbbf645e540d5b8bbd1d5862f2aa8441d3eb1e73c7d0c0b7e").unchecked_into()
+        ),
+        (
+          // subkey inspect "$SECRET//clover//5//aura"
+          hex!("ee64a09b2457926ca96a86d53a215a92987eb043284a233390193b85a0753667").into(),
+          hex!("ee64a09b2457926ca96a86d53a215a92987eb043284a233390193b85a0753667").unchecked_into()
+        ),
+      ],
+      // subkey inspect "$SECRET//clover//root"
+      hex!("7aee8f965656f7280d97fc684e3bf0d3bb6d9a32d4021bbcbf3cfa3b7da5626a").into(),
+      // Pre-funded accounts
+      vec![
+        hex!("7aee8f965656f7280d97fc684e3bf0d3bb6d9a32d4021bbcbf3cfa3b7da5626a").into()
+      ],
+      true,
+      endowed_evm_account(),
+      id,
+    ),
+    // Bootnodes
+    vec![],
+    // Telemetry
+    None,
+    // Protocol ID
+    Some("skarua"),
+    // Properties
+    Some(json!({
+      "tokenDecimals": 18,
+      "tokenSymbol": "SKU"
+    }).as_object().expect("Created an object").clone()),
+    // Extensions
+    Extensions {
+			relay_chain: "westend-dev".into(),
+			para_id: id.into(),
+		},
+  ))
+}
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
   wasm_binary: &[u8],
