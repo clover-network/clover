@@ -105,13 +105,13 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover-mainnet"),
   impl_name: create_runtime_str!("clover-mainnet"),
   authoring_version: 1,
-  spec_version: 16,
+  spec_version: 17,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
 };
 
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
+pub const MILLISECS_PER_BLOCK: u64 = 12000;
 
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
@@ -897,17 +897,17 @@ impl pallet_contracts::Config for Runtime {
   type Schedule = Schedule;
 }
 
-// parameter_types! {
-//   pub Prefix: &'static [u8] = b"Pay CLVs to the Clover account:";
-//   pub const ClaimsModuleId: ModuleId = ModuleId(*b"clvclaim");
-// }
-//
-// impl clover_claims::Config for Runtime {
-//   type ModuleId = ClaimsModuleId;
-//   type Event = Event;
-//   type Currency = Balances;
-//   type Prefix = Prefix;
-// }
+parameter_types! {
+  pub Prefix: &'static [u8] = b"Pay CLVs to the Clover account:";
+  pub const ClaimsModuleId: PalletId = PalletId(*b"clvclaim");
+}
+
+impl clover_claims::Config for Runtime {
+  type PalletId = ClaimsModuleId;
+  type Event = Event;
+  type Currency = Balances;
+  type Prefix = Prefix;
+}
 
 parameter_types! {
 	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
@@ -1042,7 +1042,7 @@ construct_runtime!(
     // account module
     EvmAccounts: evm_accounts::{Pallet, Call, Storage, Event<T>},
 
-    // CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+    CloverClaims: clover_claims::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
   }
 );
 
