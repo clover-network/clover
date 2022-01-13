@@ -673,5 +673,16 @@ fn mint_and_claim_in_one_call_should_works() {
       CloverClaims::elastic_claims(BridgeNetworks::CloverPara, &tx_hash),
       Some((zero_address, 100, true))
     ); // tx has already be claimed
+
+    assert_noop!(
+      CloverClaims::mint_and_send_claim_elastic(
+        Origin::signed(2),
+        BridgeNetworks::CloverPara,
+        tx_hash.clone(),
+        1100,
+        100
+      ),
+      Error::<Test>::NoPermission
+    );
   });
 }
