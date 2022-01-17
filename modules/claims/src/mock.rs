@@ -16,7 +16,7 @@ parameter_types! {
     pub const BlockHashCount: u32 = 250;
 }
 impl frame_system::Config for Test {
-  type BaseCallFilter = ();
+  type BaseCallFilter = frame_support::traits::Everything;
   type BlockWeights = ();
   type BlockLength = ();
   type Origin = Origin;
@@ -36,6 +36,7 @@ impl frame_system::Config for Test {
   type AccountData = pallet_balances::AccountData<u64>;
   type OnNewAccount = ();
   type OnKilledAccount = ();
+  type OnSetCode = ();
   type SystemWeightInfo = ();
   type SS58Prefix = ();
 }
@@ -52,14 +53,16 @@ impl pallet_balances::Config for Test {
   type AccountStore = System;
   type WeightInfo = ();
   type MaxLocks = ();
+  type MaxReserves = ();
+  type ReserveIdentifier = [u8; 8];
 }
 
 parameter_types! {
     pub Prefix: &'static [u8] = b"Pay CLVs to the TEST account:";
-    pub const ClaimsModuleId: ModuleId = ModuleId(*b"clvclaim");
+    pub const ClaimsModuleId: PalletId = PalletId(*b"clvclaim");
 }
 impl Config for Test {
-  type ModuleId = ClaimsModuleId;
+  type PalletId = ClaimsModuleId;
   type Event = ();
   type Currency = Balances;
   type Prefix = Prefix;
@@ -73,9 +76,9 @@ frame_support::construct_runtime!(
     NodeBlock = Block,
     UncheckedExtrinsic = UncheckedExtrinsic
   {
-    System: frame_system::{Module, Call, Config, Storage, Event<T>},
-    Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-    CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+    System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+    Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+    CloverClaims: clover_claims::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
   }
 );
 

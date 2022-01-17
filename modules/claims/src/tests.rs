@@ -636,3 +636,64 @@ fn runtime_upgrade_should_copy_data() {
     );
   });
 }
+
+#[test]
+fn mint_and_claim_in_one_call_should_works() {
+  let zero_address = EthereumAddress(hex!["0000000000000000000000000000000000000000"]);
+
+  new_test_ext().execute_with(|| {
+    // set bridge account to root
+    assert_ok!(CloverClaims::set_bridge_account_elastic(
+      Origin::root(),
+      BridgeNetworks::CloverPara,
+      1
+    ));
+
+    // Set claim limit = 100
+    assert_ok!(CloverClaims::set_claim_limit_elastic(
+      Origin::root(),
+      BridgeNetworks::CloverPara,
+      150
+    ));
+
+    // Mint a claim
+    let tx_hash = get_legal_tx_hash();
+    assert_ok!(CloverClaims::mint_and_send_claim_elastic(
+      Origin::signed(1),
+      BridgeNetworks::CloverPara,
+      tx_hash.clone(),
+      1100,
+      100
+    ));
+
+    assert_eq!(CloverClaims::elastic_claim_limits(BridgeNetworks::CloverPara), 50);
+
+    assert_eq!(Balances::free_balance(1100), 100);
+    assert_eq!(
+      CloverClaims::elastic_claims(BridgeNetworks::CloverPara, &tx_hash),
+      Some((zero_address, 100, true))
+    ); // tx has already be claimed
+
+    assert_noop!(CloverClaims::mint_and_send_claim_elastic(
+      Origin::signed(1),
+      BridgeNetworks::CloverPara,
+      tx_hash.clone(),
+      1200,
+      100
+    ), Error::<Test>::AlreadyMinted);
+
+    assert_eq!(Balances::free_balance(1100), 100);
+    assert_eq!(Balances::free_balance(1200), 0);
+
+    assert_noop!(
+      CloverClaims::mint_and_send_claim_elastic(
+        Origin::signed(2),
+        BridgeNetworks::CloverPara,
+        tx_hash.clone(),
+        1100,
+        100
+      ),
+      Error::<Test>::NoPermission
+    );
+  });
+}

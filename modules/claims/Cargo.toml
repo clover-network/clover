@@ -25,10 +25,10 @@ sp-io = {default-features = false, git = "https://github.com/paritytech/substrat
 log = { version = "0.4.14", default-features = false }
 type-utils = { path = "../type-utils" }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+hex-literal = "0.3.1"
 
 [dev-dependencies]
 pallet-balances = { git = "https://github.com/paritytech/substrate.git",  branch = "polkadot-v0.9.12" }
-hex-literal = "0.3.1"
 
 [features]
 default = ['std']
