@@ -14,6 +14,7 @@ use sp_runtime::{
   ModuleId,
 };
 use sp_std::prelude::*;
+use hex_literal::hex;
 
 pub use pallet::*;
 pub mod ethereum_address;
@@ -329,6 +330,25 @@ pub mod pallet {
       Self::deposit_event(Event::ElasticBurned(network, who, dest, burn_amount));
       Ok(().into())
     }
+
+    /// bridge between two clover like chains
+    #[pallet::weight(T::DbWeight::get().writes(3))]
+    #[frame_support::transactional]
+    pub fn mint_and_send_claim_elastic(
+      origin: OriginFor<T>,
+      network: BridgeNetworks,
+      tx: EthereumTxHash,
+      who: T::AccountId,
+      value: BalanceOf<T>,
+    ) -> DispatchResultWithPostInfo {
+      let signer = ensure_signed(origin)?;
+
+      let claim_amount = Self::do_mint_and_send_claim(signer, network, tx, who, value)?;
+
+      let zero_address = EthereumAddress(hex!["0000000000000000000000000000000000000000"]);
+      Self::deposit_event(Event::ElasticMintSuccess(network, tx, zero_address, claim_amount));
+      Ok(().into())
+    }
   }
 
   #[repr(u8)]
@@ -497,6 +517,55 @@ pub mod pallet {
         T::Currency::deposit_creating(&Self::account_id(), burn_fee);
       }
       Ok(burn_amount)
+    }
+
+    fn do_mint_and_send_claim(
+      from: T::AccountId,
+      network: BridgeNetworks,
+      tx: EthereumTxHash,
+      dest: T::AccountId,
+      value: BalanceOf<T>,
+    ) -> Result<BalanceOf<T>, DispatchError> {
+      let bridge_account = Self::elastic_bridge_accounts(network);
+      let zero_address = EthereumAddress(hex!["0000000000000000000000000000000000000000"]);
+
+      // mint must be orginated from bridge account
+      ensure!(
+        Some(&from) == bridge_account.as_ref(),
+        Error::<T>::NoPermission
+      );
+      // Check if this tx already be mint or be claimed
+      ensure!(
+        !ElasticClaims::<T>::contains_key(&network, &tx),
+        Error::<T>::AlreadyMinted
+      );
+      // Check claim limit
+      ensure!(
+        Self::elastic_claim_limits(&network) >= value,
+        Error::<T>::ClaimLimitExceeded
+      );
+      let mut claim_amount = value.clone();
+      let mut mint_fee = 0u32.into();
+      let (fee, _) = Self::bridge_fees(&network);
+      if fee > 0u32.into() {
+        ensure!(value > fee, Error::<T>::InvalidAmount);
+        claim_amount = value.saturating_sub(fee);
+        mint_fee = fee;
+      }
+
+      T::Currency::deposit_creating(&dest, claim_amount);
+      // insert into claims, mark it as claimed
+      ElasticClaims::<T>::insert(
+        network.clone(),
+        tx.clone(),
+        (zero_address, claim_amount.clone(), true),
+      );
+      // update claim limit
+      ElasticClaimLimits::<T>::mutate(&network, |l| *l = l.saturating_sub(claim_amount));
+      if mint_fee > 0u32.into() {
+        T::Currency::deposit_creating(&Self::account_id(), mint_fee);
+      }
+      Ok(claim_amount)
     }
 
     // Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.

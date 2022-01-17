@@ -107,7 +107,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 18,
+  spec_version: 19,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -481,7 +481,7 @@ parameter_types! {
   pub const BondingDuration: pallet_staking::EraIndex = 96; // 96 era for unbouding (96 * 6 hours) = 24 days
   pub const SlashDeferDuration: pallet_staking::EraIndex = 48; // 1/2 bonding duration
   pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
-  pub const MaxNominatorRewardedPerValidator: u32 = 64;
+  pub const MaxNominatorRewardedPerValidator: u32 = 256;
   pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
   pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
   pub const MaxIterations: u32 = 10;
