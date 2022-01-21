@@ -2159,7 +2159,7 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 [[package]]
 name = "evm"
 version = "0.30.1"
-source = "git+https://github.com/clover-network/evm?branch=pangwa/substrate-v0.9.11#22d4da5bc73f401e618ad629767c7141db85656d"
+source = "git+https://github.com/clover-network/evm.git?branch=pangwa/substrate-v0.9.11#22d4da5bc73f401e618ad629767c7141db85656d"
 dependencies = [
  "environmental",
  "ethereum",
@@ -2198,7 +2198,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.30.0"
-source = "git+https://github.com/clover-network/evm?branch=pangwa/substrate-v0.9.11#22d4da5bc73f401e618ad629767c7141db85656d"
+source = "git+https://github.com/clover-network/evm.git?branch=pangwa/substrate-v0.9.11#22d4da5bc73f401e618ad629767c7141db85656d"
 dependencies = [
  "funty",
  "parity-scale-codec",
@@ -2210,7 +2210,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.30.0"
-source = "git+https://github.com/clover-network/evm?branch=pangwa/substrate-v0.9.11#22d4da5bc73f401e618ad629767c7141db85656d"
+source = "git+https://github.com/clover-network/evm.git?branch=pangwa/substrate-v0.9.11#22d4da5bc73f401e618ad629767c7141db85656d"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2221,7 +2221,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.30.0"
-source = "git+https://github.com/clover-network/evm?branch=pangwa/substrate-v0.9.11#22d4da5bc73f401e618ad629767c7141db85656d"
+source = "git+https://github.com/clover-network/evm.git?branch=pangwa/substrate-v0.9.11#22d4da5bc73f401e618ad629767c7141db85656d"
 dependencies = [
  "environmental",
  "evm-core",
