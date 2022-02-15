@@ -18,7 +18,7 @@ services:
 
   build:
     container_name: clover-build
-    image: cloverio/ci-linux-production:nightly-0629
+    image: cloverio/ci-linux-production:nightly-220119
     working_dir: /var/www/clover
     ports:
       - "9944:9944"
