@@ -134,8 +134,6 @@ pub fn development_config(id: ParaId) -> Result<ChainSpec, String> {
       get_account_id_from_seed::<sr25519::Public>("Alice"),
       // Pre-funded accounts
       vec![
-        get_account_id_from_seed::<sr25519::Public>("Alice"),
-        get_account_id_from_seed::<sr25519::Public>("Bob"),
         //get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
         get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
       ],
