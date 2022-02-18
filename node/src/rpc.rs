@@ -9,9 +9,10 @@ use std::sync::Arc;
 use std::collections::BTreeMap;
 use primitives::{Block, BlockNumber, AccountId, Index, Balance, Hash, };
 use sc_client_api::{
-	backend::{Backend, StateBackend,},
+	backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	client::BlockchainEvents,
 };
-use fc_rpc_core::types::FilterPool;
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 pub use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
@@ -23,7 +24,12 @@ use sc_transaction_pool::{ChainApi, Pool};
 use sc_network::NetworkService;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use pallet_ethereum::EthereumStorageSchema;
-use fc_rpc::{EthBlockDataCache, StorageOverride, SchemaV1Override, OverrideHandle, RuntimeApiStorageOverride};
+use fc_rpc::{
+	Debug, DebugApiServer, EthBlockDataCache, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
+	SchemaV2Override, SchemaV3Override, StorageOverride,
+	Trace, TraceApiServer,
+};
+use fc_rpc::{CacheRequester as TraceFilterCacheRequester, DebugRequester};
 
 /// Full client dependencies.
 pub struct FullDeps<C, P, A: ChainApi> {
@@ -44,10 +50,96 @@ pub struct FullDeps<C, P, A: ChainApi> {
 	pub backend: Arc<fc_db::Backend<Block>>,
   /// Maximum number of logs in a query.
 	pub max_past_logs: u32,
+  /// Maximum fee history cache size.
+	pub fee_history_limit: u64,
+	/// Fee history cache.
+	pub fee_history_cache: FeeHistoryCache,
+	/// Ethereum data access overrides.
+	pub overrides: Arc<OverrideHandle<Block>>,
+	/// Cache for Ethereum block data.
+	pub block_data_cache: Arc<EthBlockDataCache<Block>>,
+	/// Rpc requester for evm trace
+	pub tracing_requesters: RpcRequesters,
+	/// Rpc Config
+	pub rpc_config: RpcConfig,
   /// The Node authority flag
   pub is_authority: bool,
   /// Network service
   pub network: Arc<NetworkService<Block, Hash>>,
+}
+
+#[derive(Clone)]
+pub struct RpcRequesters {
+	pub debug: Option<DebugRequester>,
+	pub trace: Option<TraceFilterCacheRequester>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct RpcConfig {
+	pub ethapi: Vec<EthApiCmd>,
+	pub ethapi_max_permits: u32,
+	pub ethapi_trace_max_count: u32,
+	pub ethapi_trace_cache_duration: u64,
+	pub eth_log_block_cache: usize,
+	pub max_past_logs: u32,
+}
+
+
+use std::str::FromStr;
+impl FromStr for EthApiCmd {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Ok(match s {
+			"debug" => Self::Debug,
+			"trace" => Self::Trace,
+			_ => {
+				return Err(format!(
+					"`{}` is not recognized as a supported Ethereum Api",
+					s
+				))
+			}
+		})
+	}
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum EthApiCmd {
+	Debug,
+	Trace,
+}
+
+
+pub fn overrides_handle<C, BE>(client: Arc<C>) -> Arc<OverrideHandle<Block>>
+where
+	C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
+	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError>,
+	C: Send + Sync + 'static,
+	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
+	BE: Backend<Block> + 'static,
+	BE::State: StateBackend<BlakeTwo256>,
+{
+	let mut overrides_map = BTreeMap::new();
+	overrides_map.insert(
+		EthereumStorageSchema::V1,
+		Box::new(SchemaV1Override::new(client.clone()))
+			as Box<dyn StorageOverride<_> + Send + Sync>,
+	);
+	overrides_map.insert(
+		EthereumStorageSchema::V2,
+		Box::new(SchemaV2Override::new(client.clone()))
+			as Box<dyn StorageOverride<_> + Send + Sync>,
+	);
+	overrides_map.insert(
+		EthereumStorageSchema::V3,
+		Box::new(SchemaV3Override::new(client.clone()))
+			as Box<dyn StorageOverride<_> + Send + Sync>,
+	);
+
+	Arc::new(OverrideHandle {
+		schemas: overrides_map,
+		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
+	})
 }
 
 /// A IO handler that uses all Full RPC extensions.
@@ -90,9 +182,15 @@ pub fn create_full<C, P, B, A>(
     network,
     // pending_transactions,
 		filter_pool,
+    fee_history_limit,
+		fee_history_cache,
     backend,
     max_past_logs,
     is_authority,
+    overrides,
+		block_data_cache,
+		tracing_requesters,
+		rpc_config,
   } = deps;
 
   io.extend_with(
@@ -129,8 +227,6 @@ pub fn create_full<C, P, B, A>(
 		fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
 	});
 
-  let block_data_cache = Arc::new(EthBlockDataCache::new(50, 50));
-
   io.extend_with(EthApiServer::to_delegate(EthApi::new(
     client.clone(),
     pool.clone(),
@@ -144,6 +240,8 @@ pub fn create_full<C, P, B, A>(
     is_authority,
     max_past_logs,
     block_data_cache.clone(),
+    fee_history_limit,
+		fee_history_cache,
   )));
 
   if let Some(filter_pool) = filter_pool {
@@ -153,7 +251,6 @@ pub fn create_full<C, P, B, A>(
         backend,
 				filter_pool.clone(),
 				500 as usize, // max stored filters
-        overrides.clone(),
         max_past_logs,
         block_data_cache.clone(),
 			))

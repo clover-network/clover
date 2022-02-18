@@ -134,8 +134,6 @@ pub fn development_config(id: ParaId) -> Result<ChainSpec, String> {
       get_account_id_from_seed::<sr25519::Public>("Alice"),
       // Pre-funded accounts
       vec![
-        get_account_id_from_seed::<sr25519::Public>("Alice"),
-        get_account_id_from_seed::<sr25519::Public>("Bob"),
         //get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
         get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
       ],
@@ -149,11 +147,9 @@ pub fn development_config(id: ParaId) -> Result<ChainSpec, String> {
     None,
     // Protocol ID
     Some("cloverlocal"),
+    None,
     // Properties
-    Some(json!({
-      "tokenDecimals": 18,
-      "tokenSymbol": "CLV"
-    }).as_object().expect("Created an object").clone()),
+    None,
     // Extensions
     Extensions {
       relay_chain: "westend-dev".into(),
@@ -207,11 +203,9 @@ pub fn local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
     None,
     // Protocol ID
     Some("cloverlocal"),
+    None,
     // Properties
-    Some(json!({
-      "tokenDecimals": 18,
-      "tokenSymbol": "CLV"
-    }).as_object().expect("Created an object").clone()),
+    None,
     // Extensions
     Extensions {
       relay_chain: "westend-dev".into(),
@@ -274,12 +268,10 @@ pub fn clover_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
     // Telemetry
     None,
     // Protocol ID
+    None,
     Some("clover"),
     // Properties
-    Some(json!({
-      "tokenDecimals": 18,
-      "tokenSymbol": "CLV"
-    }).as_object().expect("Created an object").clone()),
+    None,
     // Extensions
     Extensions {
 			relay_chain: "polkadot-local".into(),
@@ -333,11 +325,9 @@ pub fn clover_rococo_config(id: ParaId) -> Result<ChainSpec, String> {
     None,
     // Protocol ID
     Some("clover-rococo"),
+    None,
     // Properties
-    Some(json!({
-      "tokenDecimals": 18,
-      "tokenSymbol": "CLV"
-    }).as_object().expect("Created an object").clone()),
+    None,
     // Extensions
     Extensions {
 			relay_chain: "polkadot-local".into(),
@@ -369,7 +359,6 @@ fn testnet_genesis(
     system: SystemConfig {
       // Add Wasm runtime to storage.
       code: wasm_binary.to_vec(),
-      changes_trie_config: Default::default(),
     },
     balances: BalancesConfig {
       // Configure endowed accounts with initial balance of 1 << 60.
@@ -391,7 +380,7 @@ fn testnet_genesis(
     },
     sudo: SudoConfig {
       // Assign network admin rights.
-      key: root_key,
+      key: Some(root_key),
     },
     parachain_info: clover_runtime::ParachainInfoConfig { parachain_id: id },
     collator_selection: clover_runtime::CollatorSelectionConfig {
@@ -415,5 +404,6 @@ fn testnet_genesis(
 		},
     aura: Default::default(),
 		aura_ext: Default::default(),
+    base_fee: Default::default(),
   }
 }

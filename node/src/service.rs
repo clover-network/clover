@@ -2,22 +2,28 @@
 
 use std::{sync::{Arc, Mutex}, time::Duration, collections::{HashMap, BTreeMap}};
 
+use crate::rpc::{EthApiCmd, RpcConfig, RpcRequesters};
+
 use cumulus_client_consensus_aura::{
-	build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
+	AuraConsensus, BuildAuraConsensusParams, SlotProportion,
 };
+
+use cumulus_client_consensus_common::ParachainConsensus;
 
 use cumulus_client_consensus_relay_chain::{
 	build_relay_chain_consensus, BuildRelayChainConsensusParams,
 };
-use cumulus_client_network::build_block_announce_validator;
+use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
   prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
+use cumulus_primitives_core::ParaId;
+use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_local::build_relay_chain_interface;
 
-use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
-use fc_rpc_core::types::FilterPool;
-use fc_rpc::EthTask;
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use fc_rpc::{CacheTask, DebugTask, EthTask};
 use clover_runtime::{self, opaque::Block, RuntimeApi};
 use sc_service::{BasePath, error::Error as ServiceError, Configuration, Role, TaskManager, TFullClient};
 use sp_runtime::traits::Block as BlockT;
@@ -29,6 +35,7 @@ use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 use fc_consensus::FrontierBlockImport;
 use fc_mapping_sync::{MappingSyncWorker, SyncStrategy};
 use futures::StreamExt;
+use tokio::sync::Semaphore;
 
 use crate::cli::Cli;
 
@@ -36,7 +43,7 @@ use crate::cli::Cli;
 pub struct ExecutorDispatch;
 
 impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
-	type ExtendHostFunctions = ();
+	type ExtendHostFunctions = fp_trace_ext::evm_ext::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		clover_runtime::api::dispatch(method, data)
@@ -49,6 +56,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 
 type FullClient = sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
 type FullBackend = sc_service::TFullBackend<Block>;
+type FrontierBackend = fc_db::Backend<Block>;
 // type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
@@ -68,6 +76,56 @@ pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backen
   })?))
 }
 
+fn create_rpc_requesters(rpc_config: &RpcConfig,
+  client: Arc<FullClient>,
+  substrate_backend: Arc<FullBackend>,
+  frontier_backend: Arc<FrontierBackend>,
+  task_manager: &TaskManager,
+ ) -> RpcRequesters {
+  let cmd = rpc_config.ethapi.clone();
+  let (trace_requester, debug_requester) = if cmd.contains(&EthApiCmd::Debug) || cmd.contains(&EthApiCmd::Trace) {
+    let permit_pool = Arc::new(Semaphore::new(rpc_config.ethapi_max_permits as usize));
+    let trace_filter_requester =
+    if rpc_config.ethapi.contains(&EthApiCmd::Trace) {
+      let (trace_filter_task, trace_filter_requester) = CacheTask::create(
+        Arc::clone(&client),
+        Arc::clone(&substrate_backend),
+        Duration::from_secs(rpc_config.ethapi_trace_cache_duration),
+        Arc::clone(&permit_pool),
+        );
+      task_manager
+        .spawn_essential_handle()
+        .spawn("trace-filter-cache", None, trace_filter_task);
+      Some(trace_filter_requester)
+    } else {
+      None
+   };
+
+    let debug_requester = if rpc_config.ethapi.contains(&EthApiCmd::Debug) {
+      let (debug_task, debug_requester) = DebugTask::task(
+        Arc::clone(&client),
+        Arc::clone(&substrate_backend),
+        Arc::clone(&frontier_backend),
+        Arc::clone(&permit_pool),
+        );
+      task_manager
+        .spawn_essential_handle()
+        .spawn("ethapi-debug", None, debug_task);
+      Some(debug_requester)
+    } else {
+      None
+    };
+    (trace_filter_requester, debug_requester)
+  }
+  else {
+    (None, None)
+  };
+  RpcRequesters {
+    debug: debug_requester,
+    trace: trace_requester
+  }
+}
+
 pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::PartialComponents<
   FullClient, FullBackend, (),
   sc_consensus::DefaultImportQueue<Block, FullClient>,
@@ -80,6 +138,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
     FrontierBlockImport<Block, Arc<FullClient>, FullClient>,
     Option<FilterPool>,
     Arc<fc_db::Backend<Block>>, Option<Telemetry>, Option<TelemetryWorkerHandle>,
+    FeeHistoryCache,
   )
   >, ServiceError> {
   let telemetry = config.telemetry_endpoints.clone()
@@ -97,7 +156,17 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
+    config.runtime_cache_size,
 	);
+
+  let rpc_config = RpcConfig {
+		ethapi: cli.run.ethapi.clone(),
+		ethapi_max_permits: cli.run.ethapi_max_permits,
+		ethapi_trace_max_count: cli.run.ethapi_trace_max_count,
+		ethapi_trace_cache_duration: cli.run.ethapi_trace_cache_duration,
+		eth_log_block_cache: cli.run.eth_log_block_cache,
+		max_past_logs: cli.run.max_past_logs,
+	};
 
   let (client, backend, keystore_container, task_manager) =
     sc_service::new_full_parts::<Block, RuntimeApi, _>(
@@ -113,7 +182,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 
   let telemetry = telemetry
 		.map(|(worker, telemetry)| {
-			task_manager.spawn_handle().spawn("telemetry", worker.run());
+			task_manager.spawn_handle().spawn("telemetry", None, worker.run());
 			telemetry
 		});
 
@@ -132,6 +201,7 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 
   let filter_pool: Option<FilterPool>
       = Some(Arc::new(Mutex::new(BTreeMap::new())));
+  let fee_history_cache: FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 
   let frontier_backend = open_frontier_backend(config)?;
 
@@ -176,11 +246,30 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
 
     // let pending = pending_transactions.clone();
     let filter_pool_clone = filter_pool.clone();
-    let backend = frontier_backend.clone();
+    let fee_history_cache_clone = fee_history_cache.clone();
+    let backend_clone = backend.clone();
+    let frontier_backend_clone = frontier_backend.clone();
     let max_past_logs = cli.run.max_past_logs;
 
-    let rpc_extensions_builder = move |deny_unsafe, _subscription_executor: sc_rpc::SubscriptionTaskExecutor, network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>| {
+    let overrides = crate::rpc::overrides_handle(client.clone());
+    let fee_history_limit = cli.run.fee_history_limit;
 
+    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
+      task_manager.spawn_handle(),
+      overrides.clone(),
+      50,
+      50,
+    ));
+
+    let tracing_requesters = create_rpc_requesters(
+                  &rpc_config,
+                  client.clone(),
+                  backend.clone(),
+                  frontier_backend.clone(),
+                  &task_manager);
+
+    let rpc_extensions_builder = move |deny_unsafe, _subscription_executor: sc_rpc::SubscriptionTaskExecutor, network: Arc<sc_network::NetworkService<Block, <Block as BlockT>::Hash>>| {
+      let overrides = overrides.clone();
       let deps = crate::rpc::FullDeps {
         client: client.clone(),
         pool: pool.clone(),
@@ -189,10 +278,16 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
         deny_unsafe,
         // pending_transactions: pending.clone(),
         filter_pool: filter_pool_clone.clone(),
-        backend: backend.clone(),
+        backend: frontier_backend_clone.clone(),
         is_authority,
         max_past_logs,
+        fee_history_limit,
+				fee_history_cache: fee_history_cache_clone.clone(),
         network: network,
+        overrides: overrides.clone(),
+				block_data_cache: block_data_cache.clone(),
+				tracing_requesters: tracing_requesters.clone(),
+				rpc_config: rpc_config.clone(),
       };
 
       crate::rpc::create_full(deps, subscription_task_executor.clone())
@@ -207,26 +302,18 @@ pub fn new_partial(config: &Configuration, cli: &Cli) -> Result<sc_service::Part
     import_queue, transaction_pool,
     other: (rpc_extensions_builder, frontier_block_import,
             filter_pool,
-            frontier_backend, telemetry, telemetry_worker_handle),
+            frontier_backend, telemetry, telemetry_worker_handle, fee_history_cache),
   })
 }
 
 /// Builds a new service for a full client.
-async fn start_node_impl<RB>(
+#[sc_tracing::logging::prefix_logs_with("Parachain")]
+async fn start_node_impl(
   parachain_config: Configuration,
-  collator_key: CollatorPair,
   polkadot_config: Configuration,
-  id: polkadot_primitives::v0::Id,
-  validator: bool,
-  _rpc_ext_builder: RB,
+  id: ParaId,
   cli: &Cli,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)>
-where
-  RB: Fn(
-      Arc<FullClient>,
-    ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
-    + Send
-    + 'static,
 {
   if matches!(parachain_config.role, Role::Light) {
     return Err("Light client not supported!".into());
@@ -238,27 +325,19 @@ where
     client, backend, mut task_manager, import_queue, keystore_container, select_chain: _, transaction_pool,
     other: (partial_rpc_extensions_builder, frontier_block_import,
             /*pending_transactions,*/ filter_pool,
-            frontier_backend, mut telemetry, telemetry_worker_handle),
+            frontier_backend, mut telemetry, telemetry_worker_handle, fee_history_cache),
   } = new_partial(&parachain_config, cli)?;
 
   let import_queue = cumulus_client_service::SharedImportQueue::new(import_queue);
 
-  let relay_chain_full_node =
-  cumulus_client_service::build_polkadot_full_node(
-    polkadot_config,
-    telemetry_worker_handle).map_err(
-    |e| match e {
+  let (relay_chain_interface, collator_key) =
+    build_relay_chain_interface(polkadot_config, telemetry_worker_handle, &mut task_manager)
+    .map_err(|e| match e {
       polkadot_service::Error::Sub(x) => x,
       s => format!("{}", s).into(),
-    },
-  )?;
+    })?;
 
-  let block_announce_validator = build_block_announce_validator(
-    relay_chain_full_node.client.clone(),
-    id,
-    Box::new(relay_chain_full_node.network.clone()),
-    relay_chain_full_node.backend.clone(),
-  );
+  let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
 //  let prometheus_registry = parachain_config.prometheus_registry().cloned();
 
@@ -269,8 +348,9 @@ where
       transaction_pool: transaction_pool.clone(),
       spawn_handle: task_manager.spawn_handle(),
       import_queue: import_queue.clone(),
-      on_demand: None,
-      block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
+      block_announce_validator_builder: Some(Box::new(|_| {
+				Box::new(block_announce_validator)
+			})),
       warp_sync: None,
     })?;
 
@@ -281,6 +361,7 @@ where
   }
 
   // let role = parachain_config.role.clone();
+  let validator = parachain_config.role.is_authority();
   let force_authoring = parachain_config.force_authoring;
   // let name = parachain_config.network.node_name.clone();
 
@@ -296,6 +377,7 @@ where
 
   task_manager.spawn_essential_handle().spawn(
 		"frontier-mapping-sync-worker",
+    None,
 		MappingSyncWorker::new(
 			client.import_notification_stream(),
 			Duration::new(6, 0),
@@ -307,8 +389,6 @@ where
 	);
 
   let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-    on_demand: None,
-    remote_blockchain: None,
     rpc_extensions_builder: Box::new(rpc_extensions_builder),
     client: client.clone(),
     transaction_pool: transaction_pool.clone(),
@@ -332,6 +412,7 @@ where
     const FILTER_RETAIN_THRESHOLD: u64 = 100;
     task_manager.spawn_essential_handle().spawn(
       "frontier-filter-pool",
+      None,
       client.import_notification_stream().for_each(move |notification| {
         if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
           let imported_number: u64 = notification.header.number as u64;
@@ -360,6 +441,8 @@ where
 //    );
 //  }
 
+  let relay_chain_slot_duration = Duration::from_secs(6);
+
   if validator {
     let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
 
@@ -373,62 +456,49 @@ where
 
     let spawner = task_manager.spawn_handle();
 
-    let relay_chain_backend = relay_chain_full_node.backend.clone();
-    let relay_chain_client = relay_chain_full_node.client.clone();
+    let relay_chain_interface_copy = relay_chain_interface.clone();
+    let parachain_consensus = AuraConsensus::build::<sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _> (
+		  BuildAuraConsensusParams {
+		  	proposer_factory,
+		  	create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
+          let relay_chain_interface_copy = relay_chain_interface_copy.clone();
+		  		async move {
+		  		  let parachain_inherent =
+		  		    cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+		  		    	relay_parent,
+		  		    	&relay_chain_interface_copy,
+		  		    	&validation_data,
+		  		    	id,
+		  		    ).await;
 
-    let parachain_consensus = build_aura_consensus::<
-			sp_consensus_aura::sr25519::AuthorityPair,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-			_,
-		>(BuildAuraConsensusParams {
-			proposer_factory,
-			create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
-				let parachain_inherent =
-				cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-					relay_parent,
-					&relay_chain_client,
-					&*relay_chain_backend,
-					&validation_data,
-					id,
-				);
-				async move {
-					let time = sp_timestamp::InherentDataProvider::from_system_time();
+		  			let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-					let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-						*time,
-						slot_duration.slot_duration(),
-					);
+		  			let slot =
+		  			sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+		  				*time,
+		  				slot_duration.slot_duration(),
+		  			);
 
-					let parachain_inherent = parachain_inherent.ok_or_else(|| {
-						Box::<dyn std::error::Error + Send + Sync>::from(
-							"Failed to create parachain inherent",
-						)
-					})?;
-					Ok((time, slot, parachain_inherent))
-				}
-			},
-			block_import: frontier_block_import.clone(),
-			relay_chain_client: relay_chain_full_node.client.clone(),
-			relay_chain_backend: relay_chain_full_node.backend.clone(),
-			para_client: client.clone(),
-			backoff_authoring_blocks: Option::<()>::None,
-			sync_oracle: network.clone(),
-			keystore: keystore_container.sync_keystore(),
-			force_authoring,
-			slot_duration,
-			// We got around 500ms for proposing
-			block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
-      max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
-			telemetry: telemetry.map(|t| t.handle()),
-		});
+		  			let parachain_inherent = parachain_inherent.ok_or_else(|| {
+		  				Box::<dyn std::error::Error + Send + Sync>::from(
+		  					"Failed to create parachain inherent",
+		  				)
+		  			})?;
+		  			Ok((time, slot, parachain_inherent))
+		  		}
+		  	},
+		  	block_import: frontier_block_import.clone(),
+		  	para_client: client.clone(),
+		  	backoff_authoring_blocks: Option::<()>::None,
+		  	sync_oracle: network.clone(),
+		  	keystore: keystore_container.sync_keystore(),
+		  	force_authoring,
+		  	slot_duration,
+		  	// We got around 500ms for proposing
+		  	block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+        max_block_proposal_slot_portion: Some(SlotProportion::new(1f32 / 16f32)),
+		  	telemetry: telemetry.map(|t| t.handle()),
+		  });
 
     //let polkadot_backend = polkadot_full_node.backend.clone();
 
@@ -438,10 +508,12 @@ where
       announce_block,
       client: client.clone(),
       task_manager: &mut task_manager,
-      relay_chain_full_node: relay_chain_full_node,
+      relay_chain_interface,
       spawner,
       parachain_consensus,
       import_queue,
+      collator_key,
+			relay_chain_slot_duration,
     };
 
     start_collator(params).await?;
@@ -451,7 +523,9 @@ where
       announce_block,
       task_manager: &mut task_manager,
       para_id: id,
-      relay_chain_full_node,
+      relay_chain_interface,
+			relay_chain_slot_duration,
+			import_queue,
     };
 
     start_full_node(params)?;
@@ -464,19 +538,14 @@ where
 /// Start a normal parachain node.
 pub async fn start_node(
   parachain_config: Configuration,
-  collator_key: CollatorPair,
   polkadot_config: Configuration,
-  id: polkadot_primitives::v0::Id,
-  validator: bool,
+  id: ParaId,
   cli: &Cli,
 ) -> sc_service::error::Result<(TaskManager, Arc<FullClient>)> {
   start_node_impl(
     parachain_config,
-    collator_key,
     polkadot_config,
     id,
-    validator,
-    |_| Default::default(),
     cli,
   )
   .await
