@@ -271,6 +271,18 @@ pub fn create_full<C, P, B, A>(
     ))
   );
 
+  if let Some(trace_filter_requester) = tracing_requesters.trace {
+		io.extend_with(TraceApiServer::to_delegate(Trace::new(
+			client.clone(),
+			trace_filter_requester,
+			rpc_config.ethapi_trace_max_count,
+		)));
+	}
+
+	if let Some(debug_requester) = tracing_requesters.debug {
+		io.extend_with(DebugApiServer::to_delegate(Debug::new(debug_requester)));
+	}
+
   io.extend_with(
     EthPubSubApiServer::to_delegate(EthPubSubApi::new(
       pool.clone(),
