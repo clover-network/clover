@@ -108,7 +108,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover-sakura"),
   impl_name: create_runtime_str!("clover-sakura"),
   authoring_version: 1,
-  spec_version: 18,
+  spec_version: 19,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -326,7 +326,7 @@ impl pallet_evm::Config for Runtime {
   type PrecompilesType = CloverPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
   type ChainId = ChainId;
-  type FindAuthor = EthereumFindAuthor<PhantomMockAuthorship>;
+  type FindAuthor = EthereumFindAuthor<Aura>;
   type BlockGasLimit = BlockGasLimit;
   type OnChargeTransaction = ();
   fn config() -> &'static evm::Config {
