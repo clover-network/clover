@@ -326,7 +326,7 @@ impl pallet_evm::Config for Runtime {
   type PrecompilesType = CloverPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
   type ChainId = ChainId;
-  type FindAuthor = EthereumFindAuthor<PhantomMockAuthorship>;
+  type FindAuthor = EthereumFindAuthor<Aura>;
   type BlockGasLimit = BlockGasLimit;
   type OnChargeTransaction = ();
   fn config() -> &'static evm::Config {
