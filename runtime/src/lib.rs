@@ -107,7 +107,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 19,
+  spec_version: 20,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -624,11 +624,11 @@ impl pallet_democracy::Config for Runtime {
   /// To cancel a proposal which has been passed, all of the council must
   /// agree to it.
   type CancellationOrigin =
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
   type CancelProposalOrigin = EnsureOneOf<
     AccountId,
     EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>,
+    pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, TechnicalCollective>,
   >;
   type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
   type BlacklistOrigin = EnsureRoot<AccountId>;
