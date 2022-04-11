@@ -1088,65 +1088,63 @@ construct_runtime!(
     NodeBlock = opaque::Block,
     UncheckedExtrinsic = UncheckedExtrinsic
   {
-    System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-    RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-    Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+    System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
+    RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 1,
+    Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 
-    Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>},
-    Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+    Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>} = 3,
+    Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 4,
 
-    ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, ValidateUnsigned},
+    ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, ValidateUnsigned} = 5,
 
-    TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+    TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 6,
 
-    ParachainInfo: parachain_info::{Pallet, Storage, Config},
+    ParachainInfo: parachain_info::{Pallet, Storage, Config} = 7,
 
     // Collator support. the order of these 4 are important and shall not change.
-    Authorship: pallet_authorship::{Pallet, Call, Storage},
-    CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>},
-    Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
-    Aura: pallet_aura::{Pallet, Config<T>},
-    AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
+    Authorship: pallet_authorship::{Pallet, Call, Storage} = 8,
+    CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 9,
+    Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 10,
+    Aura: pallet_aura::{Pallet, Config<T>} = 11,
+    AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 12,
 
     // Governance.
-    Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>},
-    Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
-    TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
-    ElectionsPhragmen: pallet_elections_phragmen::{Pallet, Call, Storage, Event<T>, Config<T>},
-    TechnicalMembership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-    Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>, Config},
+    Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 13,
+    Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 14,
+    TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 15,
+    ElectionsPhragmen: pallet_elections_phragmen::{Pallet, Call, Storage, Event<T>, Config<T>} = 16,
+    TechnicalMembership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>} = 17,
+    Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>, Config} = 18,
 
     // Smart contracts modules
-    Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
-    EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
-    Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config, },
+    Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 19,
+    EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 20,
+    Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config, } = 21,
 
-    Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+    Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 22,
 
     // Utility module.
-    Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
-    Utility: pallet_utility::{Pallet, Call, Event},
+    Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 23,
+    Utility: pallet_utility::{Pallet, Call, Event} = 24,
 
-    Identity: pallet_identity::{Pallet, Call, Storage, Event<T>},
-    Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>},
+    Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 25,
+    Vesting: pallet_vesting::{Pallet, Call, Storage, Event<T>, Config<T>} = 26,
 
-    Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>},
+    Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 27,
 
-    Bounties: pallet_bounties::{Pallet, Call, Storage, Event<T>},
-    Tips: pallet_tips::{Pallet, Call, Storage, Event<T>},
+    Bounties: pallet_bounties::{Pallet, Call, Storage, Event<T>} = 28,
+    Tips: pallet_tips::{Pallet, Call, Storage, Event<T>} = 29,
 
     // account module
-    EvmAccounts: evm_accounts::{Pallet, Call, Storage, Event<T>},
+    EvmAccounts: evm_accounts::{Pallet, Call, Storage, Event<T>} = 30,
 
-    CloverClaims: clover_claims::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
-    BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
+    CloverClaims: clover_claims::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 31,
+    BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 32,
 
-    // CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
-
-    XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
-    PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
-    CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin},
-    DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>},
+    XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 33,
+    PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 34,
+    CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 35,
+    DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 36,
 
     // The main stage.
     Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
