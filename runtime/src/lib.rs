@@ -66,8 +66,15 @@ pub use primitives::{
   Index, Moment, Price, Rate, Share, Signature,
 };
 
+// Polkadot imports
+use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use xcm::latest::BodyId;
+use xcm_executor::XcmExecutor;
+
 pub use constants::time::*;
 use impls::{ MergeAccountEvm, WeightToFee};
+use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 
 mod clover_evm_config;
 mod constants;
@@ -75,11 +82,16 @@ mod impls;
 mod mock;
 mod tests;
 mod weights;
+mod parachains_common;
 
 mod precompiles;
 use precompiles::CloverPrecompiles;
 
+mod xcm_config;
+
 pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
+
+pub type AssetId = u32;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -140,7 +152,6 @@ pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_perthousand(25);
 parameter_types! {
   pub BlockLength: limits::BlockLength =
     limits::BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-  pub const BlockHashCount: BlockNumber = 2400;
   /// We allow for 2 seconds of compute with a 6 second average block time.
   pub BlockWeights: limits::BlockWeights = limits::BlockWeights::builder()
   .base_block(BlockExecutionWeight::get())
@@ -551,6 +562,41 @@ impl pallet_democracy::Config for Runtime {
   type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
   type MaxProposals = MaxProposals;
 }
+
+parameter_types! {
+	pub const AssetDeposit: Balance = 10_000 * DOLLARS; // 10_000 DOLLARS deposit to create asset
+	pub const AssetAccountDeposit: Balance = deposit(1, 16);
+	pub const ApprovalDeposit: Balance = 0;
+	pub const AssetsStringLimit: u32 = 50;
+	/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
+	// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
+	pub const MetadataDepositBase: Balance = deposit(1, 68);
+	pub const MetadataDepositPerByte: Balance = deposit(0, 1);
+	pub const ExecutiveBody: BodyId = BodyId::Executive;
+}
+
+
+/// We allow root and the Relay Chain council to execute privileged asset operations.
+pub type AssetsForceOrigin =
+	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<DotLocation, ExecutiveBody>>>;
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type Currency = Balances;
+	type ForceOrigin = AssetsForceOrigin;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = AssetsStringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type AssetAccountDeposit = AssetAccountDeposit;
+}
+
 
 impl pallet_utility::Config for Runtime {
   type Event = Event;
@@ -1096,6 +1142,16 @@ construct_runtime!(
     BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
 
     // CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+
+    XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>},
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin},
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin},
+		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>},
+
+    // The main stage.
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+
+    Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
   }
 );
 
