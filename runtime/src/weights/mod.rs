@@ -2,3 +2,4 @@
 #![allow(clippy::unnecessary_cast)]
 
 pub mod evm_accounts;
+pub mod pallet_assets;
