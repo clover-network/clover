@@ -13,13 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use sp_std::{borrow::Borrow, marker::PhantomData, prelude::*, result};
+use xcm_executor::traits::{Convert, Error as MatchError, MatchesFungibles, TransactAsset};
 use super::{
 	AccountId, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
+	ParachainSystem, PolkadotXcm, Runtime, Treasury, WeightToFee, XcmpQueue,
 };
 use frame_support::{
 	match_type, parameter_types,
-	traits::{Everything, Nothing, PalletInfoAccess},
+	traits::{Everything, Get, Nothing, PalletInfoAccess},
 	weights::Weight,
 };
 use pallet_xcm::XcmPassthrough;
@@ -27,7 +29,7 @@ use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
 	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
 	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault,
 	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
@@ -38,7 +40,7 @@ use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
 	pub const DotLocation: MultiLocation = MultiLocation::parent();
-	pub const RelayNetwork: NetworkId = NetworkId::Kusama; // Note: keep it correct!
+	pub const RelayNetwork: NetworkId = NetworkId::Any; // Note: keep it correct!
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 	pub const Local: MultiLocation = Here.into();
@@ -74,6 +76,42 @@ pub type CurrencyTransactor = CurrencyAdapter<
 	(),
 >;
 
+//
+// The local Asset id for relay chain native asset
+const DotAssetId: u128 = 1;
+
+/// Convert the relaychain native asset id to DotAssetId
+pub struct ConvertParentOnlyToIndex<Prefix, AssetId, ConvertAssetId>(
+	PhantomData<(Prefix, AssetId, ConvertAssetId)>,
+);
+impl<Prefix: Get<MultiLocation>, AssetId: Clone + core::fmt::Debug + core::cmp::PartialEq, ConvertAssetId: Convert<u128, AssetId>>
+	Convert<MultiLocation, AssetId> for ConvertParentOnlyToIndex<Prefix, AssetId, ConvertAssetId>
+{
+	fn convert_ref(id: impl Borrow<MultiLocation>) -> result::Result<AssetId, ()> {
+		let prefix = Prefix::get();
+		let id = id.borrow();
+		// frame_support::runtime_print!("prefix: {:?}, id: {:?}", prefix, id);
+		// we only support the parent location currently
+		if id.parent_count() == 1 && id.interior().len() == 0  {
+			// frame_support::runtime_print!("treat parent location as 0 asset");
+			return Ok(ConvertAssetId::convert(DotAssetId).unwrap())
+		}
+		return Err(())
+	}
+
+	fn reverse_ref(what: impl Borrow<AssetId>) -> result::Result<MultiLocation, ()> {
+		let dotId = ConvertAssetId::convert(DotAssetId).unwrap();
+		if what.borrow().clone() == dotId {
+			return Ok(MultiLocation::parent())
+		}
+		// this should not happen at current time
+		let mut location = Prefix::get();
+		let id = ConvertAssetId::reverse_ref(what)?;
+		location.push_interior(Junction::GeneralIndex(id)).map_err(|_| ())?;
+		Ok(location)
+	}
+}
+
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
 	// Use this fungibles implementation:
@@ -82,7 +120,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	ConvertedConcreteAssetId<
 		AssetId,
 		Balance,
-		AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
+		ConvertParentOnlyToIndex<AssetsPalletLocation, AssetId, JustTry>,
 		JustTry,
 	>,
 	// Convert an XCM MultiLocation into a local account id:
@@ -96,7 +134,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 	CheckingAccount,
 >;
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
+pub type AssetTransactors = FungiblesTransactor;
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
