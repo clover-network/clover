@@ -1098,6 +1098,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
+ "log",
  "pallet-assets",
  "pallet-aura",
  "pallet-authority-discovery",

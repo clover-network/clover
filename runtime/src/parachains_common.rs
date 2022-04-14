@@ -15,6 +15,7 @@ where
 	Assets: fungibles::Inspect<AccountId>,
 {
 	fn contains(id: &<Assets as fungibles::Inspect<AccountId>>::AssetId) -> bool {
+		frame_support::runtime_print!("checking asset: {:?}", *id);
 		!Assets::total_issuance(*id).is_zero()
 	}
 }
