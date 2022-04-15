@@ -6,6 +6,7 @@ members = [
     'node',
     "primitives",
     'runtime',
+    'modules/asset-config',
     'modules/evm-accounts',
     'modules/traits',
     'modules/type-utils',
