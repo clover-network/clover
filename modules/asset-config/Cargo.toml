@@ -1,0 +1,35 @@
+[package]
+name = "asset-config"
+authors = ['Clover Network <https://github.com/clover-network>']
+edition = '2018'
+license = 'GPL-3.0'
+homepage = 'https://clv.org'
+repository = 'https://github.com/clover-network/clover'
+version = "0.1.0"
+
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+
+frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" , default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" , default-features = false }
+libsecp256k1 = { version = "0.3.4", default-features = false, features = ["hmac"] }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" , default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" , default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" , default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" , default-features = false }
+
+
+
+[features]
+default = ["std"]
+
+std = [
+  "frame-support/std",
+  "frame-system/std",
+  "sp-core/std",
+  "sp-runtime/std",
+  "sp-io/std",
+  "sp-std/std",
+]
