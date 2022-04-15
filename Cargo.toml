@@ -7,6 +7,7 @@ members = [
     "primitives",
     'runtime',
     'modules/claims',
+    'modules/asset-config',
     'modules/evm-accounts',
     'modules/traits',
     'modules/type-utils',

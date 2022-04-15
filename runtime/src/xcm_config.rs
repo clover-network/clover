@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use sp_std::{borrow::Borrow, marker::PhantomData, prelude::*, result};
-use xcm_executor::traits::{Convert, Error as MatchError, MatchesFungibles, TransactAsset};
 use super::{
 	AccountId, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
 	ParachainSystem, PolkadotXcm, Runtime, Treasury, WeightToFee, XcmpQueue,
@@ -26,16 +24,17 @@ use frame_support::{
 };
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
+use sp_std::{borrow::Borrow, marker::PhantomData, prelude::*, result};
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom,
-	ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-	FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-	UsingComponents,
+	AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
+	LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
+use xcm_executor::traits::{Convert, Error as MatchError, MatchesFungibles, TransactAsset};
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
@@ -48,7 +47,6 @@ parameter_types! {
 		PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
-
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
@@ -78,36 +76,41 @@ pub type CurrencyTransactor = CurrencyAdapter<
 
 //
 // The local Asset id for relay chain native asset
-const DotAssetId: u128 = 1;
+const DOT_ASSET_ID: u128 = 1;
 
-/// Convert the relaychain native asset id to DotAssetId
+/// Convert the relaychain native asset id to DOT_ASSET_ID
 pub struct ConvertParentOnlyToIndex<Prefix, AssetId, ConvertAssetId>(
 	PhantomData<(Prefix, AssetId, ConvertAssetId)>,
 );
-impl<Prefix: Get<MultiLocation>, AssetId: Clone + core::fmt::Debug + core::cmp::PartialEq, ConvertAssetId: Convert<u128, AssetId>>
-	Convert<MultiLocation, AssetId> for ConvertParentOnlyToIndex<Prefix, AssetId, ConvertAssetId>
+impl<
+		Prefix: Get<MultiLocation>,
+		AssetId: Clone + core::fmt::Debug + core::cmp::PartialEq,
+		ConvertAssetId: Convert<u128, AssetId>,
+	> Convert<MultiLocation, AssetId> for ConvertParentOnlyToIndex<Prefix, AssetId, ConvertAssetId>
 {
 	fn convert_ref(id: impl Borrow<MultiLocation>) -> result::Result<AssetId, ()> {
 		let prefix = Prefix::get();
 		let id = id.borrow();
 		// frame_support::runtime_print!("prefix: {:?}, id: {:?}", prefix, id);
 		// we only support the parent location currently
-		if id.parent_count() == 1 && id.interior().len() == 0  {
+		if id.parent_count() == 1 && id.interior().len() == 0 {
 			// frame_support::runtime_print!("treat parent location as 0 asset");
-			return Ok(ConvertAssetId::convert(DotAssetId).unwrap())
+			return Ok(ConvertAssetId::convert(DOT_ASSET_ID).unwrap());
 		}
-		return Err(())
+		return Err(());
 	}
 
 	fn reverse_ref(what: impl Borrow<AssetId>) -> result::Result<MultiLocation, ()> {
-		let dotId = ConvertAssetId::convert(DotAssetId).unwrap();
-		if what.borrow().clone() == dotId {
-			return Ok(MultiLocation::parent())
+		let dot_id = ConvertAssetId::convert(DOT_ASSET_ID).unwrap();
+		if what.borrow().clone() == dot_id {
+			return Ok(MultiLocation::parent());
 		}
 		// this should not happen at current time
 		let mut location = Prefix::get();
 		let id = ConvertAssetId::reverse_ref(what)?;
-		location.push_interior(Junction::GeneralIndex(id)).map_err(|_| ())?;
+		location
+			.push_interior(Junction::GeneralIndex(id))
+			.map_err(|_| ())?;
 		Ok(location)
 	}
 }
@@ -195,8 +198,7 @@ impl xcm_executor::Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type Trader =
-		UsingComponents<WeightToFee<Balance>, DotLocation, AccountId, Balances, ()>;
+	type Trader = UsingComponents<WeightToFee<Balance>, DotLocation, AccountId, Balances, ()>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
@@ -246,7 +248,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
 }
-
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type Event = Event;
