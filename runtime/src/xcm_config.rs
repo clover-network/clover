@@ -17,6 +17,7 @@ use super::{
 	AccountId, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
 	ParachainSystem, PolkadotXcm, Runtime, Treasury, WeightToFee, XcmpQueue,
 };
+use crate::asset_trader;
 use frame_support::{
 	match_type, parameter_types,
 	traits::{Everything, Get, Nothing, PalletInfoAccess},
