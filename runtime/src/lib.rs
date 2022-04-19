@@ -88,6 +88,7 @@ mod weights;
 mod precompiles;
 use precompiles::CloverPrecompiles;
 
+mod asset_trader;
 mod xcm_config;
 
 pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
