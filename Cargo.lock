@@ -155,6 +155,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 name = "asset-config"
 version = "0.1.0"
 dependencies = [
+ "clover-traits",
  "frame-support",
  "frame-system",
  "libsecp256k1 0.3.5",
