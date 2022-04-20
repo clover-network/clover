@@ -14,7 +14,7 @@
 // limitations under the License.
 
 use super::{
-	AccountId, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
+	AccountId, AssetConfig, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
 	ParachainSystem, PolkadotXcm, Runtime, Treasury, WeightToFee, XcmpQueue,
 };
 use crate::asset_trader;
@@ -188,6 +188,24 @@ pub type Barrier = (
 	AllowSubscriptionsFrom<Everything>,
 );
 
+parameter_types! {
+	pub XcmBeneficialAccount: AccountId = Treasury::account_id();
+}
+
+pub type PayToAccount = crate::asset_trader::XcmPayToAccount<
+	Assets,
+	(
+		ConvertedConcreteAssetId<
+			AssetId,
+			Balance,
+			ConvertParentOnlyToIndex<AssetsPalletLocation, AssetId, JustTry>,
+			JustTry,
+		>,
+	),
+	AccountId,
+	XcmBeneficialAccount,
+>;
+
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type Call = Call;
@@ -199,7 +217,12 @@ impl xcm_executor::Config for XcmConfig {
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type Trader = UsingComponents<WeightToFee<Balance>, DotLocation, AccountId, Balances, ()>;
+	type Trader = crate::asset_trader::FungibleAssetTrader<
+		AssetId,
+		(ConvertParentOnlyToIndex<AssetsPalletLocation, AssetId, JustTry>,),
+		asset_config::ConfigurableAssetWeight<Runtime>,
+		PayToAccount,
+	>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
