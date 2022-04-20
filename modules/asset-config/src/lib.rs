@@ -6,6 +6,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use clover_traits::AssetIdWeightGetter;
+use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 
 pub use pallet::*;
@@ -19,7 +21,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-        type AssetId: From<u128> + Parameter;
+        type AssetId: From<u64> + Parameter;
     }
 
     #[pallet::pallet]
@@ -57,5 +59,12 @@ pub mod pallet {
 
             Ok(())
         }
+    }
+}
+
+pub struct ConfigurableAssetWeight<T>(PhantomData<T>);
+impl<T: Config> AssetIdWeightGetter<T::AssetId> for ConfigurableAssetWeight<T> {
+    fn get_units_per_second(asset_id: T::AssetId) -> Option<u128> {
+        Pallet::<T>::fee_rate_per_second(asset_id)
     }
 }

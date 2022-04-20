@@ -9,6 +9,7 @@ use sp_std::{
 	marker::PhantomData,
 };
 
+use clover_traits::AssetIdWeightGetter;
 use xcm::latest::{
 	AssetId as xcmAssetId, Error as XcmError, Fungibility,
 	Junction::{AccountKey20, Parachain},
@@ -20,14 +21,8 @@ use xcm_executor::traits::{
 	Convert, FilterAssetLocation, MatchesFungible, MatchesFungibles, WeightTrader,
 };
 
-/// AssetId payment weigth ratio getter
-pub trait AssetIdWeightGetter<AssetId> {
-	/// get the units per second that the asset_id has to pay
-	fn get_units_per_second(asset_id: AssetId) -> Option<u128>;
-}
-
-pub struct FungiAssetTrader<
-	AssetId: From<MultiLocation> + Clone,
+pub struct FungibleAssetTrader<
+	AssetId: From<u64> + Clone,
 	LocationConverter: Convert<MultiLocation, AssetId>,
 	AssetWeightGetter: AssetIdWeightGetter<AssetId>,
 	R: TakeRevenue,
@@ -38,14 +33,14 @@ pub struct FungiAssetTrader<
 );
 
 impl<
-		AssetId: From<MultiLocation> + Clone,
-		AssetWeightGetter: AssetIdWeightGetter<AssetId>,
+		AssetId: From<u64> + Clone,
 		LocationConverter: Convert<MultiLocation, AssetId>,
+		AssetWeightGetter: AssetIdWeightGetter<AssetId>,
 		R: TakeRevenue,
-	> WeightTrader for FungiAssetTrader<AssetId, LocationConverter, AssetWeightGetter, R>
+	> WeightTrader for FungibleAssetTrader<AssetId, LocationConverter, AssetWeightGetter, R>
 {
 	fn new() -> Self {
-		FungiAssetTrader(0, None, PhantomData)
+		FungibleAssetTrader(0, None, PhantomData)
 	}
 
 	fn buy_weight(
@@ -58,5 +53,47 @@ impl<
 
 	fn refund_weight(&mut self, weight: Weight) -> Option<MultiAsset> {
 		None
+	}
+}
+
+/// Deal with spent fees, deposit them as dictated by R
+impl<
+		AssetId: From<u64> + Clone,
+		LocationConverter: Convert<MultiLocation, AssetId>,
+		AssetWeightGetter: AssetIdWeightGetter<AssetId>,
+		R: TakeRevenue,
+	> Drop for FungibleAssetTrader<AssetId, LocationConverter, AssetWeightGetter, R>
+{
+	fn drop(&mut self) {
+		if let Some((id, amount)) = self.1.clone() {
+			R::take_revenue((id, amount).into());
+		}
+	}
+}
+
+/// helper to pay xcm transactions fees to the Beneficial account
+pub struct XcmPayToAccount<Assets, Matcher, AccountId, Beneficial>(
+	PhantomData<(Assets, Matcher, AccountId, Beneficial)>,
+);
+impl<
+		Assets: Mutate<AccountId>,
+		Matcher: MatchesFungibles<Assets::AssetId, Assets::Balance>,
+		AccountId: Clone,
+		Beneficial: Get<AccountId>,
+	> TakeRevenue for XcmPayToAccount<Assets, Matcher, AccountId, Beneficial>
+{
+	fn take_revenue(revenue: MultiAsset) {
+		match Matcher::matches_fungibles(&revenue) {
+			Ok((asset_id, amount)) => {
+				if !amount.is_zero() {
+					let ok = Assets::mint_into(asset_id, &Beneficial::get(), amount).is_ok();
+					debug_assert!(ok, "`mint_into` cannot fail; qed");
+				}
+			}
+			Err(_) => log::debug!(
+				target: "xcm-fee",
+				"no fungible found for `take_revenue`"
+			),
+		}
 	}
 }

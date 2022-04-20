@@ -93,7 +93,7 @@ mod xcm_config;
 
 pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 
-pub type AssetId = u32;
+pub type AssetId = u64;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -1082,6 +1082,11 @@ impl pallet_collator_selection::Config for Runtime {
   type WeightInfo = ();
 }
 
+impl asset_config::Config for Runtime {
+  type Event = Event;
+  type AssetId = AssetId;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
   pub enum Runtime where
@@ -1146,6 +1151,7 @@ construct_runtime!(
     PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 34,
     CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 35,
     DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 36,
+    AssetConfig: asset_config::{Pallet, Call, Storage, Event<T>} = 40,
 
     // The main stage.
     Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
