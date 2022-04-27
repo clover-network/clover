@@ -59,8 +59,8 @@ impl<
 				let asset_id: AssetId =
 					LocationConverter::convert(id.clone()).map_err(|_| XcmError::AssetNotFound)?;
 				// we only support assets that have weight price configured
-				let units_per_second = AssetWeightGetter::get_units_per_second(asset_id)
-					.ok_or_else(|| XcmError::TooExpensive)?;
+				let units_per_second =
+					AssetWeightGetter::get_units_per_second(asset_id).ok_or(XcmError::TooExpensive)?;
 				let amount = units_per_second.saturating_mul(weight as u128) / (WEIGHT_PER_SECOND as u128);
 				// the fee is too low
 				if amount.is_zero() {
