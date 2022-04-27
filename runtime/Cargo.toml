@@ -22,6 +22,7 @@ pallet-ethereum = { git = "https://github.com/clover-network/frontier.git", bran
 fp-rpc = { git = "https://github.com/clover-network/frontier.git", branch = "pangwa/substrate-v0.9.16", default-features = false }
 fp-self-contained = { git = "https://github.com/clover-network/frontier.git", branch = "pangwa/substrate-v0.9.16", default-features = false }
 asset-config = { path = "../modules/asset-config", default-features = false }
+erc20-precompile = { path = "../modules/erc20-precompile", default-features = false }
 evm-accounts = { path = "../modules/evm-accounts", default-features = false }
 primitives = { default-features = false, package = 'clover-primitives', path = '../primitives', version = '0.9.0'}
 
@@ -195,6 +196,7 @@ std = [
 	  "rlp/std",
 	  "sha3/std",
     "asset-config/std",
+    "erc20-precompile/std",
     "evm-accounts/std",
 ]
 

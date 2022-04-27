@@ -569,7 +569,7 @@ impl pallet_democracy::Config for Runtime {
 
 parameter_types! {
   pub const AssetDeposit: Balance = 10_000 * DOLLARS; // 10_000 DOLLARS deposit to create asset
-  pub const AssetAccountDeposit: Balance = deposit(1, 16);
+  pub const AssetAccountDeposit: Balance = 0;
   pub const ApprovalDeposit: Balance = 0;
   pub const AssetsStringLimit: u32 = 50;
   /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)

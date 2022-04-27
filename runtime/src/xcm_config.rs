@@ -90,7 +90,7 @@ impl<
 	> Convert<MultiLocation, AssetId> for ConvertParentOnlyToIndex<Prefix, AssetId, ConvertAssetId>
 {
 	fn convert_ref(id: impl Borrow<MultiLocation>) -> result::Result<AssetId, ()> {
-		let prefix = Prefix::get();
+		// let prefix = Prefix::get();
 		let id = id.borrow();
 		// frame_support::runtime_print!("prefix: {:?}, id: {:?}", prefix, id);
 		// we only support the parent location currently
