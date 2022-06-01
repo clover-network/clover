@@ -266,11 +266,11 @@ parameter_types! {
     pub const MaxRegistrars: u32 = 20;
 }
 
-// type EnsureRootOrHalfCouncil = EnsureOneOf<
-// 	AccountId,
-// 	EnsureRoot<AccountId>,
-// 	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>
-// >;
+type EnsureRootOrHalfCouncil = EnsureOneOf<
+	AccountId,
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>
+>;
 
 impl pallet_identity::Config for Runtime {
   type Event = Event;
@@ -805,7 +805,7 @@ parameter_types! {
 impl pallet_treasury::Config for Runtime {
   type Currency = Balances;
   type ApproveOrigin = EnsureRoot<AccountId>;
-  type RejectOrigin = EnsureRoot<AccountId>;
+  type RejectOrigin = EnsureRootOrHalfCouncil;
   type Event = Event;
   type OnSlash = ();
   type ProposalBond = ProposalBond;
