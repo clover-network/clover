@@ -77,6 +77,7 @@ pub use constants::time::*;
 use impls::{MergeAccountEvm, WeightToFee};
 use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 
+mod asset_location;
 mod clover_evm_config;
 mod constants;
 mod impls;
@@ -90,6 +91,8 @@ use precompiles::CloverPrecompiles;
 
 mod asset_trader;
 mod xcm_config;
+
+use crate::asset_location::AssetLocation;
 
 pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 
@@ -122,7 +125,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover-mainnet"),
   impl_name: create_runtime_str!("clover-mainnet"),
   authoring_version: 1,
-  spec_version: 20,
+  spec_version: 19,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -1085,6 +1088,7 @@ impl pallet_collator_selection::Config for Runtime {
 impl asset_config::Config for Runtime {
   type Event = Event;
   type AssetId = AssetId;
+  type AssetLocation = AssetLocation;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
