@@ -22,6 +22,7 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
         type AssetId: From<u64> + Parameter;
+        type AssetLocation: Parameter + Member + Ord + PartialOrd + Default;
     }
 
     #[pallet::pallet]
@@ -33,6 +34,20 @@ pub mod pallet {
     pub enum Event<T: Config> {
         FeeRateChanged(T::AssetId, Option<u128>),
     }
+
+    /// the mapping from asset_id to asset_location
+    /// Note: AssetIdLocation and AssetLocationId should be synced!
+    #[pallet::storage]
+    #[pallet::getter(fn location_of_asset_id)]
+    pub type AssetIdLocation<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AssetId, T::AssetLocation>;
+
+    /// mapping from asset_location to asset_id
+    /// Note: AssetIdLocation and AssetLocationId should be synced!
+    #[pallet::storage]
+    #[pallet::getter(fn id_of_asset_location)]
+    pub type AssetLocationId<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AssetLocation, T::AssetId>;
 
     /// transaction fee rate per second that an asset should be charged
     #[pallet::storage]
