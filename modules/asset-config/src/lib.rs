@@ -6,7 +6,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use clover_traits::AssetIdWeightGetter;
+use clover_traits::{AssetIdWeightGetter, AssetLocationGetter};
 use sp_std::marker::PhantomData;
 use sp_std::prelude::*;
 
@@ -33,6 +33,12 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
         FeeRateChanged(T::AssetId, Option<u128>),
+        AssetLocationRegistered(T::AssetId, T::AssetLocation),
+    }
+
+    #[pallet::error]
+    pub enum Error<T> {
+        AssetAlreadyRegistered,
     }
 
     /// the mapping from asset_id to asset_location
@@ -73,6 +79,40 @@ pub mod pallet {
             Self::deposit_event(Event::FeeRateChanged(asset_id, fee_rate));
 
             Ok(())
+        }
+
+        #[pallet::weight(T::DbWeight::get().writes(2))]
+        pub fn register_asset_location(
+            origin: OriginFor<T>,
+            location: T::AssetLocation,
+            asset_id: T::AssetId,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
+
+            ensure!(
+                AssetIdLocation::<T>::get(&asset_id).is_none(),
+                Error::<T>::AssetAlreadyRegistered
+            );
+            ensure!(
+                AssetLocationId::<T>::get(&location).is_none(),
+                Error::<T>::AssetAlreadyRegistered
+            );
+
+            AssetIdLocation::<T>::insert(&asset_id, &location);
+            AssetLocationId::<T>::insert(&location, &asset_id);
+            Self::deposit_event(Event::AssetLocationRegistered(asset_id, location));
+
+            Ok(())
+        }
+    }
+
+    impl<T: Config> AssetLocationGetter<T::AssetId, T::AssetLocation> for Pallet<T> {
+        fn get_asset_location(asset_id: T::AssetId) -> Option<T::AssetLocation> {
+            AssetIdLocation::<T>::get(asset_id)
+        }
+
+        fn get_asset_id(location: T::AssetLocation) -> Option<T::AssetId> {
+            AssetLocationId::<T>::get(location)
         }
     }
 }
