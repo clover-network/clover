@@ -17,7 +17,9 @@ use super::{
     AccountId, AssetConfig, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
     ParachainSystem, PolkadotXcm, Runtime, Treasury, WeightToFee, XcmpQueue,
 };
+use crate::asset_location::AssetLocation;
 use crate::asset_trader;
+use clover_traits::AssetLocationGetter;
 use frame_support::{
     match_type, parameter_types,
     traits::{Everything, Get, Nothing, PalletInfoAccess},
@@ -75,45 +77,34 @@ pub type CurrencyTransactor = CurrencyAdapter<
     (),
 >;
 
-//
-// The local Asset id for relay chain native asset
-const DOT_ASSET_ID: u128 = 1;
-
 /// Convert the relaychain native asset id to DOT_ASSET_ID
-pub struct ConvertParentOnlyToIndex<Prefix, AssetId, ConvertAssetId>(
-    PhantomData<(Prefix, AssetId, ConvertAssetId)>,
+pub struct ConvertToAssetLocation<AssetId, AssetLocation, LocationGetter>(
+    PhantomData<(AssetId, AssetLocation, LocationGetter)>,
 );
 impl<
-        Prefix: Get<MultiLocation>,
         AssetId: Clone + core::fmt::Debug + core::cmp::PartialEq,
-        ConvertAssetId: Convert<u128, AssetId>,
+        LocationGetter: AssetLocationGetter<AssetId, AssetLocation>,
     > Convert<MultiLocation, AssetId>
-    for ConvertParentOnlyToIndex<Prefix, AssetId, ConvertAssetId>
+    for ConvertToAssetLocation<AssetId, AssetLocation, LocationGetter>
 {
     fn convert_ref(id: impl Borrow<MultiLocation>) -> result::Result<AssetId, ()> {
-        // let prefix = Prefix::get();
-        let id = id.borrow();
-        // frame_support::runtime_print!("prefix: {:?}, id: {:?}", prefix, id);
-        // we only support the parent location currently
-        if id.parent_count() == 1 && id.interior().len() == 0 {
-            // frame_support::runtime_print!("treat parent location as 0 asset");
-            return Ok(ConvertAssetId::convert(DOT_ASSET_ID).unwrap());
+        if let Some(asset_id) = LocationGetter::get_asset_id(id.borrow().clone().into()) {
+            Ok(asset_id)
+        } else {
+            Err(())
         }
-        return Err(());
     }
 
     fn reverse_ref(what: impl Borrow<AssetId>) -> result::Result<MultiLocation, ()> {
-        let dot_id = ConvertAssetId::convert(DOT_ASSET_ID).unwrap();
-        if what.borrow().clone() == dot_id {
-            return Ok(MultiLocation::parent());
+        if let Some(asset_location) = LocationGetter::get_asset_location(what.borrow().clone()) {
+            if let Some(location) = asset_location.into() {
+                Ok(location)
+            } else {
+                Err(())
+            }
+        } else {
+            Err(())
         }
-        // this should not happen at current time
-        let mut location = Prefix::get();
-        let id = ConvertAssetId::reverse_ref(what)?;
-        location
-            .push_interior(Junction::GeneralIndex(id))
-            .map_err(|_| ())?;
-        Ok(location)
     }
 }
 
@@ -125,7 +116,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
     ConvertedConcreteAssetId<
         AssetId,
         Balance,
-        ConvertParentOnlyToIndex<AssetsPalletLocation, AssetId, JustTry>,
+        ConvertToAssetLocation<AssetId, AssetLocation, AssetConfig>,
         JustTry,
     >,
     // Convert an XCM MultiLocation into a local account id:
@@ -199,7 +190,7 @@ pub type PayToAccount = crate::asset_trader::XcmPayToAccount<
         ConvertedConcreteAssetId<
             AssetId,
             Balance,
-            ConvertParentOnlyToIndex<AssetsPalletLocation, AssetId, JustTry>,
+            ConvertToAssetLocation<AssetId, AssetLocation, AssetConfig>,
             JustTry,
         >,
     ),
@@ -220,7 +211,7 @@ impl xcm_executor::Config for XcmConfig {
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type Trader = crate::asset_trader::FungibleAssetTrader<
         AssetId,
-        (ConvertParentOnlyToIndex<AssetsPalletLocation, AssetId, JustTry>,),
+        (ConvertToAssetLocation<AssetId, AssetLocation, AssetConfig>,),
         asset_config::ConfigurableAssetWeight<Runtime>,
         PayToAccount,
     >;

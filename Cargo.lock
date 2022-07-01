@@ -2343,7 +2343,7 @@ checksum = "77f3309417938f28bf8228fcff79a4a37103981e3e186d2ccd19c74b38f4eb71"
 [[package]]
 name = "evm"
 version = "0.33.1"
-source = "git+https://github.com/clover-network/evm?branch=pangwa/evm-tracing#78c49debfc65ddf3c0635edd02045a937dcc15d5"
+source = "git+https://github.com/clover-network/evm.git?branch=pangwa/evm-tracing#78c49debfc65ddf3c0635edd02045a937dcc15d5"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2383,7 +2383,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.33.0"
-source = "git+https://github.com/clover-network/evm?branch=pangwa/evm-tracing#78c49debfc65ddf3c0635edd02045a937dcc15d5"
+source = "git+https://github.com/clover-network/evm.git?branch=pangwa/evm-tracing#78c49debfc65ddf3c0635edd02045a937dcc15d5"
 dependencies = [
  "funty",
  "parity-scale-codec",
@@ -2395,7 +2395,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.33.0"
-source = "git+https://github.com/clover-network/evm?branch=pangwa/evm-tracing#78c49debfc65ddf3c0635edd02045a937dcc15d5"
+source = "git+https://github.com/clover-network/evm.git?branch=pangwa/evm-tracing#78c49debfc65ddf3c0635edd02045a937dcc15d5"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2406,7 +2406,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.33.0"
-source = "git+https://github.com/clover-network/evm?branch=pangwa/evm-tracing#78c49debfc65ddf3c0635edd02045a937dcc15d5"
+source = "git+https://github.com/clover-network/evm.git?branch=pangwa/evm-tracing#78c49debfc65ddf3c0635edd02045a937dcc15d5"
 dependencies = [
  "auto_impl",
  "environmental",
