@@ -88,6 +88,7 @@ impl<
     for ConvertToAssetLocation<AssetId, AssetLocation, LocationGetter>
 {
     fn convert_ref(id: impl Borrow<MultiLocation>) -> result::Result<AssetId, ()> {
+        frame_support::runtime_print!("id: {:?}", id.borrow());
         if let Some(asset_id) = LocationGetter::get_asset_id(id.borrow().clone().into()) {
             Ok(asset_id)
         } else {
@@ -96,6 +97,7 @@ impl<
     }
 
     fn reverse_ref(what: impl Borrow<AssetId>) -> result::Result<MultiLocation, ()> {
+        frame_support::runtime_print!("reverse_ref: {:?}", what.borrow());
         if let Some(asset_location) = LocationGetter::get_asset_location(what.borrow().clone()) {
             if let Some(location) = asset_location.into() {
                 Ok(location)
