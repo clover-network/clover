@@ -208,7 +208,7 @@ impl xcm_executor::Config for XcmConfig {
   type AssetTransactor = AssetTransactors;
   type OriginConverter = XcmOriginToTransactDispatchOrigin;
   type IsReserve = NativeAsset;
-  type IsTeleporter = NativeAsset; // <- shoud be enough to allow teleportation of DOT
+  type IsTeleporter = ();
   type LocationInverter = LocationInverter<Ancestry>;
   type Barrier = Barrier;
   type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
