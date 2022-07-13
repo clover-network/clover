@@ -75,7 +75,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
   // Our chain's account ID type (we can't get away without mentioning it explicitly):
   AccountId,
   // We don't track any teleports of `Balances`.
-  (),
+  CheckingAccount,
 >;
 
 /// Convert the relaychain native asset id to DOT_ASSET_ID
@@ -126,9 +126,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
   LocationToAccountId,
   // Our chain's account ID type (we can't get away without mentioning it explicitly):
   AccountId,
-  // We only want to allow teleports of known assets. We use non-zero issuance as an indication
-  // that this asset is known.
-  crate::parachains_common::NonZeroIssuance<AccountId, Assets>,
+  (),
   // The account to use for tracking teleports.
   CheckingAccount,
 >;
