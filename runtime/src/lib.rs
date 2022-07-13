@@ -47,7 +47,7 @@ pub use frame_support::{
   construct_runtime, debug, ensure, log, parameter_types,
   traits::{
     Currency, EnsureOneOf, EqualPrivilegeOnly, Everything, FindAuthor, Imbalance,
-    KeyOwnerProofSystem, LockIdentifier, Nothing, Randomness, U128CurrencyToVote,
+    KeyOwnerProofSystem, LockIdentifier, Nothing, OnUnbalanced, Randomness, U128CurrencyToVote,
   },
   transactional,
   weights::{
@@ -97,6 +97,7 @@ use crate::asset_location::AssetLocation;
 pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
 
 pub type AssetId = u64;
+type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -477,6 +478,18 @@ impl pallet_balances::Config for Runtime {
   type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+  fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+    if let Some(mut fees) = fees_then_tips.next() {
+      if let Some(tips) = fees_then_tips.next() {
+        tips.merge_into(&mut fees);
+      }
+      Treasury::on_unbalanced(fees);
+    }
+  }
+}
+
 parameter_types! {
   pub const SessionDuration: BlockNumber = EPOCH_DURATION_IN_BLOCKS as _;
   pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
@@ -820,7 +833,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-  type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+  type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
   type TransactionByteFee = TransactionByteFee;
   type OperationalFeeMultiplier = OperationalFeeMultiplier;
   type WeightToFee = WeightToFee<Balance>;

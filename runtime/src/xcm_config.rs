@@ -14,8 +14,8 @@
 // limitations under the License.
 
 use super::{
-  AccountId, AssetConfig, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
-  ParachainSystem, PolkadotXcm, Runtime, Treasury, WeightToFee, XcmpQueue,
+  AccountId, AssetConfig, AssetId, Assets, Balance, Balances, Call, DealWithFees, Event, Origin,
+  ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, WeightToFee, XcmpQueue,
 };
 use crate::asset_location::AssetLocation;
 use crate::asset_trader;
@@ -42,6 +42,7 @@ use xcm_executor::{traits::JustTry, XcmExecutor};
 
 parameter_types! {
     pub const DotLocation: MultiLocation = MultiLocation::parent();
+    pub const LocalLocation : MultiLocation = MultiLocation::here();
     pub const RelayNetwork: NetworkId = NetworkId::Any; // Note: keep it correct!
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
@@ -68,7 +69,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
   // Use this currency:
   Balances,
   // Use this currency when it is a fungible asset matching the given location or name:
-  IsConcrete<Local>,
+  IsConcrete<LocalLocation>,
   // Convert an XCM MultiLocation into a local account id:
   LocationToAccountId,
   // Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -211,12 +212,15 @@ impl xcm_executor::Config for XcmConfig {
   type LocationInverter = LocationInverter<Ancestry>;
   type Barrier = Barrier;
   type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-  type Trader = crate::asset_trader::FungibleAssetTrader<
-    AssetId,
-    (ConvertToAssetLocation<AssetId, AssetLocation, AssetConfig>,),
-    asset_config::ConfigurableAssetWeight<Runtime>,
-    PayToAccount,
-  >;
+  type Trader = (
+    UsingComponents<WeightToFee<Balance>, LocalLocation, AccountId, Balances, DealWithFees>,
+    crate::asset_trader::FungibleAssetTrader<
+      AssetId,
+      (ConvertToAssetLocation<AssetId, AssetLocation, AssetConfig>,),
+      asset_config::ConfigurableAssetWeight<Runtime>,
+      PayToAccount,
+    >,
+  );
   type ResponseHandler = PolkadotXcm;
   type AssetTrap = PolkadotXcm;
   type AssetClaims = PolkadotXcm;
