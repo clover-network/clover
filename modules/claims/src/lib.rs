@@ -5,17 +5,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::Encode;
-use frame_support::PalletId;
 use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons};
+use frame_support::PalletId;
 use frame_system::ensure_signed;
+use hex_literal::hex;
+use log::error;
 use sp_io::{crypto::secp256k1_ecdsa_recover, hashing::keccak_256};
 use sp_runtime::{
   traits::{AccountIdConversion, Saturating},
   transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
 };
 use sp_std::prelude::*;
-use hex_literal::hex;
-use log::{error};
 
 pub use pallet::*;
 pub mod ethereum_address;
@@ -349,7 +349,12 @@ pub mod pallet {
       let claim_amount = Self::do_mint_and_send_claim(signer, network, tx, who, value)?;
 
       let zero_address = EthereumAddress(hex!["0000000000000000000000000000000000000000"]);
-      Self::deposit_event(Event::ElasticMintSuccess(network, tx, zero_address, claim_amount));
+      Self::deposit_event(Event::ElasticMintSuccess(
+        network,
+        tx,
+        zero_address,
+        claim_amount,
+      ));
       Ok(().into())
     }
   }
@@ -377,7 +382,13 @@ pub mod pallet {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-      if let Call::claim_elastic{network, dest, tx, sig} = call {
+      if let Call::claim_elastic {
+        network,
+        dest,
+        tx,
+        sig,
+      } = call
+      {
         Self::do_validate(network, dest, tx, sig)
       } else {
         InvalidTransaction::Call.into()
@@ -388,7 +399,7 @@ pub mod pallet {
   impl<T: Config> Pallet<T> {
     /// the account to store the mint/claim fees
     pub fn account_id() -> T::AccountId {
-      T::PalletId::get().into_account()
+      T::PalletId::get().into_account_truncating()
     }
 
     fn do_validate(
@@ -522,7 +533,7 @@ pub mod pallet {
       Ok(burn_amount)
     }
 
-  fn do_mint_and_send_claim(
+    fn do_mint_and_send_claim(
       from: T::AccountId,
       network: BridgeNetworks,
       tx: EthereumTxHash,

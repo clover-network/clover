@@ -2,7 +2,7 @@
 name = "clover-rpc"
 authors = ['Clover Network <https://github.com/clover-network>']
 version = '0.9.0'
-edition = "2018"
+edition = "2021"
 license = 'GPL-3.0'
 homepage = 'https://clover.finance'
 repository = 'https://github.com/clover-network/clover'
@@ -12,14 +12,14 @@ description = "Runtime API definition required by System RPC extensions."
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0" }
+codec = { package = "parity-scale-codec", version = "3" }
 jsonrpc-core = "18.0"
 jsonrpc-core-client = "18.0"
 jsonrpc-derive = "18.0"
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16"  }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16"  }
-sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" , default-features = false }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16"  }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24"  }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24"  }
+sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24" , default-features = false }
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24"  }
 clover-rpc-runtime-api = { path = "runtime-api" }
 serde = { version = "1.0.101", optional = true }
 clover-primitives = { path = "../primitives" }
