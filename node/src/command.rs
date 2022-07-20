@@ -14,41 +14,42 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use crate::service;
+use crate::service::new_partial;
 use crate::{
   chain_spec,
   cli::{Cli, RelayChainCli, Subcommand},
 };
-use sp_core::Encode;
-use polkadot_parachain::primitives::AccountIdConversion;
-use log::info;
-use crate::service;
-use cumulus_primitives_core::ParaId;
-use cumulus_client_service::genesis::generate_genesis_block;
 use clover_runtime::Block;
+use cumulus_client_service::genesis::generate_genesis_block;
+use cumulus_primitives_core::ParaId;
+use log::info;
 use sc_cli::{
-  ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams,
-  KeystoreParams, NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
+  ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
+  NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::{
   config::{BasePath, PrometheusConfig},
   PartialComponents,
 };
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::Block as BlockT;
+use sp_core::Encode;
+use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::{io::Write, net::SocketAddr};
-use crate::service::new_partial;
 
-fn load_spec(id: &str, para_id: ParaId)
--> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-    Ok(match id {
-      "dev" => Box::new(chain_spec::development_config(para_id)?),
-      "" | "local" => Box::new(chain_spec::local_testnet_config(para_id)?),
-      "clover" => Box::new(chain_spec::clover_mainnet_config(para_id)?),
-      "rococo" => Box::new(chain_spec::clover_rococo_config(para_id)?),
-      path => Box::new(chain_spec::ChainSpec::from_json_file(
-        std::path::PathBuf::from(path),
-      )?),
-    })
+fn load_spec(
+  id: &str,
+  para_id: ParaId,
+) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+  Ok(match id {
+    "dev" => Box::new(chain_spec::development_config(para_id)?),
+    "" | "local" => Box::new(chain_spec::local_testnet_config(para_id)?),
+    "clover" => Box::new(chain_spec::clover_mainnet_config(para_id)?),
+    "rococo" => Box::new(chain_spec::clover_rococo_config(para_id)?),
+    path => Box::new(chain_spec::ChainSpec::from_json_file(
+      std::path::PathBuf::from(path),
+    )?),
+  })
 }
 
 impl SubstrateCli for Cli {
@@ -84,7 +85,6 @@ impl SubstrateCli for Cli {
     &clover_runtime::VERSION
   }
 }
-
 
 impl SubstrateCli for RelayChainCli {
   fn impl_name() -> String {
@@ -147,16 +147,23 @@ pub fn run() -> sc_cli::Result<()> {
     Some(Subcommand::CheckBlock(cmd)) => {
       let runner = cli.create_runner(cmd)?;
       runner.async_run(|config| {
-        let PartialComponents { client, task_manager, import_queue, .. }
-        = new_partial(&config, &cli)?;
+        let PartialComponents {
+          client,
+          task_manager,
+          import_queue,
+          ..
+        } = new_partial(&config, &cli)?;
         Ok((cmd.run(client, import_queue), task_manager))
       })
     }
     Some(Subcommand::ExportBlocks(cmd)) => {
       let runner = cli.create_runner(cmd)?;
       runner.async_run(|config| {
-        let PartialComponents { client, task_manager, ..}
-        = new_partial(&config, &cli)?;
+        let PartialComponents {
+          client,
+          task_manager,
+          ..
+        } = new_partial(&config, &cli)?;
         Ok((cmd.run(client, config.database), task_manager))
       })
     }
@@ -212,8 +219,11 @@ pub fn run() -> sc_cli::Result<()> {
     Some(Subcommand::ExportState(cmd)) => {
       let runner = cli.create_runner(cmd)?;
       runner.async_run(|config| {
-        let PartialComponents { client, task_manager, ..}
-        = new_partial(&config, &cli)?;
+        let PartialComponents {
+          client,
+          task_manager,
+          ..
+        } = new_partial(&config, &cli)?;
         Ok((cmd.run(client, config.chain_spec), task_manager))
       })
     }
@@ -222,7 +232,12 @@ pub fn run() -> sc_cli::Result<()> {
       let runner = cli.create_runner(cmd)?;
 
       runner.async_run(|config| {
-        let PartialComponents{client, import_queue, task_manager, ..} = service::new_partial(&config, &cli)?;
+        let PartialComponents {
+          client,
+          import_queue,
+          task_manager,
+          ..
+        } = service::new_partial(&config, &cli)?;
         Ok((cmd.run(client, import_queue), task_manager))
       })
     }
@@ -230,39 +245,52 @@ pub fn run() -> sc_cli::Result<()> {
     Some(Subcommand::PurgeChain(cmd)) => {
       let runner = cli.create_runner(cmd)?;
       runner.sync_run(|config| {
-				let polkadot_cli = RelayChainCli::new(
-					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
-				);
+        let polkadot_cli = RelayChainCli::new(
+          &config,
+          [RelayChainCli::executable_name().to_string()]
+            .iter()
+            .chain(cli.relaychain_args.iter()),
+        );
 
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
+        let polkadot_config = SubstrateCli::create_configuration(
+          &polkadot_cli,
+          &polkadot_cli,
           config.tokio_handle.clone(),
-				)
-				.map_err(|err| format!("Relay chain argument error: {}", err))?;
+        )
+        .map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-				cmd.run(config, polkadot_config)
-			})
+        cmd.run(config, polkadot_config)
+      })
     }
 
     Some(Subcommand::Revert(cmd)) => {
       let runner = cli.create_runner(cmd)?;
 
       runner.async_run(|config| {
-        let PartialComponents { client, task_manager, backend, ..}
-        = service::new_partial(&config, &cli)?;
-        Ok((cmd.run(client, backend), task_manager))
+        let PartialComponents {
+          client,
+          task_manager,
+          backend,
+          ..
+        } = service::new_partial(&config, &cli)?;
+        Ok((cmd.run(client, backend, None), task_manager))
       })
     }
     None => {
       let runner = cli.create_runner(&cli.run.base.normalize())?;
+      let collator_options = cli.run.base.collator_options();
 
       runner.run_node_until_exit(|config| async move {
-        let para_id =
-					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+        let hwbench = if !cli.no_hardware_benchmarks {
+          config.database.path().map(|database_path| {
+            let _ = std::fs::create_dir_all(&database_path);
+            sc_sysinfo::gather_hwbench(Some(database_path))
+          })
+        } else {
+          None
+        };
+
+        let para_id = chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
         let polkadot_cli = RelayChainCli::new(
           &config,
@@ -274,33 +302,27 @@ pub fn run() -> sc_cli::Result<()> {
         let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(2002));
 
         let parachain_account =
-          AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
+          AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
 
         let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
 
-        let block: Block =
-          generate_genesis_block(&config.chain_spec, state_version).map_err(|e| format!("{:?}", e))?;
+        let block: Block = generate_genesis_block(&config.chain_spec, state_version)
+          .map_err(|e| format!("{:?}", e))?;
         let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
         let tokio_handle = config.tokio_handle.clone();
 
-        let polkadot_config = SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+        let polkadot_config =
+          SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
             .map_err(|err| format!("Relay chain argument error: {}", err))?;
 
         let collator = config.role.is_authority();
         info!("Parachain id: {:?}", id);
         info!("Parachain Account: {}", parachain_account);
         info!("Parachain genesis state: {}", genesis_state);
-        info!(
-					"Is collating: {}",
-					if collator {
-						"yes"
-					} else {
-						"no"
-					}
-				);
+        info!("Is collating: {}", if collator { "yes" } else { "no" });
 
-        crate::service::start_node(config, polkadot_config, id, &cli)
+        crate::service::start_node(config, polkadot_config, collator_options, id, hwbench, &cli)
           .await
           .map(|r| r.0)
           .map_err(Into::into)
@@ -345,10 +367,12 @@ impl CliConfiguration<Self> for RelayChainCli {
   }
 
   fn base_path(&self) -> Result<Option<BasePath>> {
-    Ok(self
-      .shared_params()
-      .base_path()
-      .or_else(|| self.base_path.clone().map(Into::into)))
+    Ok(
+      self
+        .shared_params()
+        .base_path()
+        .or_else(|| self.base_path.clone().map(Into::into)),
+    )
   }
 
   fn rpc_http(&self, default_listen_port: u16) -> Result<Option<SocketAddr>> {
@@ -363,18 +387,27 @@ impl CliConfiguration<Self> for RelayChainCli {
     self.base.base.rpc_ws(default_listen_port)
   }
 
-  fn prometheus_config(&self, default_listen_port: u16, chain_spec: &Box<dyn ChainSpec>) -> Result<Option<PrometheusConfig>> {
-    self.base.base.prometheus_config(default_listen_port, chain_spec)
+  fn prometheus_config(
+    &self,
+    default_listen_port: u16,
+    chain_spec: &Box<dyn ChainSpec>,
+  ) -> Result<Option<PrometheusConfig>> {
+    self
+      .base
+      .base
+      .prometheus_config(default_listen_port, chain_spec)
   }
 
   fn init<F>(
     &self,
     _support_url: &String,
-		_impl_version: &String,
-		_logger_hook: F,
-		_config: &sc_service::Configuration,) -> Result<()>
-    where
-		F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration), {
+    _impl_version: &String,
+    _logger_hook: F,
+    _config: &sc_service::Configuration,
+  ) -> Result<()>
+  where
+    F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+  {
     unreachable!("PolkadotCli is never initialized; qed");
   }
 

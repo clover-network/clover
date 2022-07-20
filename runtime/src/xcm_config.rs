@@ -20,23 +20,27 @@ use super::{
 use crate::asset_location::AssetLocation;
 use crate::asset_trader;
 use clover_traits::AssetLocationGetter;
+use cumulus_primitives_core::ParaId;
 use frame_support::{
   match_type, parameter_types,
   traits::{Everything, Get, Nothing, PalletInfoAccess},
   weights::Weight,
 };
+use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
+use sp_runtime::traits::CheckedConversion;
 use sp_std::{borrow::Borrow, marker::PhantomData, prelude::*, result};
 use xcm::latest::prelude::*;
 use xcm_builder::{
   AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
   AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
   CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
-  LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
+  LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
   SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
   SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
+use xcm_executor::traits::MatchesFungible;
 use xcm_executor::traits::{Convert, Error as MatchError, MatchesFungibles, TransactAsset};
 use xcm_executor::{traits::JustTry, XcmExecutor};
 
@@ -57,19 +61,60 @@ parameter_types! {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
   // The parent (Relay-chain) origin converts to the parent `AccountId`.
-  ParentIsDefault<AccountId>,
+  ParentIsPreset<AccountId>,
   // Sibling parachain origins convert to AccountId via the `ParaId::into`.
   SiblingParachainConvertsVia<Sibling, AccountId>,
   // Straight up local `AccountId32` origins just alias directly to `AccountId`.
   AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
+pub trait NativeAssetChecker {
+  fn is_native_asset(asset: &MultiAsset) -> bool;
+  fn is_native_asset_id(id: &MultiLocation) -> bool;
+  fn native_asset_id() -> MultiLocation;
+}
+
+pub struct NativeAssetFilter<T>(PhantomData<T>);
+impl<T: Get<ParaId>> NativeAssetChecker for NativeAssetFilter<T> {
+  fn is_native_asset(asset: &MultiAsset) -> bool {
+    match (&asset.id, &asset.fun) {
+      // So far our native asset is concrete
+      (Concrete(ref id), Fungible(_)) if Self::is_native_asset_id(id) => true,
+      _ => false,
+    }
+  }
+
+  fn is_native_asset_id(id: &MultiLocation) -> bool {
+    let native_locations = [
+      MultiLocation::here(),
+      (1, X1(Parachain(T::get().into()))).into(),
+    ];
+    native_locations.contains(id)
+  }
+
+  fn native_asset_id() -> MultiLocation {
+    (1, X1(Parachain(T::get().into()))).into()
+  }
+}
+
+pub struct NativeAssetMatcher<C>(PhantomData<C>);
+impl<C: NativeAssetChecker, B: TryFrom<u128>> MatchesFungible<B> for NativeAssetMatcher<C> {
+  fn matches_fungible(a: &MultiAsset) -> Option<B> {
+    match (&a.id, &a.fun) {
+      (Concrete(_), Fungible(ref amount)) if C::is_native_asset(a) => {
+        CheckedConversion::checked_from(*amount)
+      }
+      _ => None,
+    }
+  }
+}
+
 /// Means for transacting the native currency on this chain.
 pub type CurrencyTransactor = CurrencyAdapter<
   // Use this currency:
   Balances,
   // Use this currency when it is a fungible asset matching the given location or name:
-  IsConcrete<LocalLocation>,
+  NativeAssetMatcher<NativeAssetFilter<ParachainInfo>>,
   // Convert an XCM MultiLocation into a local account id:
   LocationToAccountId,
   // Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -126,7 +171,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
   LocationToAccountId,
   // Our chain's account ID type (we can't get away without mentioning it explicitly):
   AccountId,
-  (),
+  Nothing,
   // The account to use for tracking teleports.
   CheckingAccount,
 >;
@@ -273,6 +318,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
   type ChannelInfo = ParachainSystem;
   type VersionWrapper = PolkadotXcm;
   type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+  type ControllerOrigin = EnsureRoot<AccountId>;
+  type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+  type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_ping::Config for Runtime {

@@ -29,7 +29,6 @@ use pallet_contracts::weights::WeightInfo;
 use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 pub use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
-use sp_core::u32_trait::{_1, _2, _4, _5};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -46,13 +45,14 @@ use fp_rpc::TransactionStatus;
 pub use frame_support::{
   construct_runtime, debug, ensure, log, parameter_types,
   traits::{
-    Currency, EnsureOneOf, EqualPrivilegeOnly, Everything, FindAuthor, Imbalance,
-    KeyOwnerProofSystem, LockIdentifier, Nothing, OnUnbalanced, Randomness, U128CurrencyToVote,
+    ConstU128, ConstU16, ConstU32, Currency, EnsureOneOf, EqualPrivilegeOnly, Everything,
+    FindAuthor, Imbalance, KeyOwnerProofSystem, LockIdentifier, Nothing, OnUnbalanced, Randomness,
+    U128CurrencyToVote,
   },
   transactional,
   weights::{
     constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-    DispatchClass, Weight,
+    ConstantMultiplier, DispatchClass, Weight,
   },
   ConsensusEngineId, PalletId, StorageValue,
 };
@@ -244,7 +244,7 @@ parameter_types! {
 
 type EnsureRootOrHalfCouncil = EnsureOneOf<
   EnsureRoot<AccountId>,
-  pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
+  pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 >;
 
 impl pallet_identity::Config for Runtime {
@@ -380,7 +380,7 @@ impl FindAuthor<u32> for PhantomMockAuthorship {
 impl pallet_ethereum::Config for Runtime {
   type Event = Event;
   // type FindAuthor = EthereumFindAuthor<PhantomMockAuthorship>;
-  type StateRoot = pallet_ethereum::IntermediateStateRoot;
+  type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
 }
 
 pub struct TransactionConverter;
@@ -542,30 +542,30 @@ impl pallet_democracy::Config for Runtime {
   type MinimumDeposit = MinimumDeposit;
   /// A straight majority of the council can decide what their next motion is.
   type ExternalOrigin =
-    pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>;
   /// A super-majority can have the next scheduled referendum be a straight
   /// majority-carries vote.
   type ExternalMajorityOrigin =
-    pallet_collective::EnsureProportionAtLeast<_4, _5, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 4, 5>;
   /// A unanimous council can have the next scheduled referendum be a straight
   /// default-carries (NTB) vote.
   type ExternalDefaultOrigin =
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>;
   /// Full of the technical committee can have an
   /// ExternalMajority/ExternalDefault vote be tabled immediately and with a
   /// shorter voting/enactment period.
   type FastTrackOrigin =
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
+    pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>;
   type InstantOrigin = frame_system::EnsureNever<AccountId>;
   type InstantAllowed = InstantAllowed;
   type FastTrackVotingPeriod = FastTrackVotingPeriod;
   /// To cancel a proposal which has been passed, all of the council must
   /// agree to it.
   type CancellationOrigin =
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>;
   type CancelProposalOrigin = EnsureOneOf<
     EnsureRoot<AccountId>,
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>,
+    pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>,
   >;
   type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
   type BlacklistOrigin = EnsureRoot<AccountId>;
@@ -775,17 +775,19 @@ parameter_types! {
   pub const BountyDepositBase: Balance = 1 * DOLLARS;
   pub const BountyDepositPayoutDelay: BlockNumber = 1 * DAYS;
   pub const BountyUpdatePeriod: BlockNumber = 7 * DAYS;
-  pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
+  pub const CuratorDepositMultiplier: Permill = Permill::from_percent(50);
   pub const BountyValueMinimum: Balance = 5 * DOLLARS;
+  pub const CuratorDepositMin: Balance = 100 * DOLLARS;
+  pub const CuratorDepositMax: Balance = 10000 * DOLLARS;
   pub const MaxApprovals: u32 = 100;
 }
 
 impl pallet_treasury::Config for Runtime {
   type Currency = Balances;
   type ApproveOrigin =
-    pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>;
   type RejectOrigin =
-    pallet_collective::EnsureProportionMoreThan<_1, _5, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 5>;
   type Event = Event;
   type OnSlash = ();
   type ProposalBond = ProposalBond;
@@ -805,7 +807,9 @@ impl pallet_bounties::Config for Runtime {
   type BountyDepositBase = BountyDepositBase;
   type BountyDepositPayoutDelay = BountyDepositPayoutDelay;
   type BountyUpdatePeriod = BountyUpdatePeriod;
-  type BountyCuratorDeposit = BountyCuratorDeposit;
+  type CuratorDepositMultiplier = CuratorDepositMultiplier;
+  type CuratorDepositMin = CuratorDepositMin;
+  type CuratorDepositMax = CuratorDepositMax;
   type BountyValueMinimum = BountyValueMinimum;
   type DataDepositPerByte = DataDepositPerByte;
   type MaximumReasonLength = MaximumReasonLength;
@@ -834,9 +838,9 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
   type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-  type TransactionByteFee = TransactionByteFee;
   type OperationalFeeMultiplier = OperationalFeeMultiplier;
   type WeightToFee = WeightToFee<Balance>;
+  type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
   type FeeMultiplierUpdate =
     TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
@@ -951,26 +955,19 @@ impl pallet_contracts::Config for Runtime {
   type Event = Event;
   type Call = Call;
   type CallFilter = Nothing;
-  // type RentPayment = ();
   type DepositPerItem = DepositPerItem;
   type DepositPerByte = DepositPerByte;
-  // type SignedClaimHandicap = SignedClaimHandicap;
-  // type TombstoneDeposit = TombstoneDeposit;
-  // type DepositPerContract = DepositPerContract;
-  // type DepositPerStorageByte = DepositPerStorageByte;
-  // type DepositPerStorageItem = DepositPerStorageItem;
-  // type RentFraction = RentFraction;
-  // type SurchargeReward = SurchargeReward;
   type CallStack = [pallet_contracts::Frame<Self>; 31];
-  // type MaxValueSize = MaxValueSize;
   type WeightPrice = pallet_transaction_payment::Pallet<Self>;
   type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
   type ChainExtension = ();
   type DeletionQueueDepth = DeletionQueueDepth;
   type DeletionWeightLimit = DeletionWeightLimit;
-  // type MaxCodeSize = MaxCodeSize;
   type Schedule = Schedule;
   type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+  type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
+  type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+  type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 }
 
 parameter_types! {
@@ -1394,6 +1391,14 @@ impl_runtime_apis! {
 //    ) -> pallet_contracts_primitives::RentProjectionResult<BlockNumber> {
 //      Contracts::rent_projection(address)
 //    }
+  }
+
+  impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
+    fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
+      UncheckedExtrinsic::new_unsigned(
+        pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
+      )
+    }
   }
 
   impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
