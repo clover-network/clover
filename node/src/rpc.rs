@@ -15,10 +15,7 @@ use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 use jsonrpsee::RpcModule;
 use pallet_ethereum::EthereumStorageSchema;
 use primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
-use sc_client_api::{
-  backend::{AuxStore, Backend, StateBackend, StorageProvider},
-  client::BlockchainEvents,
-};
+use sc_client_api::backend::{AuxStore, Backend, StateBackend, StorageProvider};
 use sc_network::NetworkService;
 pub use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
@@ -67,12 +64,14 @@ pub struct FullDeps<C, P, A: ChainApi> {
   pub network: Arc<NetworkService<Block, Hash>>,
 }
 
+#[allow(missing_docs)]
 #[derive(Clone)]
 pub struct RpcRequesters {
   pub debug: Option<DebugRequester>,
   pub trace: Option<TraceFilterCacheRequester>,
 }
 
+#[allow(missing_docs)]
 #[derive(Debug, PartialEq, Clone)]
 pub struct RpcConfig {
   pub ethapi: Vec<EthApiCmd>,
@@ -101,12 +100,14 @@ impl FromStr for EthApiCmd {
   }
 }
 
+#[allow(missing_docs)]
 #[derive(Debug, PartialEq, Clone)]
 pub enum EthApiCmd {
   Debug,
   Trace,
 }
 
+#[allow(missing_docs)]
 pub fn overrides_handle<C, BE>(client: Arc<C>) -> Arc<OverrideHandle<Block>>
 where
   C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
@@ -183,7 +184,7 @@ where
     backend,
     max_past_logs,
     is_authority,
-    overrides,
+    overrides: _,
     block_data_cache,
     tracing_requesters,
     rpc_config,

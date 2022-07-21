@@ -1,7 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use std::{
-  collections::{BTreeMap, HashMap},
+  collections::{BTreeMap},
   sync::{Arc, Mutex},
   time::Duration,
 };
@@ -14,7 +14,7 @@ use cumulus_client_cli::CollatorOptions;
 
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 
-use cumulus_client_consensus_common::ParachainConsensus;
+
 
 use cumulus_client_network::BlockAnnounceValidator;
 
@@ -27,13 +27,13 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayC
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 
 use clover_runtime::{self, opaque::Block, RuntimeApi};
-use fc_rpc::{CacheTask, DebugTask, EthTask, OverrideHandle};
+use fc_rpc::{CacheTask, DebugTask, OverrideHandle};
 use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 use sc_cli::SubstrateCli;
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_service::{
-  error::Error as ServiceError, BasePath, Configuration, Role, TFullClient, TaskManager,
+  error::Error as ServiceError, BasePath, Configuration, Role, TaskManager,
 };
 use sp_runtime::traits::Block as BlockT;
 // pub use sc_executor::NativeExecutor;
@@ -178,7 +178,7 @@ pub fn new_partial(
     })
     .transpose()?;
 
-  let registry = config.prometheus_registry();
+  let _registry = config.prometheus_registry();
 
   let executor = NativeElseWasmExecutor::<ExecutorDispatch>::new(
     config.wasm_method,
@@ -275,7 +275,7 @@ pub fn new_partial(
     // let pending = pending_transactions.clone();
     let filter_pool_clone = filter_pool.clone();
     let fee_history_cache_clone = fee_history_cache.clone();
-    let backend_clone = backend.clone();
+    let _backend_clone = backend.clone();
     let frontier_backend_clone = frontier_backend.clone();
     let max_past_logs = cli.run.max_past_logs;
 
@@ -407,7 +407,7 @@ async fn start_node_impl(
         frontier_backend,
         mut telemetry,
         telemetry_worker_handle,
-        (fee_history_cache, fee_history_cache_limit),
+        (_fee_history_cache, _fee_history_cache_limit),
       ),
   } = new_partial(&parachain_config, cli)?;
 

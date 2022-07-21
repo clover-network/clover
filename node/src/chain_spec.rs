@@ -9,7 +9,7 @@ use primitive_types::H160;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public, U256};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::collections::BTreeMap;
@@ -35,9 +35,9 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 /// Generate collator keys from seed.
 ///
 /// This function's return type must always match the session keys of the chain in tuple format.
-pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
-  get_from_seed::<AuraId>(seed)
-}
+//pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
+//  get_from_seed::<AuraId>(seed)
+//}
 
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
@@ -355,7 +355,7 @@ fn testnet_genesis(
   endowed_eth_accounts: BTreeMap<H160, GenesisAccount>,
   id: ParaId,
 ) -> GenesisConfig {
-  let enable_println = true;
+  let _enable_println = true;
 
   const ENDOWMENT: Balance = 1_000 * DOLLARS;
   // const STASH: Balance = 100 * DOLLARS;

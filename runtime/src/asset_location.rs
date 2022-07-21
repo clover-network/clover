@@ -1,28 +1,6 @@
-use super::{
-  AccountId, AssetConfig, AssetId, Assets, Balance, Balances, Call, DealWithFees, Event, Origin,
-  ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, Treasury, WeightToFee, XcmpQueue,
-};
-use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{
-  match_type, parameter_types,
-  traits::{Everything, Get, Nothing, PalletInfoAccess},
-  weights::Weight,
-};
-use pallet_xcm::XcmPassthrough;
-use polkadot_parachain::primitives::Sibling;
-use sp_std::{borrow::Borrow, marker::PhantomData, prelude::*, result};
-use xcm::latest::prelude::*;
+use codec::{Decode, Encode};
+use sp_std::prelude::*;
 use xcm::v1::MultiLocation;
-use xcm_builder::{
-  AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-  AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-  CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
-  LocationInverter, NativeAsset, ParentAsSuperuser, RelayChainAsNative, SiblingParachainAsNative,
-  SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-  SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
-};
-use xcm_executor::traits::{Convert, Error as MatchError, MatchesFungibles, TransactAsset};
-use xcm_executor::{traits::JustTry, XcmExecutor};
 
 /// abstraction of the asset location
 #[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, scale_info::TypeInfo)]
