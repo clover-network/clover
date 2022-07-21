@@ -12,7 +12,7 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::curve::PiecewiseLinear;
 use sp_runtime::traits::{
   BlakeTwo256, Block as BlockT, Convert, ConvertInto, Dispatchable, PostDispatchInfoOf,
-  SaturatedConversion, StaticLookup, UniqueSaturatedInto, Verify,
+  SaturatedConversion, StaticLookup, UniqueSaturatedInto,
 };
 use sp_runtime::{
   create_runtime_str, generic, impl_opaque_keys,
@@ -69,13 +69,12 @@ pub use primitives::{
 
 // Polkadot imports
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
-use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use polkadot_runtime_common::BlockHashCount;
 use xcm::latest::BodyId;
-use xcm_executor::XcmExecutor;
 
 pub use constants::time::*;
 use impls::{MergeAccountEvm, WeightToFee};
-use xcm_config::{DotLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+use xcm_config::DotLocation;
 
 mod asset_location;
 mod clover_evm_config;
