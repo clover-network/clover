@@ -17,8 +17,8 @@ strum = "0.19.2"
 strum_macros = "0.19.2"
 int-enum = "0.4.0"
 enum-iterator = "0.6.0"
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24", default-features = false  }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.24", default-features = false  }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23", default-features = false  }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23", default-features = false  }
 
 [features]
 default = ["std"]
