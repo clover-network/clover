@@ -25,6 +25,7 @@ use frame_support::{
   traits::{Everything, Get, Nothing, PalletInfoAccess},
   weights::Weight,
 };
+use codec::{Decode, Encode, };
 use frame_system::EnsureRoot;
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
@@ -39,9 +40,12 @@ use xcm_builder::{
   SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
   SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
+use scale_info::TypeInfo;
 use xcm_executor::traits::Convert;
 use xcm_executor::traits::MatchesFungible;
 use xcm_executor::{traits::JustTry, XcmExecutor};
+use orml_traits::location::{RelativeReserveProvider, Reserve};
+use orml_traits::parameter_type_with_key;
 
 parameter_types! {
     pub const DotLocation: MultiLocation = MultiLocation::parent();
@@ -328,3 +332,117 @@ impl cumulus_ping::Config for Runtime {
   type Call = Call;
   type XcmSender = XcmRouter;
 }
+
+parameter_types! {
+	pub const BaseXcmWeight: Weight = 100_000_000;
+	pub const MaxAssetsForTransfer: usize = 2;
+
+	// This is how we are going to detect whether the asset is a Reserve asset
+	// This however is the chain part only
+	pub SelfLocation: MultiLocation = MultiLocation::here();
+	// We need this to be able to catch when someone is trying to execute a non-
+	// cross-chain transfer in xtokens through the absolute path way
+	pub SelfLocationAbsolute: MultiLocation = MultiLocation {
+		parents:1,
+		interior: Junctions::X1(
+			Parachain(ParachainInfo::parachain_id().into())
+		)
+	};
+}
+
+/// This struct offers uses RelativeReserveProvider to output relative views of multilocations
+/// However, additionally accepts a MultiLocation that aims at representing the chain part
+/// (parent: 1, Parachain(paraId)) of the absolute representation of our chain.
+/// If a token reserve matches against this absolute view, we return  Some(MultiLocation::here())
+/// This helps users by preventing errors when they try to transfer a token through xtokens
+/// to our chain (either inserting the relative or the absolute value).
+pub struct AbsoluteAndRelativeReserve<AbsoluteMultiLocation>(PhantomData<AbsoluteMultiLocation>);
+impl<AbsoluteMultiLocation> Reserve for AbsoluteAndRelativeReserve<AbsoluteMultiLocation>
+where
+	AbsoluteMultiLocation: Get<MultiLocation>,
+{
+	fn reserve(asset: &MultiAsset) -> Option<MultiLocation> {
+		RelativeReserveProvider::reserve(asset).map(|relative_reserve| {
+			if relative_reserve == AbsoluteMultiLocation::get() {
+				MultiLocation::here()
+			} else {
+				relative_reserve
+			}
+		})
+	}
+}
+
+
+
+pub struct AccountIdToMultiLocation;
+impl sp_runtime::traits::Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
+	fn convert(account: AccountId) -> MultiLocation {
+		X1(AccountId32 {
+			network: NetworkId::Any,
+			id: account.into(),
+		})
+		.into()
+	}
+}
+
+impl orml_xcm::Config for Runtime {
+	type Event = Event;
+	type SovereignOrigin = frame_system::EnsureRoot<AccountId>;
+}
+
+parameter_type_with_key! {
+	pub ParachainMinFee: |_location: MultiLocation| -> Option<u128> {
+		Some(u128::MAX)
+	};
+}
+
+/// Xcm Weigher shared between multiple Xcm-related configs.
+pub type XcmWeigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+
+// Our currencyId. We distinguish for now between SelfReserve, and Others, defined by their Id.
+#[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, TypeInfo)]
+pub enum CurrencyId {
+	SelfReserve,
+	OtherReserve(AssetId),
+}
+
+// How to convert from CurrencyId to MultiLocation
+pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
+impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
+	for CurrencyIdtoMultiLocation<AssetXConverter>
+where
+	AssetXConverter: xcm_executor::traits::Convert<MultiLocation, AssetId>,
+{
+	fn convert(currency: CurrencyId) -> Option<MultiLocation> {
+		match currency {
+			// For now and until Xtokens is adapted to handle 0.9.16 version we use
+			// the old anchoring here
+			// This is not a problem in either cases, since the view of the destination
+			// chain does not change
+			CurrencyId::SelfReserve => {
+				let multi: MultiLocation = LocalLocation::get();
+				Some(multi)
+			}
+			CurrencyId::OtherReserve(asset) => AssetXConverter::reverse_ref(asset).ok(),
+		}
+	}
+}
+
+impl orml_xtokens::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type CurrencyId = CurrencyId;
+	type AccountIdToMultiLocation = AccountIdToMultiLocation;
+	type CurrencyIdConvert =
+    CurrencyIdtoMultiLocation<ConvertToAssetLocation<AssetId, AssetLocation, AssetConfig>>;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type SelfLocation = SelfLocation;
+	type Weigher = XcmWeigher;
+	type BaseXcmWeight = BaseXcmWeight;
+	type LocationInverter = LocationInverter<Ancestry>;
+	type MaxAssetsForTransfer = MaxAssetsForTransfer;
+	type MinXcmFee = ParachainMinFee;
+	type MultiLocationsFilter = Everything;
+	type ReserveProvider = AbsoluteAndRelativeReserve<SelfLocationAbsolute>;
+}
+
