@@ -74,7 +74,7 @@ use xcm::latest::BodyId;
 
 pub use constants::time::*;
 use impls::{MergeAccountEvm, WeightToFee};
-use xcm_config::DotLocation;
+use xcm_config::{DotLocation, };
 
 mod asset_location;
 mod clover_evm_config;
@@ -1164,10 +1164,12 @@ construct_runtime!(
     PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 34,
     CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 35,
     DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 36,
+    OrmlXcm: orml_xcm::{Pallet, Call, Event<T>} = 37,
     AssetConfig: asset_config::{Pallet, Call, Storage, Event<T>} = 40,
 
     // The main stage.
     Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
+    XTokens: orml_xtokens::{Pallet, Call, Storage, Event<T>} = 51,
 
     Spambot: cumulus_ping::{Pallet, Call, Storage, Event<T>} = 99,
   }
