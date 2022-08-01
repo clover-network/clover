@@ -804,7 +804,11 @@ parameter_types! {
 
 impl pallet_treasury::Config for Runtime {
   type Currency = Balances;
-  type ApproveOrigin = EnsureRoot<AccountId>;
+  type ApproveOrigin = EnsureOneOf<
+	  AccountId,
+    EnsureRoot<AccountId>,
+    pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
+  >;
   type RejectOrigin = EnsureRootOrHalfCouncil;
   type Event = Event;
   type OnSlash = ();
@@ -874,10 +878,10 @@ impl pallet_transaction_payment::Config for Runtime {
     TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
 
-impl pallet_sudo::Config for Runtime {
-  type Event = Event;
-  type Call = Call;
-}
+//impl pallet_sudo::Config for Runtime {
+//  type Event = Event;
+//  type Call = Call;
+//}
 
 parameter_types! {
   pub const IndexDeposit: Balance = 1 * DOLLARS;
@@ -1050,7 +1054,7 @@ construct_runtime!(
     // EVM: pallet_evm::{Module, Config, Call, Storage, Event<T>},
     // Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
 
-    Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+    // Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
 
     ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
     AuthorityDiscovery: pallet_authority_discovery::{Module, Call, Config},
