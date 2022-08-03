@@ -107,7 +107,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 21,
+  spec_version: 22,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -589,7 +589,7 @@ parameter_types! {
   pub const CooloffPeriod: BlockNumber = 7 * DAYS;
   // One cent: $10,000 / MB
   pub const PreimageByteDeposit: Balance = 10 * MILLICENTS;
-  pub const InstantAllowed: bool = false;
+  pub const InstantAllowed: bool = true;
   pub const MaxVotes: u32 = 100;
   pub const MaxProposals: u32 = 100;
 }
@@ -618,7 +618,7 @@ impl pallet_democracy::Config for Runtime {
   /// shorter voting/enactment period.
   type FastTrackOrigin =
     pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
-  type InstantOrigin = frame_system::EnsureNever<AccountId>;
+  type InstantOrigin = pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
   type InstantAllowed = InstantAllowed;
   type FastTrackVotingPeriod = FastTrackVotingPeriod;
   /// To cancel a proposal which has been passed, all of the council must
