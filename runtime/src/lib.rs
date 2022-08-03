@@ -307,15 +307,6 @@ impl evm_accounts::Config for Runtime {
   type WeightInfo = weights::evm_accounts::WeightInfo<Runtime>;
 }
 
-/// clover evm
-pub struct FixedGasPrice;
-
-impl FeeCalculator for FixedGasPrice {
-  fn min_gas_price() -> U256 {
-    50_000_000_000u64.into()
-  }
-}
-
 const CHAIN_ID: u64 = 1024;
 
 parameter_types! {
@@ -525,7 +516,7 @@ parameter_types! {
   pub const CooloffPeriod: BlockNumber = 7 * DAYS;
   // One cent: $10,000 / MB
   pub const PreimageByteDeposit: Balance = 10 * MILLICENTS;
-  pub const InstantAllowed: bool = false;
+  pub const InstantAllowed: bool = true;
   pub const MaxVotes: u32 = 100;
   pub const MaxProposals: u32 = 100;
 }
@@ -555,7 +546,8 @@ impl pallet_democracy::Config for Runtime {
   /// shorter voting/enactment period.
   type FastTrackOrigin =
     pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>;
-  type InstantOrigin = frame_system::EnsureNever<AccountId>;
+  type InstantOrigin =
+    pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 1, 1>;
   type InstantAllowed = InstantAllowed;
   type FastTrackVotingPeriod = FastTrackVotingPeriod;
   /// To cancel a proposal which has been passed, all of the council must
