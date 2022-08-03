@@ -74,7 +74,7 @@ use xcm::latest::BodyId;
 
 pub use constants::time::*;
 use impls::{MergeAccountEvm, WeightToFee};
-use xcm_config::{DotLocation, };
+use xcm_config::DotLocation;
 
 mod asset_location;
 mod clover_evm_config;
@@ -330,7 +330,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-  type FeeCalculator = FixedGasPrice;
+  type FeeCalculator = BaseFee;
   type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
   type GasWeightMapping = ();
   type CallOrigin = EnsureAddressTruncated;
