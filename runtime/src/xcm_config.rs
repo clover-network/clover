@@ -46,6 +46,7 @@ use xcm_executor::traits::MatchesFungible;
 use xcm_executor::{traits::JustTry, XcmExecutor};
 use orml_traits::location::{RelativeReserveProvider, Reserve};
 use orml_traits::parameter_type_with_key;
+use orml_xcm_support::MultiNativeAsset;
 
 parameter_types! {
     pub const DotLocation: MultiLocation = MultiLocation::parent();
@@ -253,7 +254,7 @@ impl xcm_executor::Config for XcmConfig {
   type XcmSender = XcmRouter;
   type AssetTransactor = AssetTransactors;
   type OriginConverter = XcmOriginToTransactDispatchOrigin;
-  type IsReserve = NativeAsset;
+  type IsReserve = MultiNativeAsset<AbsoluteAndRelativeReserve<SelfLocationAbsolute>>;
   type IsTeleporter = ();
   type LocationInverter = LocationInverter<Ancestry>;
   type Barrier = Barrier;
