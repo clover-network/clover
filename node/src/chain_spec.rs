@@ -2,7 +2,7 @@ use serde_json::json;
 use sp_core::{Pair, Public, sr25519, U256};
 use clover_runtime::{
   AccountId, BabeConfig, Balance, AuthorityDiscoveryConfig, BalancesConfig, ContractsConfig, IndicesConfig, GenesisConfig, ImOnlineId,
-  GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
+  GrandpaConfig, SessionConfig, SessionKeys, StakingConfig, /* SudoConfig, */ SystemConfig, WASM_BINARY,
   Signature, StakerStatus,
   DOLLARS
 };
@@ -534,10 +534,10 @@ fn testnet_genesis(
     pallet_authority_discovery: Some(AuthorityDiscoveryConfig {
       keys: vec![],
     }),
-    pallet_sudo: Some(SudoConfig {
-      // Assign network admin rights.
-      key: root_key,
-    }),
+    // pallet_sudo: Some(SudoConfig {
+    //   // Assign network admin rights.
+    //   key: root_key,
+    // }),
     pallet_collective_Instance1: Some(Default::default()),
     pallet_collective_Instance2: Some(Default::default()),
     pallet_democracy: Some(Default::default()),
