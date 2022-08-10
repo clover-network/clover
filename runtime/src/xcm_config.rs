@@ -36,7 +36,7 @@ use xcm_builder::{
   AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
   AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
   CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, LocationInverter,
-  NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+  ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
   SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
   SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };

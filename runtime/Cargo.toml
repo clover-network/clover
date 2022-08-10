@@ -103,10 +103,10 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "releas
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24", default-features = false }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24", default-features = false }
 
-orml-xcm = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.23" }
-orml-xtokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.23" }
-orml-xcm-support = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.23" }
-orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.23" }
+orml-xcm = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.24" }
+orml-xtokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.24" }
+orml-xcm-support = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.24" }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.24" }
 
 smallvec = "1.4.1"
 
