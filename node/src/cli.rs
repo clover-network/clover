@@ -1,13 +1,14 @@
-use std::path::PathBuf;
-use sc_cli::{KeySubcommand, SignCmd, VanityCmd, VerifyCmd};
-use structopt::StructOpt;
-use crate::rpc::EthApiCmd;
 use crate::chain_spec;
+use crate::rpc::EthApiCmd;
+use clap::Parser;
+use sc_cli::{KeySubcommand, SignCmd, VanityCmd, VerifyCmd};
+use std::path::PathBuf;
 
 /// Possible subcommands of the main binary.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
   /// Key management cli utilities
+  #[clap(subcommand)]
   Key(KeySubcommand),
 
   /// Verify a signature for a message, provided on STDIN, with a given
@@ -33,11 +34,11 @@ pub enum Subcommand {
   ExportState(sc_cli::ExportStateCmd),
 
   /// Export the genesis state of the parachain.
-  #[structopt(name = "export-genesis-state")]
+  #[clap(name = "export-genesis-state")]
   ExportGenesisState(ExportGenesisStateCommand),
 
   /// Export the genesis wasm of the parachain.
-  #[structopt(name = "export-genesis-wasm")]
+  #[clap(name = "export-genesis-wasm")]
   ExportGenesisWasm(ExportGenesisWasmCommand),
 
   /// Import blocks.
@@ -48,98 +49,110 @@ pub enum Subcommand {
 
   /// Revert the chain to a previous state.
   Revert(sc_cli::RevertCmd),
-}
-
-/// Command for exporting the genesis state of the parachain
-#[derive(Debug, StructOpt)]
-pub struct ExportGenesisStateCommand {
-	/// Output file name or stdout if unspecified.
-	#[structopt(parse(from_os_str))]
-	pub output: Option<PathBuf>,
-
-	/// Id of the parachain this state is for.
-	#[structopt(long, default_value = "100")]
-	pub parachain_id: u32,
-
-	/// Write output in binary. Default is to write in hex.
-	#[structopt(short, long)]
-	pub raw: bool,
-
-	/// The name of the chain for that the genesis state should be exported.
-	#[structopt(long)]
-	pub chain: Option<String>,
-}
-
-/// Command for exporting the genesis wasm file.
-#[derive(Debug, StructOpt)]
-pub struct ExportGenesisWasmCommand {
-	/// Output file name or stdout if unspecified.
-	#[structopt(parse(from_os_str))]
-	pub output: Option<PathBuf>,
-
-	/// Write output in binary. Default is to write in hex.
-	#[structopt(short, long)]
-	pub raw: bool,
-
-	/// The name of the chain for that the genesis wasm file should be exported.
-	#[structopt(long)]
-	pub chain: Option<String>,
+  // Try some testing command against a specified runtime state.
+  // TryRuntime(try_runtime_cli::TryRuntimeCmd),
 }
 
 #[allow(missing_docs)]
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Parser)]
 pub struct RunCmd {
-	#[allow(missing_docs)]
-	#[structopt(flatten)]
-	pub base: cumulus_client_cli::RunCmd,
-
-  /// Id of the parachain this collator collates for.
-  #[structopt(long)]
-  pub parachain_id: Option<u32>,
-
-	/// Enable EVM tracing module on a non-authority node.
-	#[structopt(long, conflicts_with = "validator", require_delimiter = true)]
-	pub ethapi: Vec<EthApiCmd>,
-
-  /// Number of concurrent tracing tasks. Meant to be shared by both "debug" and "trace" modules.
-	#[structopt(long, default_value = "10")]
-	pub ethapi_max_permits: u32,
-	/// Maximum number of trace entries a single request of `trace_filter` is allowed to return.
-	/// A request asking for more or an unbounded one going over this limit will both return an
-	/// error.
-	#[structopt(long, default_value = "500")]
-	pub ethapi_trace_max_count: u32,
-
-  /// Duration (in seconds) after which the cache of `trace_filter` for a given block will be
-	/// discarded.
-	#[structopt(long, default_value = "300")]
-	pub ethapi_trace_cache_duration: u64,
-
-	/// Size of the LRU cache for block data and their transaction statuses.
-	#[structopt(long, default_value = "3000")]
-	pub eth_log_block_cache: usize,
-
-	/// Maximum number of logs in a query.
-	#[structopt(long, default_value = "10000")]
-	pub max_past_logs: u32,
-
-  /// Maximum fee history cache size.
-	#[structopt(long, default_value = "2048")]
-	pub fee_history_limit: u64,
-
-}
-
-#[derive(Debug, StructOpt)]
-pub struct Cli {
-  #[structopt(subcommand)]
+  #[clap(subcommand)]
   pub subcommand: Option<Subcommand>,
 
-  #[structopt(flatten)]
+  #[allow(missing_docs)]
+  #[clap(flatten)]
+  pub base: cumulus_client_cli::RunCmd,
+
+  /// Id of the parachain this collator collates for.
+  #[clap(long)]
+  pub parachain_id: Option<u32>,
+
+  /// Enable EVM tracing module on a non-authority node.
+  #[clap(long, conflicts_with = "validator", require_delimiter = true)]
+  pub ethapi: Vec<EthApiCmd>,
+
+  /// Number of concurrent tracing tasks. Meant to be shared by both "debug" and "trace" modules.
+  #[clap(long, default_value = "10")]
+  pub ethapi_max_permits: u32,
+  /// Maximum number of trace entries a single request of `trace_filter` is allowed to return.
+  /// A request asking for more or an unbounded one going over this limit will both return an
+  /// error.
+  #[clap(long, default_value = "500")]
+  pub ethapi_trace_max_count: u32,
+
+  /// Duration (in seconds) after which the cache of `trace_filter` for a given block will be
+  /// discarded.
+  #[clap(long, default_value = "300")]
+  pub ethapi_trace_cache_duration: u64,
+
+  /// Size of the LRU cache for block data and their transaction statuses.
+  #[clap(long, default_value = "3000")]
+  pub eth_log_block_cache: usize,
+
+  /// Maximum number of logs in a query.
+  #[clap(long, default_value = "10000")]
+  pub max_past_logs: u32,
+
+  /// Maximum fee history cache size.
+  #[clap(long, default_value = "2048")]
+  pub fee_history_limit: u64,
+}
+
+/// Command for exporting the genesis state of the parachain
+#[derive(Debug, Parser)]
+pub struct ExportGenesisStateCommand {
+  /// Output file name or stdout if unspecified.
+  #[clap(parse(from_os_str))]
+  pub output: Option<PathBuf>,
+
+  /// Write output in binary. Default is to write in hex.
+  #[clap(short, long)]
+  pub raw: bool,
+
+  /// The name of the chain for that the genesis state should be exported.
+  #[clap(long)]
+  pub chain: Option<String>,
+
+  /// Id of the parachain this state is for.
+  #[clap(long, default_value = "2016")]
+  pub parachain_id: u32,
+}
+
+/// Command for exporting the genesis wasm file.
+#[derive(Debug, Parser)]
+pub struct ExportGenesisWasmCommand {
+  /// Output file name or stdout if unspecified.
+  #[clap(parse(from_os_str))]
+  pub output: Option<PathBuf>,
+
+  /// Write output in binary. Default is to write in hex.
+  #[clap(short, long)]
+  pub raw: bool,
+
+  /// The name of the chain for that the genesis wasm file should be exported.
+  #[clap(long)]
+  pub chain: Option<String>,
+}
+
+#[derive(Debug, clap::Parser)]
+#[clap(
+  propagate_version = true,
+  args_conflicts_with_subcommands = true,
+  subcommand_negates_reqs = true
+)]
+pub struct Cli {
+  #[clap(subcommand)]
+  pub subcommand: Option<Subcommand>,
+
+  #[clap(flatten)]
   pub run: RunCmd,
 
+  #[clap(long)]
+  pub no_hardware_benchmarks: bool,
+
   /// Relaychain arguments
-  #[structopt(raw = true)]
-  pub relaychain_args: Vec<String>
+  #[clap(raw = true)]
+  pub relaychain_args: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -161,11 +174,11 @@ impl RelayChainCli {
     relay_chain_args: impl Iterator<Item = &'a String>,
   ) -> Self {
     let extension = chain_spec::Extensions::try_get(&*para_config.chain_spec);
-		let chain_id = extension.map(|e| e.relay_chain.clone());
-		let base_path = para_config
-			.base_path
-			.as_ref()
-			.map(|x| x.path().join("polkadot"));
+    let chain_id = extension.map(|e| e.relay_chain.clone());
+    let base_path = para_config
+      .base_path
+      .as_ref()
+      .map(|x| x.path().join("polkadot"));
     Self {
       base_path,
       chain_id,
