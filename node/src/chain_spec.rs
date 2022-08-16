@@ -120,28 +120,6 @@ pub fn development_config(id: ParaId) -> Result<ChainSpec, String> {
     // ID
     "dev",
     ChainType::Development,
-<<<<<<< HEAD
-    move || testnet_genesis(
-      wasm_binary,
-      // Initial PoA authorities
-      vec![
-        authority_keys_from_seed("Alice"),
-        authority_keys_from_seed("Bob"),
-      ],
-      // Sudo account
-      get_account_id_from_seed::<sr25519::Public>("Alice"),
-      // Pre-funded accounts
-      vec![
-        get_account_id_from_seed::<sr25519::Public>("Alice"),
-        get_account_id_from_seed::<sr25519::Public>("Bob"),
-        //get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-        get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-      ],
-      true,
-      dev_endowed_evm_accounts(),
-      id
-      ),
-=======
     move || {
       testnet_genesis(
         wasm_binary,
@@ -162,7 +140,6 @@ pub fn development_config(id: ParaId) -> Result<ChainSpec, String> {
         id,
       )
     },
->>>>>>> 0c58d8e (xcm integration and runtime upgrade to polkadot-0.9.24 (#60))
     // Bootnodes
     vec![],
     // Telemetry
@@ -317,7 +294,6 @@ pub fn sakura_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
     // Name
     "Skarua",
     // ID
-<<<<<<< HEAD
     "skarua",
     ChainType::Custom(String::from("skarua")),
     move || testnet_genesis(
@@ -360,43 +336,6 @@ pub fn sakura_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
       endowed_evm_account(),
       id,
     ),
-=======
-    "clover-rococo",
-    ChainType::Custom(String::from("clover")),
-    move || {
-      testnet_genesis(
-        wasm_binary,
-        // Initial PoA authorities
-        vec![
-          (
-            // subkey inspect "$SECRET//clover//1//aura"
-            hex!("2a7ec989c303c91977b5b2ca88f37e42fd53442c6e973382aeeefa8cf0e6c938").into(),
-            hex!("2a7ec989c303c91977b5b2ca88f37e42fd53442c6e973382aeeefa8cf0e6c938")
-              .unchecked_into(),
-          ),
-          (
-            // subkey inspect "$SECRET//clover//2//aura"
-            hex!("9840e2c715a84fe7d3b8a7e884cfe5f175ba3f05098a39e750cff41e213cd017").into(),
-            hex!("9840e2c715a84fe7d3b8a7e884cfe5f175ba3f05098a39e750cff41e213cd017")
-              .unchecked_into(),
-          ),
-          (
-            // subkey inspect "$SECRET//clover//3//aura"
-            hex!("b40362f997b47823b32828947778dd6120ca030cba99c7e039965a0041142d77").into(),
-            hex!("b40362f997b47823b32828947778dd6120ca030cba99c7e039965a0041142d77")
-              .unchecked_into(),
-          ),
-        ],
-        // subkey inspect "$SECRET//clover//root"
-        hex!("4284ab7d9e8fc61bd69f212f45bd52bc5f82aaa57897cfd09b10c5294d7af558").into(),
-        // Pre-funded accounts
-        vec![hex!("4284ab7d9e8fc61bd69f212f45bd52bc5f82aaa57897cfd09b10c5294d7af558").into()],
-        true,
-        endowed_evm_account(),
-        id,
-      )
-    },
->>>>>>> 0c58d8e (xcm integration and runtime upgrade to polkadot-0.9.24 (#60))
     // Bootnodes
     vec![],
     // Telemetry
@@ -408,15 +347,9 @@ pub fn sakura_mainnet_config(id: ParaId) -> Result<ChainSpec, String> {
     None,
     // Extensions
     Extensions {
-<<<<<<< HEAD
 			relay_chain: "westend-dev".into(),
 			para_id: id.into(),
 		},
-=======
-      relay_chain: "polkadot-local".into(),
-      para_id: id.into(),
-    },
->>>>>>> 0c58d8e (xcm integration and runtime upgrade to polkadot-0.9.24 (#60))
   ))
 }
 
