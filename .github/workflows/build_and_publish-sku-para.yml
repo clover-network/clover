@@ -1,0 +1,44 @@
+name: Clover chain deploy
+on:
+  push:
+    tags:
+      - skupara-*
+jobs:
+  build-and-publish-sakura-para:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Set release version env
+        run: echo "RELEASE_VER=$(echo ${GITHUB_REF#refs/*/}  | cut -d '-' -f 2 )" >> $GITHUB_ENV
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - run: cargo build --release && cp -f target/release/clover docker/
+      - run: rm -rf docker/specs && cp -r specs/ docker/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile
+          push: true
+          tags: cloverio/clover-sakura-para:polkadot-v${{ env.RELEASE_VER }}
