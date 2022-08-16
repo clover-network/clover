@@ -45,7 +45,7 @@ fn load_spec(
     "dev" => Box::new(chain_spec::development_config(para_id)?),
     "" | "local" => Box::new(chain_spec::local_testnet_config(para_id)?),
     "clover" => Box::new(chain_spec::clover_mainnet_config(para_id)?),
-    "rococo" => Box::new(chain_spec::clover_rococo_config(para_id)?),
+    // "rococo" => Box::new(chain_spec::clover_rococo_config(para_id)?),
     "sakura" => Box::new(chain_spec::sakura_mainnet_config(para_id)?),
     path => Box::new(chain_spec::ChainSpec::from_json_file(
       std::path::PathBuf::from(path),
