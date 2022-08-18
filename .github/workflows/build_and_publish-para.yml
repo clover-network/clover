@@ -41,4 +41,4 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile
           push: true
-          tags: cloverio/clover-para:polkadot-v${{ env.RELEASE_VER }}
+          tags: cloverio/clover-para:v${{ env.RELEASE_VER }}
