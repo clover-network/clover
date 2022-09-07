@@ -836,10 +836,10 @@ impl pallet_transaction_payment::Config for Runtime {
     TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
 
-impl pallet_sudo::Config for Runtime {
-  type Event = Event;
-  type Call = Call;
-}
+// impl pallet_sudo::Config for Runtime {
+//   type Event = Event;
+//   type Call = Call;
+// }
 
 parameter_types! {
   pub const IndexDeposit: Balance = 1 * DOLLARS;
@@ -1132,7 +1132,7 @@ construct_runtime!(
     EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 20,
     Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config, } = 21,
 
-    Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 22,
+    // Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 22,
 
     // Utility module.
     Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 23,
