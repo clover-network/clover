@@ -1,6 +1,6 @@
 use clover_runtime::{
   AccountId, AuraId, Balance, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig,
-  IndicesConfig, SessionKeys, Signature, SudoConfig, SystemConfig, DOLLARS, WASM_BINARY,
+  IndicesConfig, SessionKeys, Signature, /*SudoConfig, */ SystemConfig, DOLLARS, WASM_BINARY,
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;

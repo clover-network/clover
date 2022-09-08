@@ -58,7 +58,7 @@ pub use frame_support::{
 };
 use frame_system::{limits, EnsureRoot};
 pub use pallet_balances::Call as BalancesCall;
-use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, Runner};
+use pallet_evm::{Account as EVMAccount, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, Runner};
 pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::{Perbill, Permill, RuntimeAppPublic};
 
@@ -125,7 +125,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover-mainnet"),
   impl_name: create_runtime_str!("clover-mainnet"),
   authoring_version: 1,
-  spec_version: 23,
+  spec_version: 24,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -324,8 +324,8 @@ impl pallet_evm::Config for Runtime {
   type FeeCalculator = BaseFee;
   type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
   type GasWeightMapping = ();
-  type CallOrigin = EnsureAddressTruncated;
-  type WithdrawOrigin = EnsureAddressTruncated;
+  type CallOrigin = EnsureAddressRoot<AccountId>;
+  type WithdrawOrigin = EnsureAddressNever<AccountId>;
   type AddressMapping = EvmAddressMapping<Runtime>;
   type Currency = Balances;
   type Event = Event;
@@ -836,10 +836,10 @@ impl pallet_transaction_payment::Config for Runtime {
     TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
 
-impl pallet_sudo::Config for Runtime {
-  type Event = Event;
-  type Call = Call;
-}
+//impl pallet_sudo::Config for Runtime {
+//  type Event = Event;
+//  type Call = Call;
+//}
 
 parameter_types! {
   pub const IndexDeposit: Balance = 1 * DOLLARS;
@@ -1132,7 +1132,7 @@ construct_runtime!(
     EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 20,
     Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config, } = 21,
 
-    Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 22,
+    // Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>} = 22,
 
     // Utility module.
     Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 23,
