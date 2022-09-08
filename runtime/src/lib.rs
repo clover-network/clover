@@ -58,7 +58,7 @@ pub use frame_support::{
 };
 use frame_system::{limits, EnsureRoot};
 pub use pallet_balances::Call as BalancesCall;
-use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, Runner};
+use pallet_evm::{Account as EVMAccount, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, Runner};
 pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_runtime::{Perbill, Permill, RuntimeAppPublic};
 
@@ -125,7 +125,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover-sakura"),
   impl_name: create_runtime_str!("clover-sakura"),
   authoring_version: 1,
-  spec_version: 24,
+  spec_version: 25,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -324,8 +324,8 @@ impl pallet_evm::Config for Runtime {
   type FeeCalculator = BaseFee;
   type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
   type GasWeightMapping = ();
-  type CallOrigin = EnsureAddressTruncated;
-  type WithdrawOrigin = EnsureAddressTruncated;
+  type CallOrigin = EnsureAddressRoot<AccountId>;
+  type WithdrawOrigin = EnsureAddressNever<AccountId>;
   type AddressMapping = EvmAddressMapping<Runtime>;
   type Currency = Balances;
   type Event = Event;
