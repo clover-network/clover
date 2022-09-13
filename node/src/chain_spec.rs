@@ -1,6 +1,6 @@
 use clover_runtime::{
   AccountId, AuraId, Balance, BalancesConfig, EVMConfig, EthereumConfig, GenesisConfig,
-  IndicesConfig, SessionKeys, Signature, SudoConfig, SystemConfig, DOLLARS, WASM_BINARY,
+  IndicesConfig, SessionKeys, Signature, /*SudoConfig, */ SystemConfig, DOLLARS, WASM_BINARY,
 };
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
@@ -388,10 +388,10 @@ fn testnet_genesis(
     },
     ethereum: EthereumConfig {},
     indices: IndicesConfig { indices: vec![] },
-    sudo: SudoConfig {
-      // Assign network admin rights.
-      key: Some(root_key),
-    },
+    //sudo: SudoConfig {
+    //  // Assign network admin rights.
+    //  key: Some(root_key),
+    //},
     parachain_info: clover_runtime::ParachainInfoConfig { parachain_id: id },
     collator_selection: clover_runtime::CollatorSelectionConfig {
       invulnerables: initial_authorities
