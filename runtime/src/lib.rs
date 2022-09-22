@@ -7,6 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::Decode;
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use sp_arithmetic::PerThing;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::curve::PiecewiseLinear;
@@ -791,6 +792,7 @@ impl pallet_treasury::Config for Runtime {
   type PalletId = TreasuryModuleId;
   type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
   type MaxApprovals = MaxApprovals;
+  type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 }
 
 impl pallet_bounties::Config for Runtime {
@@ -828,6 +830,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+  type Event = Event;
   type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
   type OperationalFeeMultiplier = OperationalFeeMultiplier;
   type WeightToFee = WeightToFee<Balance>;
@@ -959,6 +962,7 @@ impl pallet_contracts::Config for Runtime {
   type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
   type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
   type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
+  type MaxStorageKeyLen = ConstU32<128>;
 }
 
 // parameter_types! {
@@ -988,6 +992,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
   type OutboundXcmpMessageSource = XcmpQueue;
   type XcmpMessageHandler = XcmpQueue;
   type ReservedXcmpWeight = ReservedXcmpWeight;
+  type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -1108,7 +1113,7 @@ construct_runtime!(
 
     ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>, ValidateUnsigned} = 5,
 
-    TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 6,
+    TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>} = 6,
 
     ParachainInfo: parachain_info::{Pallet, Storage, Config} = 7,
 
@@ -1374,7 +1379,7 @@ impl_runtime_apis! {
 
     fn get_storage(
       address: AccountId,
-      key: [u8; 32],
+      key: Vec<u8>,
     ) -> pallet_contracts_primitives::GetStorageResult {
       Contracts::get_storage(address, key)
     }
