@@ -9136,6 +9136,7 @@ version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf617d864d25af3587aa745529f7aaa541066c876d57e050c0d0c85c61c92aff"
 dependencies = [
+ "errno",
  "libc",
  "memory_units",
  "num-rational",
