@@ -209,10 +209,10 @@ pub fn new_full_base(mut config: Configuration,
 
   config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
 
-  #[cfg(feature = "cli")]
-  config.network.request_response_protocols.push(sc_finality_grandpa_warp_sync::request_response_config_for_chain(
-    &config, task_manager.spawn_handle(), backend.clone(),
-  ));
+  // #[cfg(feature = "cli")]
+  // config.network.request_response_protocols.push(sc_finality_grandpa_warp_sync::request_response_config_for_chain(
+  //   &config, task_manager.spawn_handle(), backend.clone(),
+  // ));
 
   let (network, network_status_sinks, system_rpc_tx, network_starter) =
     sc_service::build_network(sc_service::BuildNetworkParams {
