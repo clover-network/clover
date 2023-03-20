@@ -285,8 +285,8 @@ pub fn new_partial(
     let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
       task_manager.spawn_handle(),
       overrides.clone(),
-      50,
-      50,
+      cli.run.block_cache_size.try_into().unwrap(),
+      cli.run.status_cache_size.try_into().unwrap(),
     ));
 
     let tracing_requesters = create_rpc_requesters(

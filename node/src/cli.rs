@@ -96,6 +96,12 @@ pub struct RunCmd {
   /// Maximum fee history cache size.
   #[clap(long, default_value = "2048")]
   pub fee_history_limit: u64,
+
+  #[clap(long, default_value = "50")]
+  pub block_cache_size: u64,
+
+  #[clap(long, default_value = "50")]
+  pub status_cache_size: u64,
 }
 
 /// Command for exporting the genesis state of the parachain
