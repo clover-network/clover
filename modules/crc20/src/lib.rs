@@ -57,6 +57,9 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
+        MintFeeUpdated(BalanceOf<T>),
+        ProtocolMintFeeUpdated(BalanceOf<T>),
+        ProtocolOwnerUpdated(T::AccountId),
         Deploy(T::AccountId, CRC20),
     }
 
@@ -82,14 +85,65 @@ pub mod pallet {
     #[pallet::getter(fn token_minted_amount)]
     pub(super) type TokenMintedAmount<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u128, ValueQuery>;
 
-
     #[pallet::storage]
     #[pallet::getter(fn account_balance_map)]
     pub(super) type AccountBalanceMap<T: Config> =
     StorageMap<_, Blake2_128Concat, Vec<u8>, AccountBalance, ValueQuery>;
 
+    #[pallet::storage]
+    #[pallet::getter(fn mint_fee)]
+    pub(super) type MintFee<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn protocol_mint_fee)]
+    pub(super) type ProtocolMintFee<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn protocol_owner)]
+    pub(super) type ProtocolOwner<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+
+
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        #[frame_support::transactional]
+        pub fn set_mint_fee(
+          origin: OriginFor<T>,
+          mint_fee: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+          ensure_root(origin)?;
+
+          MintFee::<T>::put(mint_fee);
+          Self::deposit_event(Event::MintFeeUpdated(mint_fee));
+          Ok(().into())
+        }
+
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        #[frame_support::transactional]
+        pub fn set_protocol_mint_fee(
+          origin: OriginFor<T>,
+          protocol_mint_fee: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+          ensure_root(origin)?;
+
+          ProtocolMintFee::<T>::put(protocol_mint_fee);
+          Self::deposit_event(Event::ProtocolMintFeeUpdated(protocol_mint_fee));
+          Ok(().into())
+        }
+
+        #[pallet::weight(T::DbWeight::get().writes(1))]
+        #[frame_support::transactional]
+        pub fn set_protocol_owner(
+          origin: OriginFor<T>,
+          protocol_owner: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+          ensure_root(origin)?;
+
+          ProtocolOwner::<T>::put(protocol_owner.clone());
+          Self::deposit_event(Event::ProtocolOwnerUpdated(protocol_owner));
+          Ok(().into())
+        }
+
         #[pallet::weight(T::DbWeight::get().writes(2))]
         #[frame_support::transactional]
         pub(super) fn deploy(
