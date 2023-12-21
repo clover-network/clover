@@ -48,9 +48,11 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        InSufficientError,
+        InSufficientFundError,
         TickAlreadyExists,
         InvalidName,
+        InsufficientSupplyError,
+        OverLimitError,
     }
 
     #[pallet::event]
@@ -61,12 +63,13 @@ pub mod pallet {
         ProtocolMintFeeUpdated(BalanceOf<T>),
         ProtocolOwnerUpdated(T::AccountId),
         Deploy(T::AccountId, CRC20),
+        Mint(T::AccountId, MintInfo),
     }
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
     pub struct AccountBalance {
         account_full_name: Vec<u8>,
-        balance: u128
+        balance: u128,
     }
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
@@ -77,18 +80,28 @@ pub mod pallet {
         pub limit: u128,
     }
 
+    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+    pub struct MintInfo {
+        pub protocol: Vec<u8>,
+        pub tick: Vec<u8>,
+        pub amount: u128,
+    }
+
     #[pallet::storage]
     #[pallet::getter(fn all_tokens)]
-    pub(super) type AllTokens<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, CRC20), ValueQuery>;
+    pub(super) type AllTokens<T: Config> =
+        StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, CRC20), ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn token_minted_amount)]
-    pub(super) type TokenMintedAmount<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u128, ValueQuery>;
+
+    pub(super) type TokenMintedAmount<T: Config> =
+        StorageMap<_, Blake2_128Concat, Vec<u8>, u128, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn account_balance_map)]
     pub(super) type AccountBalanceMap<T: Config> =
-    StorageMap<_, Blake2_128Concat, Vec<u8>, AccountBalance, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, Vec<u8>, AccountBalance, ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn mint_fee)]
@@ -179,17 +192,43 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
 
-            let mut map_key = Vec::new();
-            map_key.extend(protocol.clone());
-            map_key.extend(tick);
-            map_key.extend(signer.encode());
+            let mut tick_key = Self::token_storage_key(&protocol, &tick)?;
+            let tick_info = Self::all_tokens(tick_key.clone());
+
+            let tick_supply = tick_info.1.max;
+            let tick_limit = tick_info.1.limit;
+
+            let tick_minted = Self::token_minted_amount(tick_key.clone());
+
+            if (tick_minted + amount) > tick_supply {
+                return Err(Error::<T>::InsufficientSupplyError.into());
+            }
+
+            if amount > tick_limit {
+                return Err(Error::<T>::OverLimitError.into());
+            }
+
+            let mut account_balance_map_key = Vec::new();
+            account_balance_map_key.extend(protocol.clone());
+            account_balance_map_key.extend(tick.clone());
+            account_balance_map_key.extend(signer.encode());
 
             let account_balance = AccountBalance {
                 account_full_name: protocol.clone(),
                 balance: amount,
             };
 
-            AccountBalanceMap::<T>::insert(protocol, account_balance);
+            AccountBalanceMap::<T>::insert(account_balance_map_key, account_balance);
+            TokenMintedAmount::<T>::insert(tick_key, amount + tick_minted);
+
+            Self::deposit_event(Event::Mint(
+                signer,
+                MintInfo {
+                    protocol,
+                    tick,
+                    amount,
+                },
+            ));
 
             Ok(().into())
         }
@@ -207,8 +246,7 @@ pub mod pallet {
         }
 
         fn is_valid_str(s: &[u8]) -> bool {
-            s.len() == 4 &&
-            s.iter().all(|c| *c >= 65 && *c <= 90)
+            s.len() == 4 && s.iter().all(|c| *c >= 65 && *c <= 90)
         }
     }
 }
