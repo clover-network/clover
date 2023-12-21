@@ -68,19 +68,19 @@ pub mod pallet {
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
     pub struct CRC20 {
-        pub protocol: String,
-        pub tick: String,
+        pub protocol: Vec<u8>,
+        pub tick: Vec<u8>,
         pub max: u128,
         pub limit: u128,
     }
 
     #[pallet::storage]
     #[pallet::getter(fn all_tokens)]
-    pub(super) type AllTokens<T: Config> = StorageMap<_, Blake2_128Concat, String, (T::AccountId, CRC20), ValueQuery>;
+    pub(super) type AllTokens<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, CRC20), ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn token_minted_amount)]
-    pub(super) type TokenMintedAmount<T: Config> = StorageMap<_, Blake2_128Concat, String, u128, ValueQuery>;
+    pub(super) type TokenMintedAmount<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u128, ValueQuery>;
 
 
     #[pallet::storage]
@@ -94,8 +94,8 @@ pub mod pallet {
         #[frame_support::transactional]
         pub(super) fn deploy(
             origin: OriginFor<T>,
-            protocol: String,
-            tick: String,
+            protocol: Vec<u8>,
+            tick: Vec<u8>,
             max: u128,
             limit: u128,
         ) -> DispatchResultWithPostInfo {
@@ -142,17 +142,19 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        fn token_storage_key(protocol: &str, tick: &str) -> Result<String, Error<T>> {
+        fn token_storage_key(protocol: &[u8], tick: &[u8]) -> Result<Vec<u8>, Error<T>> {
             if Self::is_valid_str(&protocol) && Self::is_valid_str(&tick) {
-                Ok(format!("{protocol}{tick}"))
+                let mut v = protocol.to_vec();
+                v.extend(tick);
+                Ok(v)
             } else {
                 Err(Error::<T>::InvalidName)
             }
         }
 
-        fn is_valid_str(s: &str) -> bool {
+        fn is_valid_str(s: &[u8]) -> bool {
             s.len() == 4 &&
-            s.chars().all(|c| c.is_ascii_uppercase() && c.is_ascii_alphabetic())
+            s.iter().all(|c| *c >= 65 && *c <= 90)
         }
     }
 }
