@@ -52,60 +52,39 @@ pub mod pallet {
     #[pallet::error]
     pub enum Error<T> {
         InSufficientError,
+        TickAlreadyExists,
+        InvalidName,
     }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
-        /// Bridge Account Changed
-        Deploy(Vec<u8>),
+        Deploy(T::AccountId, CRC20),
     }
 
-    #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
     pub struct AccountBalance {
         account_full_name: Vec<u8>,
         balance: u128
     }
 
-    impl Default for AccountBalance {
-        fn default() -> Self {
-            AccountBalance {
-                account_full_name: Vec::new(),
-                balance: 0,
-            }
-        }
-    }
-
-    #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
     pub struct CRC20 {
-        pub protocol: Vec<u8>,
-        pub tick: Vec<u8>,
-        pub supply: Vec<u8>,
-        pub max: Vec<u8>,
-        pub limit: Vec<u8>,
-        pub owner: Vec<u8>,
-        pub minted: u128,
-    }
-
-    impl Default for CRC20 {
-        fn default() -> Self {
-            CRC20 {
-                protocol: Vec::new(),
-                tick: Vec::new(),
-                supply: Vec::new(),
-                max: Vec::new(),
-                limit: Vec::new(),
-                owner: Vec::new(),
-                minted: 0,
-            }
-        }
+        pub protocol: String,
+        pub tick: String,
+        pub max: u128,
+        pub limit: u128,
     }
 
     #[pallet::storage]
-    #[pallet::getter(fn all_tokens_map)]
-    pub(super) type AllTokens<T: Config> =
-        StorageMap<_, Blake2_128Concat, Vec<u8>, CRC20, ValueQuery>;
+    #[pallet::getter(fn all_tokens)]
+    pub(super) type AllTokens<T: Config> = StorageMap<_, Blake2_128Concat, String, (T::AccountId, CRC20), ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn token_minted_amount)]
+    pub(super) type TokenMintedAmount<T: Config> = StorageMap<_, Blake2_128Concat, String, u128, ValueQuery>;
+
 
     #[pallet::storage]
     #[pallet::getter(fn account_balance_map)]
@@ -114,21 +93,34 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// update the bridge account for the target network
         #[pallet::weight(T::DbWeight::get().writes(2))]
         #[frame_support::transactional]
-        pub(super) fn deploy_crc20(
+        pub(super) fn deploy(
             origin: OriginFor<T>,
-            protocol: Vec<u8>,
-            tick: Vec<u8>,
-            supply: Vec<u8>,
-            max: Vec<u8>,
-            limit: Vec<u8>,
-            owner: Vec<u8>,
-            minted: u128,
+            protocol: String,
+            tick: String,
+            max: u128,
+            limit: u128,
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
-
+            if !is_valid_str(&protocol) {
+                return Err(Error::<T>::InvalidName.into());
+            }
+            if !is_valid_str(&tick) {
+                return Err(Error::<T>::InvalidName.into());
+            }
+            let key = token_storage_key(&protocol, &tick);
+            if AllTokens::<T>::contains_key(&key) {
+                return Err(Error::<T>::TickAlreadyExists.into());
+            }
+            let crc20 = CRC20 {
+                protocol,
+                tick,
+                max,
+                limit,
+            };
+            AllTokens::<T>::insert(key.clone(), (signer.clone(), crc20.clone()));
+            Self::deposit_event(Event::Deploy(signer, crc20));
             Ok(().into())
         }
 
@@ -156,5 +148,14 @@ pub mod pallet {
 
             Ok(().into())
         }
+    }
+
+    fn token_storage_key(protocol: &str, tick: &str) -> String {
+        format!("{protocol}{tick}")
+    }
+
+    fn is_valid_str(s: &str) -> bool {
+        s.len() == 4 &&
+        s.chars().all(|c| c.is_ascii_uppercase() && c.is_ascii_alphabetic())
     }
 }
