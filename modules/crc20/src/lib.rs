@@ -63,6 +63,21 @@ pub mod pallet {
     }
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+    pub struct AccountBalance {
+        account_full_name: Vec<u8>,
+        balance: u128
+    }
+
+    impl Default for AccountBalance {
+        fn default() -> Self {
+            AccountBalance {
+                account_full_name: Vec::new(),
+                balance: 0,
+            }
+        }
+    }
+
+    #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
     pub struct CRC20 {
         pub protocol: Vec<u8>,
         pub tick: Vec<u8>,
@@ -76,12 +91,12 @@ pub mod pallet {
     impl Default for CRC20 {
         fn default() -> Self {
             CRC20 {
-                protocol: vec![],
-                tick: vec![],
-                supply: vec![],
-                max: vec![],
-                limit: vec![],
-                owner: vec![],
+                protocol: Vec::new(),
+                tick: Vec::new(),
+                supply: Vec::new(),
+                max: Vec::new(),
+                limit: Vec::new(),
+                owner: Vec::new(),
                 minted: 0,
             }
         }
@@ -91,6 +106,11 @@ pub mod pallet {
     #[pallet::getter(fn all_tokens_map)]
     pub(super) type AllTokens<T: Config> =
         StorageMap<_, Blake2_128Concat, Vec<u8>, CRC20, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn account_balance_map)]
+    pub(super) type AccountBalanceMap<T: Config> =
+    StorageMap<_, Blake2_128Concat, Vec<u8>, AccountBalance, ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -108,6 +128,31 @@ pub mod pallet {
             minted: u128,
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
+
+            Ok(().into())
+        }
+
+        #[pallet::weight(T::DbWeight::get().writes(2))]
+        #[frame_support::transactional]
+        pub(super) fn mint(
+            origin: OriginFor<T>,
+            protocol: Vec<u8>,
+            tick: Vec<u8>,
+            amount: u128,
+        ) -> DispatchResultWithPostInfo {
+            let signer = ensure_signed(origin)?;
+
+            let mut map_key = Vec::new();
+            map_key.extend(protocol.clone());
+            map_key.extend(tick);
+            map_key.extend(signer.encode());
+
+            let account_balance = AccountBalance {
+                account_full_name: protocol.clone(),
+                balance: amount,
+            };
+
+            AccountBalanceMap::<T>::insert(protocol, account_balance);
 
             Ok(().into())
         }
