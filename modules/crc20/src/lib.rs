@@ -16,6 +16,8 @@ use sp_std::prelude::*;
 
 pub use pallet::*;
 pub use type_utils::option_utils::OptionExt;
+use frame_support::sp_runtime::SaturatedConversion;
+use sp_runtime::traits::Zero;
 
 #[cfg(test)]
 mod mock;
@@ -206,6 +208,19 @@ pub mod pallet {
 
             if amount > tick_limit {
                 return Err(Error::<T>::OverLimitError.into());
+            }
+
+            let mint_fee = Self::mint_fee();
+            let protocol_mint_fee = Self::protocol_mint_fee();
+
+            let protocol_owner = Self::protocol_owner();
+
+            if mint_fee.gt(&BalanceOf::<T>::zero()) {
+                //T::Currency::transfer(&signer, &protocol_owner, mint_fee, ExistenceRequirement::KeepAlive)?;
+            }
+
+            if protocol_mint_fee.gt(&BalanceOf::<T>::zero()) {
+                //T::Currency::transfer(&signer, &protocol_owner, protocol_mint_fee, ExistenceRequirement::KeepAlive)?;
             }
 
             let mut account_balance_map_key = Vec::new();
