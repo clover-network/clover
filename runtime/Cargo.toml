@@ -85,6 +85,7 @@ smallvec = "1.4.1"
 default = ['std']
 std = [
     'clover-rpc-runtime-api/std',
+    'clover-crc20/std',
     'codec/std',
     "frame-benchmarking/std",
     'frame-executive/std',
