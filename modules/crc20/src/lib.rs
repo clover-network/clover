@@ -15,7 +15,6 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 pub use pallet::*;
-pub mod ethereum_address;
 pub use type_utils::option_utils::OptionExt;
 
 #[cfg(test)]
@@ -23,8 +22,6 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
-
-pub use ethereum_address::*;
 
 #[frame_support::pallet]
 pub mod pallet {
