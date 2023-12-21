@@ -103,13 +103,7 @@ pub mod pallet {
             limit: u128,
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
-            if !is_valid_str(&protocol) {
-                return Err(Error::<T>::InvalidName.into());
-            }
-            if !is_valid_str(&tick) {
-                return Err(Error::<T>::InvalidName.into());
-            }
-            let key = token_storage_key(&protocol, &tick);
+            let key = Self::token_storage_key(&protocol, &tick)?;
             if AllTokens::<T>::contains_key(&key) {
                 return Err(Error::<T>::TickAlreadyExists.into());
             }
@@ -150,12 +144,18 @@ pub mod pallet {
         }
     }
 
-    fn token_storage_key(protocol: &str, tick: &str) -> String {
-        format!("{protocol}{tick}")
-    }
+    impl<T: Config> Pallet<T> {
+        fn token_storage_key(protocol: &str, tick: &str) -> Result<String, Error<T>> {
+            if Self::is_valid_str(&protocol) && Self::is_valid_str(&tick) {
+                Ok(format!("{protocol}{tick}"))
+            } else {
+                Err(Error::<T>::InvalidName)
+            }
+        }
 
-    fn is_valid_str(s: &str) -> bool {
-        s.len() == 4 &&
-        s.chars().all(|c| c.is_ascii_uppercase() && c.is_ascii_alphabetic())
+        fn is_valid_str(s: &str) -> bool {
+            s.len() == 4 &&
+            s.chars().all(|c| c.is_ascii_uppercase() && c.is_ascii_alphabetic())
+        }
     }
 }
