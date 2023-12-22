@@ -90,7 +90,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn tick_info)]
     pub(super) type TickInfo<T: Config> =
-        StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, Vec<u8>, u128, u128), ValueQuery>;
+        StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, Vec<u8>, u128, u128, BalanceOf<T>, T::AccountId), ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn token_minted_amount)]
@@ -103,10 +103,6 @@ pub mod pallet {
     StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, Vec<u8>, u128>;
 
     #[pallet::storage]
-    #[pallet::getter(fn mint_fee)]
-    pub(super) type MintFee<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
-
-    #[pallet::storage]
     #[pallet::getter(fn protocol_mint_fee)]
     pub(super) type ProtocolMintFee<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
@@ -117,19 +113,6 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        #[pallet::weight(T::DbWeight::get().writes(1))]
-        #[frame_support::transactional]
-        pub fn set_mint_fee(
-          origin: OriginFor<T>,
-          mint_fee: BalanceOf<T>,
-        ) -> DispatchResultWithPostInfo {
-          ensure_root(origin)?;
-
-          MintFee::<T>::put(mint_fee);
-          Self::deposit_event(Event::MintFeeUpdated(mint_fee));
-          Ok(().into())
-        }
-
         #[pallet::weight(T::DbWeight::get().writes(1))]
         #[frame_support::transactional]
         pub fn set_protocol_mint_fee(
@@ -163,12 +146,14 @@ pub mod pallet {
             tick: Vec<u8>,
             max: u128,
             limit: u128,
+            mint_fee: BalanceOf<T>,
+            mint_fee_to: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
             ensure!(tick.len() == 4 && tick.iter().all(|c| *c >= 65 && *c <= 90), Error::<T>::InvalidTickName);
             ensure!(!TickInfo::<T>::contains_key(&tick), Error::<T>::TickAlreadyExists);
             ensure!(max > limit, Error::<T>::InvalidTickLimit);
-            TickInfo::<T>::insert(tick.clone(), (signer.clone(), tick.clone(), max, limit));
+            TickInfo::<T>::insert(tick.clone(), (signer.clone(), tick.clone(), max, limit, mint_fee, mint_fee_to));
             Self::deposit_event(Event::Deploy(signer, tick.clone(), max, limit));
             Ok(().into())
         }
@@ -200,16 +185,15 @@ pub mod pallet {
                 return Err(Error::<T>::OverLimitError.into());
             }
 
-            let mint_fee = Self::mint_fee();
-            let protocol_mint_fee = Self::protocol_mint_fee();
+            let mint_fee = tick_info.4;
+            let mint_fee_to = tick_info.5;
 
-            let protocol_owner = Self::protocol_owner();
-
-            if mint_fee.gt(&BalanceOf::<T>::zero()) {
-                if ProtocolOwner::<T>::exists() {
-                    T::Currency::transfer(&signer, &protocol_owner, mint_fee, ExistenceRequirement::KeepAlive)?;
-                }
+            if mint_fee.gt(&crate::pallet::BalanceOf::<T>::zero()) {
+                T::Currency::transfer(&signer, &mint_fee_to, mint_fee, ExistenceRequirement::KeepAlive)?;
             }
+
+            let protocol_mint_fee = Self::protocol_mint_fee();
+            let protocol_owner = Self::protocol_owner();
 
             if protocol_mint_fee.gt(&BalanceOf::<T>::zero()) {
                 if ProtocolOwner::<T>::exists() {
