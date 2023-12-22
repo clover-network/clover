@@ -7,16 +7,11 @@
 use codec::Encode;
 use frame_support::traits::{Currency, Get};
 use frame_system::ensure_signed;
-use hex_literal::hex;
-use sp_runtime::{
-    traits::{AccountIdConversion, Saturating},
-    ModuleId,
-};
+use sp_runtime::ModuleId;
 use sp_std::prelude::*;
 
 pub use pallet::*;
 pub use type_utils::option_utils::OptionExt;
-use frame_support::sp_runtime::SaturatedConversion;
 use sp_runtime::traits::Zero;
 
 #[cfg(test)]
@@ -49,7 +44,7 @@ pub mod pallet {
     impl<T: Config> ValidateUnsigned for Pallet<T> {
         type Call = Call<T>;
 
-        fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+        fn validate_unsigned(_source: TransactionSource, _call: &Self::Call) -> TransactionValidity {
             InvalidTransaction::Call.into()
         }
     }
@@ -281,10 +276,7 @@ pub mod pallet {
         pub(super) fn burn(origin: OriginFor<T>, tick: Vec<u8>, amount: u128) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
             let address_bytes = signer.encode();
-            let balance = match BalanceForTickAddress::<T>::get(&tick, &address_bytes) {
-                Some(v) => v,
-                None => return Err(Error::<T>::FromAddressNotExists.into()),
-            };
+            let balance = BalanceForTickAddress::<T>::get(&tick, &address_bytes).ok_or(Error::<T>::FromAddressNotExists)?;
             ensure!(balance >= amount, Error::<T>::InSufficientFundError);
             BalanceForTickAddress::<T>::insert(&tick, &address_bytes, balance - amount);
             Self::deposit_event(Event::Burn(signer, tick, amount));
