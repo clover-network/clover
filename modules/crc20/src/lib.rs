@@ -61,6 +61,7 @@ pub mod pallet {
     pub enum Error<T> {
         InSufficientFundError,
         TickAlreadyExists,
+        TickNotExists,
         InvalidName,
         InvalidLimit,
         InsufficientSupplyError,
@@ -105,14 +106,13 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn token_minted_amount)]
-
     pub(super) type TokenMintedAmount<T: Config> =
         StorageMap<_, Blake2_128Concat, Vec<u8>, u128, ValueQuery>;
 
     #[pallet::storage]
-    #[pallet::getter(fn account_balance_map)]
-    pub(super) type AccountBalanceMap<T: Config> =
-        StorageMap<_, Blake2_128Concat, Vec<u8>, AccountBalance, ValueQuery>;
+    #[pallet::getter(fn tick_address_to_balance)]
+    pub(super) type BalanceForTickAddress<T: Config> =
+    StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, Vec<u8>, u128>;
 
     #[pallet::storage]
     #[pallet::getter(fn mint_fee)]
@@ -194,11 +194,13 @@ pub mod pallet {
         #[frame_support::transactional]
         pub(super) fn mint(
             origin: OriginFor<T>,
-            protocol: Vec<u8>,
             tick: Vec<u8>,
             amount: u128,
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
+            let address_bytes = signer.encode();
+
+            ensure!(TickInfo::<T>::contains_key(&tick), Error::<T>::TickNotExists);
 
             let tick_info = Self::tick_info(&tick);
 
@@ -228,17 +230,13 @@ pub mod pallet {
                 //T::Currency::transfer(&signer, &protocol_owner, protocol_mint_fee, ExistenceRequirement::KeepAlive)?;
             }
 
-            let mut account_balance_map_key = Vec::new();
-            account_balance_map_key.extend(protocol.clone());
-            account_balance_map_key.extend(tick.clone());
-            account_balance_map_key.extend(signer.encode());
+            if BalanceForTickAddress::<T>::contains_key(&tick, &address_bytes) {
+                let address_balance = BalanceForTickAddress::<T>::get(&tick, &address_bytes)?;
+                BalanceForTickAddress::<T>::insert(&tick, &address_bytes, address_balance + amount);
+            } else {
+                BalanceForTickAddress::<T>::insert(&tick, &address_bytes, amount);
+            }
 
-            let account_balance = AccountBalance {
-                account_full_name: protocol.clone(),
-                balance: amount,
-            };
-
-            AccountBalanceMap::<T>::insert(account_balance_map_key, account_balance);
             TokenMintedAmount::<T>::insert(tick.clone(), amount + tick_minted);
 
             Self::deposit_event(Event::Mint(
