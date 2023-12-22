@@ -54,6 +54,7 @@ pub mod pallet {
         TickNotExists,
         InvalidTickName,
         InvalidTickLimit,
+        InvalidTickMax,
         InsufficientSupplyError,
         OverLimitError,
         FromAddressNotExists,
@@ -161,7 +162,9 @@ pub mod pallet {
                 !TickInfo::<T>::contains_key(&tick),
                 Error::<T>::TickAlreadyExists
             );
+            ensure!(max <= u128::MAX, Error::<T>::InvalidTickMax);
             ensure!(max > limit, Error::<T>::InvalidTickLimit);
+            ensure!(limit > 0, Error::<T>::InvalidTickLimit);
             TickInfo::<T>::insert(
                 tick.clone(),
                 (
