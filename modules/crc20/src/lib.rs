@@ -67,8 +67,8 @@ pub mod pallet {
         MintFeeUpdated(BalanceOf<T>),
         ProtocolMintFeeUpdated(BalanceOf<T>),
         ProtocolOwnerUpdated(T::AccountId),
-        Deploy(T::AccountId, CRC20),
-        Mint(T::AccountId, MintInfo),
+        Deploy(T::AccountId, Vec<u8>, u128, u128),
+        Mint(T::AccountId, Vec<u8>, u128),
         Burn(T::AccountId, Vec<u8>, u128),
         Transfer(T::AccountId, TransferInfo),
     }
@@ -77,19 +77,6 @@ pub mod pallet {
     pub struct AccountBalance {
         account_full_name: Vec<u8>,
         balance: u128,
-    }
-
-    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-    pub struct CRC20 {
-        pub tick: Vec<u8>,
-        pub max: u128,
-        pub limit: u128,
-    }
-
-    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-    pub struct MintInfo {
-        pub tick: Vec<u8>,
-        pub amount: u128,
     }
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
@@ -103,7 +90,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn tick_info)]
     pub(super) type TickInfo<T: Config> =
-        StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, CRC20), ValueQuery>;
+        StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, Vec<u8>, u128, u128), ValueQuery>;
 
     #[pallet::storage]
     #[pallet::getter(fn token_minted_amount)]
@@ -181,13 +168,8 @@ pub mod pallet {
             ensure!(tick.len() == 4 && tick.iter().all(|c| *c >= 65 && *c <= 90), Error::<T>::InvalidTickName);
             ensure!(!TickInfo::<T>::contains_key(&tick), Error::<T>::TickAlreadyExists);
             ensure!(max > limit, Error::<T>::InvalidTickLimit);
-            let crc20 = CRC20 {
-                tick: tick.clone(),
-                max,
-                limit,
-            };
-            TickInfo::<T>::insert(tick, (signer.clone(), crc20.clone()));
-            Self::deposit_event(Event::Deploy(signer, crc20));
+            TickInfo::<T>::insert(tick.clone(), (signer.clone(), tick.clone(), max, limit));
+            Self::deposit_event(Event::Deploy(signer, tick.clone(), max, limit));
             Ok(().into())
         }
 
@@ -205,8 +187,8 @@ pub mod pallet {
 
             let tick_info = Self::tick_info(&tick);
 
-            let tick_supply = tick_info.1.max;
-            let tick_limit = tick_info.1.limit;
+            let tick_supply = tick_info.2;
+            let tick_limit = tick_info.3;
 
             let tick_minted = Self::token_minted_amount(&tick);
 
@@ -242,10 +224,8 @@ pub mod pallet {
 
             Self::deposit_event(Event::Mint(
                 signer,
-                MintInfo {
-                    tick,
-                    amount,
-                },
+                tick,
+                amount,
             ));
 
             Ok(().into())
