@@ -66,6 +66,8 @@ pub mod pallet {
         InvalidLimit,
         InsufficientSupplyError,
         OverLimitError,
+        FromAddressNotExists,
+        ToAddressNotExists
     }
 
     #[pallet::event]
@@ -94,7 +96,6 @@ pub mod pallet {
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
     pub struct MintInfo {
-        pub protocol: Vec<u8>,
         pub tick: Vec<u8>,
         pub amount: u128,
     }
@@ -231,7 +232,7 @@ pub mod pallet {
             }
 
             if BalanceForTickAddress::<T>::contains_key(&tick, &address_bytes) {
-                let address_balance = BalanceForTickAddress::<T>::get(&tick, &address_bytes)?;
+                let address_balance = BalanceForTickAddress::<T>::get(&tick, &address_bytes).unwrap();
                 BalanceForTickAddress::<T>::insert(&tick, &address_bytes, address_balance + amount);
             } else {
                 BalanceForTickAddress::<T>::insert(&tick, &address_bytes, amount);
@@ -242,11 +243,40 @@ pub mod pallet {
             Self::deposit_event(Event::Mint(
                 signer,
                 MintInfo {
-                    protocol,
                     tick,
                     amount,
                 },
             ));
+
+            Ok(().into())
+        }
+
+
+        #[pallet::weight(T::DbWeight::get().writes(2))]
+        #[frame_support::transactional]
+        pub(super) fn transfer(
+            from: OriginFor<T>,
+            to_address: Vec<u8>,
+            tick: Vec<u8>,
+            amount: u128,
+        ) -> DispatchResultWithPostInfo {
+            let from_signer = ensure_signed(from)?;
+            let from_address_bytes = from_signer.encode();
+
+            ensure!(BalanceForTickAddress::<T>::contains_key(&tick, &from_address_bytes), Error::<T>::FromAddressNotExists);
+            // ensure!(BalanceForTickAddress::<T>::contains_key(&tick, &to_address), Error::<T>::ToAddressNotExists);
+
+            let from_address_balance = BalanceForTickAddress::<T>::get(&tick, &from_address_bytes).unwrap();
+            ensure!(from_address_balance >= amount, Error::<T>::InSufficientFundError);
+
+            BalanceForTickAddress::<T>::insert(&tick, &from_address_bytes, from_address_balance - amount);
+
+            if BalanceForTickAddress::<T>::contains_key(&tick, &to_address) {
+                let to_address_balance = BalanceForTickAddress::<T>::get(&tick, &to_address).unwrap();
+                BalanceForTickAddress::<T>::insert(&tick, &from_address_bytes, to_address_balance + amount);
+            } else {
+                BalanceForTickAddress::<T>::insert(&tick, &from_address_bytes, amount);
+            }
 
             Ok(().into())
         }
