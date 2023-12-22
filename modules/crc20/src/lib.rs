@@ -62,6 +62,7 @@ pub mod pallet {
         InSufficientFundError,
         TickAlreadyExists,
         InvalidName,
+        InvalidLimit,
         InsufficientSupplyError,
         OverLimitError,
     }
@@ -85,7 +86,6 @@ pub mod pallet {
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
     pub struct CRC20 {
-        pub protocol: Vec<u8>,
         pub tick: Vec<u8>,
         pub max: u128,
         pub limit: u128,
@@ -99,8 +99,8 @@ pub mod pallet {
     }
 
     #[pallet::storage]
-    #[pallet::getter(fn all_tokens)]
-    pub(super) type AllTokens<T: Config> =
+    #[pallet::getter(fn tick_info)]
+    pub(super) type TickInfo<T: Config> =
         StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, CRC20), ValueQuery>;
 
     #[pallet::storage]
@@ -172,23 +172,20 @@ pub mod pallet {
         #[frame_support::transactional]
         pub(super) fn deploy(
             origin: OriginFor<T>,
-            protocol: Vec<u8>,
             tick: Vec<u8>,
             max: u128,
             limit: u128,
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
-            let key = Self::token_storage_key(&protocol, &tick)?;
-            if AllTokens::<T>::contains_key(&key) {
-                return Err(Error::<T>::TickAlreadyExists.into());
-            }
+            ensure!(tick.len() == 4 && tick.iter().all(|c| *c >= 65 && *c <= 90), Error::<T>::InvalidName);
+            ensure!(!TickInfo::<T>::contains_key(&tick), Error::<T>::TickAlreadyExists);
+            ensure!(max > limit, Error::<T>::InvalidLimit);
             let crc20 = CRC20 {
-                protocol,
-                tick,
+                tick: tick.clone(),
                 max,
                 limit,
             };
-            AllTokens::<T>::insert(key.clone(), (signer.clone(), crc20.clone()));
+            TickInfo::<T>::insert(tick, (signer.clone(), crc20.clone()));
             Self::deposit_event(Event::Deploy(signer, crc20));
             Ok(().into())
         }
@@ -203,13 +200,12 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
 
-            let mut tick_key = Self::token_storage_key(&protocol, &tick)?;
-            let tick_info = Self::all_tokens(tick_key.clone());
+            let tick_info = Self::tick_info(&tick);
 
             let tick_supply = tick_info.1.max;
             let tick_limit = tick_info.1.limit;
 
-            let tick_minted = Self::token_minted_amount(tick_key.clone());
+            let tick_minted = Self::token_minted_amount(&tick);
 
             if (tick_minted + amount) > tick_supply {
                 return Err(Error::<T>::InsufficientSupplyError.into());
@@ -243,7 +239,7 @@ pub mod pallet {
             };
 
             AccountBalanceMap::<T>::insert(account_balance_map_key, account_balance);
-            TokenMintedAmount::<T>::insert(tick_key, amount + tick_minted);
+            TokenMintedAmount::<T>::insert(tick.clone(), amount + tick_minted);
 
             Self::deposit_event(Event::Mint(
                 signer,
@@ -255,22 +251,6 @@ pub mod pallet {
             ));
 
             Ok(().into())
-        }
-    }
-
-    impl<T: Config> Pallet<T> {
-        fn token_storage_key(protocol: &[u8], tick: &[u8]) -> Result<Vec<u8>, Error<T>> {
-            if Self::is_valid_str(&protocol) && Self::is_valid_str(&tick) {
-                let mut v = protocol.to_vec();
-                v.extend(tick);
-                Ok(v)
-            } else {
-                Err(Error::<T>::InvalidName)
-            }
-        }
-
-        fn is_valid_str(s: &[u8]) -> bool {
-            s.len() == 4 && s.iter().all(|c| *c >= 65 && *c <= 90)
         }
     }
 }
