@@ -1084,7 +1084,7 @@ construct_runtime!(
     EvmAccounts: evm_accounts::{Module, Call, Storage, Event<T>},
 
     CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
-    CloverCRC20: clover_crc20::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+    CloverCRC20: clover_crc20::{Module, Call, Storage, Event<T>},
   }
 );
 

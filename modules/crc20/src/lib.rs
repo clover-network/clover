@@ -40,15 +40,6 @@ pub mod pallet {
         type Prefix: Get<&'static [u8]>;
     }
 
-    #[pallet::validate_unsigned]
-    impl<T: Config> ValidateUnsigned for Pallet<T> {
-        type Call = Call<T>;
-
-        fn validate_unsigned(_source: TransactionSource, _call: &Self::Call) -> TransactionValidity {
-            InvalidTransaction::Call.into()
-        }
-    }
-
     #[pallet::pallet]
     pub struct Pallet<T>(sp_std::marker::PhantomData<T>);
 
