@@ -9,10 +9,14 @@ use frame_support::traits::{Currency, Get};
 use frame_system::ensure_signed;
 use sp_runtime::ModuleId;
 use sp_std::prelude::*;
+use sp_std::str;
 
 pub use pallet::*;
 pub use type_utils::option_utils::OptionExt;
+use frame_support::sp_runtime::SaturatedConversion;
+use frame_support::traits::ExistenceRequirement;
 use sp_runtime::traits::Zero;
+use log;
 
 #[cfg(test)]
 mod mock;
@@ -66,6 +70,13 @@ pub mod pallet {
         Deploy(T::AccountId, CRC20),
         Mint(T::AccountId, MintInfo),
         Burn(T::AccountId, Vec<u8>, u128),
+        Transfer(T::AccountId, TransferInfo),
+    }
+
+    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+    pub struct AccountBalance {
+        account_full_name: Vec<u8>,
+        balance: u128,
     }
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
@@ -79,6 +90,14 @@ pub mod pallet {
     pub struct MintInfo {
         pub tick: Vec<u8>,
         pub amount: u128,
+    }
+
+    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
+    pub struct TransferInfo {
+        from: Vec<u8>,
+        to: Vec<u8>,
+        tick: Vec<u8>,
+        amount: u128
     }
 
     #[pallet::storage]
@@ -253,12 +272,20 @@ pub mod pallet {
             BalanceForTickAddress::<T>::insert(&tick, &from_address_bytes, from_address_balance - amount);
 
             if BalanceForTickAddress::<T>::contains_key(&tick, &to_address) {
-                let to_address_balance = BalanceForTickAddress::<T>::get(&tick, &to_address).unwrap();
-                BalanceForTickAddress::<T>::insert(&tick, &from_address_bytes, to_address_balance + amount);
+                let _: Result<(), ()> = BalanceForTickAddress::<T>::try_mutate(&tick, &to_address, |old_balance| {
+                    *old_balance = Some(amount + (*old_balance).unwrap());
+                    Ok(())
+                });
             } else {
-                BalanceForTickAddress::<T>::insert(&tick, &from_address_bytes, amount);
+                BalanceForTickAddress::<T>::insert(&tick, &to_address, amount);
             }
 
+            Self::deposit_event(Event::Transfer(from_signer, TransferInfo{
+                from: from_address_bytes,
+                to: to_address,
+                tick: tick,
+                amount: amount,
+            }));
             Ok(().into())
         }
 
