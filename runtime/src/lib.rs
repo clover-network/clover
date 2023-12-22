@@ -1001,10 +1001,18 @@ impl pallet_contracts::Config for Runtime {
 parameter_types! {
     pub Prefix: &'static [u8] = b"Pay CLVs to the Clover account:";
     pub const ClaimsModuleId: ModuleId = ModuleId(*b"clvclaim");
+    pub const CRC20ModuleId: ModuleId = ModuleId(*b"clvcrc20");
 }
 
 impl clover_claims::Config for Runtime {
   type ModuleId = ClaimsModuleId;
+  type Event = Event;
+  type Currency = Balances;
+  type Prefix = Prefix;
+}
+
+impl clover_crc20::Config for Runtime {
+  type ModuleId = CRC20ModuleId;
   type Event = Event;
   type Currency = Balances;
   type Prefix = Prefix;
@@ -1076,6 +1084,7 @@ construct_runtime!(
     EvmAccounts: evm_accounts::{Module, Call, Storage, Event<T>},
 
     CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+    CloverCRC20: clover_crc20::{Module, Call, Storage, Event<T>, ValidateUnsigned},
   }
 );
 
