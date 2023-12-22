@@ -206,11 +206,15 @@ pub mod pallet {
             let protocol_owner = Self::protocol_owner();
 
             if mint_fee.gt(&BalanceOf::<T>::zero()) {
-                //T::Currency::transfer(&signer, &protocol_owner, mint_fee, ExistenceRequirement::KeepAlive)?;
+                if ProtocolOwner::<T>::exists() {
+                    T::Currency::transfer(&signer, &protocol_owner, mint_fee, ExistenceRequirement::KeepAlive)?;
+                }
             }
 
             if protocol_mint_fee.gt(&BalanceOf::<T>::zero()) {
-                //T::Currency::transfer(&signer, &protocol_owner, protocol_mint_fee, ExistenceRequirement::KeepAlive)?;
+                if ProtocolOwner::<T>::exists() {
+                    T::Currency::transfer(&signer, &protocol_owner, protocol_mint_fee, ExistenceRequirement::KeepAlive)?;
+                }
             }
 
             if BalanceForTickAddress::<T>::contains_key(&tick, &address_bytes) {
