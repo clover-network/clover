@@ -62,8 +62,8 @@ pub mod pallet {
         InSufficientFundError,
         TickAlreadyExists,
         TickNotExists,
-        InvalidName,
-        InvalidLimit,
+        InvalidTickName,
+        InvalidTickLimit,
         InsufficientSupplyError,
         OverLimitError,
         FromAddressNotExists,
@@ -79,12 +79,7 @@ pub mod pallet {
         ProtocolOwnerUpdated(T::AccountId),
         Deploy(T::AccountId, CRC20),
         Mint(T::AccountId, MintInfo),
-    }
-
-    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-    pub struct AccountBalance {
-        account_full_name: Vec<u8>,
-        balance: u128,
+        Burn(T::AccountId, Vec<u8>, u128),
     }
 
     #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
@@ -178,9 +173,9 @@ pub mod pallet {
             limit: u128,
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
-            ensure!(tick.len() == 4 && tick.iter().all(|c| *c >= 65 && *c <= 90), Error::<T>::InvalidName);
+            ensure!(tick.len() == 4 && tick.iter().all(|c| *c >= 65 && *c <= 90), Error::<T>::InvalidTickName);
             ensure!(!TickInfo::<T>::contains_key(&tick), Error::<T>::TickAlreadyExists);
-            ensure!(max > limit, Error::<T>::InvalidLimit);
+            ensure!(max > limit, Error::<T>::InvalidTickLimit);
             let crc20 = CRC20 {
                 tick: tick.clone(),
                 max,
@@ -278,6 +273,21 @@ pub mod pallet {
                 BalanceForTickAddress::<T>::insert(&tick, &from_address_bytes, amount);
             }
 
+            Ok(().into())
+        }
+
+        #[pallet::weight(T::DbWeight::get().writes(2))]
+        #[frame_support::transactional]
+        pub(super) fn burn(origin: OriginFor<T>, tick: Vec<u8>, amount: u128) -> DispatchResultWithPostInfo {
+            let signer = ensure_signed(origin)?;
+            let address_bytes = signer.encode();
+            let balance = match BalanceForTickAddress::<T>::get(&tick, &address_bytes) {
+                Some(v) => v,
+                None => return Err(Error::<T>::FromAddressNotExists.into()),
+            };
+            ensure!(balance >= amount, Error::<T>::InSufficientFundError);
+            BalanceForTickAddress::<T>::insert(&tick, &address_bytes, balance - amount);
+            Self::deposit_event(Event::Burn(signer, tick, amount));
             Ok(().into())
         }
     }
