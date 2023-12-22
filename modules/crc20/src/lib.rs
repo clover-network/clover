@@ -11,12 +11,12 @@ use sp_runtime::ModuleId;
 use sp_std::prelude::*;
 use sp_std::str;
 
-pub use pallet::*;
-pub use type_utils::option_utils::OptionExt;
 use frame_support::sp_runtime::SaturatedConversion;
 use frame_support::traits::ExistenceRequirement;
-use sp_runtime::traits::Zero;
 use log;
+pub use pallet::*;
+use sp_runtime::traits::Zero;
+pub use type_utils::option_utils::OptionExt;
 
 #[cfg(test)]
 mod mock;
@@ -57,7 +57,7 @@ pub mod pallet {
         InsufficientSupplyError,
         OverLimitError,
         FromAddressNotExists,
-        ToAddressNotExists
+        ToAddressNotExists,
     }
 
     #[pallet::event]
@@ -67,40 +67,44 @@ pub mod pallet {
         MintFeeUpdated(BalanceOf<T>),
         ProtocolMintFeeUpdated(BalanceOf<T>),
         ProtocolOwnerUpdated(T::AccountId),
+        // signer, tick, max, limit
         Deploy(T::AccountId, Vec<u8>, u128, u128),
+        // signer, tick, amount
         Mint(T::AccountId, Vec<u8>, u128),
+        // signer, tick, amount
         Burn(T::AccountId, Vec<u8>, u128),
-        Transfer(T::AccountId, TransferInfo),
-    }
-
-    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-    pub struct AccountBalance {
-        account_full_name: Vec<u8>,
-        balance: u128,
-    }
-
-    #[derive(Encode, Decode, Clone, PartialEq, Eq, Default, RuntimeDebug)]
-    pub struct TransferInfo {
-        from: Vec<u8>,
-        to: Vec<u8>,
-        tick: Vec<u8>,
-        amount: u128
+        // from, to, tick, amount
+        Transfer(T::AccountId, T::AccountId, Vec<u8>, u128),
     }
 
     #[pallet::storage]
     #[pallet::getter(fn tick_info)]
-    pub(super) type TickInfo<T: Config> =
-        StorageMap<_, Blake2_128Concat, Vec<u8>, (T::AccountId, Vec<u8>, u128, u128, BalanceOf<T>, T::AccountId), ValueQuery>;
+    pub(super) type TickInfo<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        Vec<u8>,    // tick
+        (
+            T::AccountId,   // signer
+            Vec<u8>,        // tick
+            u128,           // max
+            u128,           // limit
+            BalanceOf<T>,   // mint_fee
+            T::AccountId,   // mint_fee_to
+        ),
+        ValueQuery,
+    >;
 
     #[pallet::storage]
     #[pallet::getter(fn token_minted_amount)]
     pub(super) type TokenMintedAmount<T: Config> =
         StorageMap<_, Blake2_128Concat, Vec<u8>, u128, ValueQuery>;
+        // tick, amount
 
     #[pallet::storage]
     #[pallet::getter(fn tick_address_to_balance)]
     pub(super) type BalanceForTickAddress<T: Config> =
-    StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, Vec<u8>, u128>;
+        StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, T::AccountId, u128>;
+        // tick, address, balance
 
     #[pallet::storage]
     #[pallet::getter(fn protocol_mint_fee)]
@@ -110,33 +114,32 @@ pub mod pallet {
     #[pallet::getter(fn protocol_owner)]
     pub(super) type ProtocolOwner<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
 
-
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(T::DbWeight::get().writes(1))]
         #[frame_support::transactional]
         pub fn set_protocol_mint_fee(
-          origin: OriginFor<T>,
-          protocol_mint_fee: BalanceOf<T>,
+            origin: OriginFor<T>,
+            protocol_mint_fee: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-          ensure_root(origin)?;
+            ensure_root(origin)?;
 
-          ProtocolMintFee::<T>::put(protocol_mint_fee);
-          Self::deposit_event(Event::ProtocolMintFeeUpdated(protocol_mint_fee));
-          Ok(().into())
+            ProtocolMintFee::<T>::put(protocol_mint_fee);
+            Self::deposit_event(Event::ProtocolMintFeeUpdated(protocol_mint_fee));
+            Ok(().into())
         }
 
         #[pallet::weight(T::DbWeight::get().writes(1))]
         #[frame_support::transactional]
         pub fn set_protocol_owner(
-          origin: OriginFor<T>,
-          protocol_owner: T::AccountId,
+            origin: OriginFor<T>,
+            protocol_owner: T::AccountId,
         ) -> DispatchResultWithPostInfo {
-          ensure_root(origin)?;
+            ensure_root(origin)?;
 
-          ProtocolOwner::<T>::put(protocol_owner.clone());
-          Self::deposit_event(Event::ProtocolOwnerUpdated(protocol_owner));
-          Ok(().into())
+            ProtocolOwner::<T>::put(protocol_owner.clone());
+            Self::deposit_event(Event::ProtocolOwnerUpdated(protocol_owner));
+            Ok(().into())
         }
 
         #[pallet::weight(T::DbWeight::get().writes(2))]
@@ -150,10 +153,26 @@ pub mod pallet {
             mint_fee_to: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
-            ensure!(tick.len() == 4 && tick.iter().all(|c| *c >= 65 && *c <= 90), Error::<T>::InvalidTickName);
-            ensure!(!TickInfo::<T>::contains_key(&tick), Error::<T>::TickAlreadyExists);
+            ensure!(
+                tick.len() == 4 && tick.iter().all(|c| *c >= 65 && *c <= 90),
+                Error::<T>::InvalidTickName
+            );
+            ensure!(
+                !TickInfo::<T>::contains_key(&tick),
+                Error::<T>::TickAlreadyExists
+            );
             ensure!(max > limit, Error::<T>::InvalidTickLimit);
-            TickInfo::<T>::insert(tick.clone(), (signer.clone(), tick.clone(), max, limit, mint_fee, mint_fee_to));
+            TickInfo::<T>::insert(
+                tick.clone(),
+                (
+                    signer.clone(),
+                    tick.clone(),
+                    max,
+                    limit,
+                    mint_fee,
+                    mint_fee_to,
+                ),
+            );
             Self::deposit_event(Event::Deploy(signer, tick.clone(), max, limit));
             Ok(().into())
         }
@@ -165,10 +184,12 @@ pub mod pallet {
             tick: Vec<u8>,
             amount: u128,
         ) -> DispatchResultWithPostInfo {
-            let signer = ensure_signed(origin)?;
-            let address_bytes = signer.encode();
+            let signer_address = ensure_signed(origin)?;
 
-            ensure!(TickInfo::<T>::contains_key(&tick), Error::<T>::TickNotExists);
+            ensure!(
+                TickInfo::<T>::contains_key(&tick),
+                Error::<T>::TickNotExists
+            );
 
             let tick_info = Self::tick_info(&tick);
 
@@ -189,7 +210,12 @@ pub mod pallet {
             let mint_fee_to = tick_info.5;
 
             if mint_fee.gt(&crate::pallet::BalanceOf::<T>::zero()) {
-                T::Currency::transfer(&signer, &mint_fee_to, mint_fee, ExistenceRequirement::KeepAlive)?;
+                T::Currency::transfer(
+                    &signer_address,
+                    &mint_fee_to,
+                    mint_fee,
+                    ExistenceRequirement::KeepAlive,
+                )?;
             }
 
             let protocol_mint_fee = Self::protocol_mint_fee();
@@ -197,74 +223,85 @@ pub mod pallet {
 
             if protocol_mint_fee.gt(&BalanceOf::<T>::zero()) {
                 if ProtocolOwner::<T>::exists() {
-                    T::Currency::transfer(&signer, &protocol_owner, protocol_mint_fee, ExistenceRequirement::KeepAlive)?;
+                    T::Currency::transfer(
+                        &signer_address,
+                        &protocol_owner,
+                        protocol_mint_fee,
+                        ExistenceRequirement::KeepAlive,
+                    )?;
                 }
             }
 
-            if BalanceForTickAddress::<T>::contains_key(&tick, &address_bytes) {
-                let address_balance = BalanceForTickAddress::<T>::get(&tick, &address_bytes).unwrap();
-                BalanceForTickAddress::<T>::insert(&tick, &address_bytes, address_balance + amount);
+            if BalanceForTickAddress::<T>::contains_key(&tick, &signer_address) {
+                let address_balance =
+                    BalanceForTickAddress::<T>::get(&tick, &signer_address).unwrap();
+                BalanceForTickAddress::<T>::insert(
+                    &tick,
+                    &signer_address,
+                    address_balance + amount,
+                );
             } else {
-                BalanceForTickAddress::<T>::insert(&tick, &address_bytes, amount);
+                BalanceForTickAddress::<T>::insert(&tick, &signer_address, amount);
             }
 
             TokenMintedAmount::<T>::insert(tick.clone(), amount + tick_minted);
 
-            Self::deposit_event(Event::Mint(
-                signer,
-                tick,
-                amount,
-            ));
+            Self::deposit_event(Event::Mint(signer_address, tick, amount));
 
             Ok(().into())
         }
-
 
         #[pallet::weight(T::DbWeight::get().writes(2))]
         #[frame_support::transactional]
         pub(super) fn transfer(
             from: OriginFor<T>,
-            to_address: Vec<u8>,
+            to_address: T::AccountId,
             tick: Vec<u8>,
             amount: u128,
         ) -> DispatchResultWithPostInfo {
-            let from_signer = ensure_signed(from)?;
-            let from_address_bytes = from_signer.encode();
+            let from_address = ensure_signed(from)?;
 
-            ensure!(BalanceForTickAddress::<T>::contains_key(&tick, &from_address_bytes), Error::<T>::FromAddressNotExists);
+            ensure!(
+                BalanceForTickAddress::<T>::contains_key(&tick, &from_address),
+                Error::<T>::FromAddressNotExists
+            );
             // ensure!(BalanceForTickAddress::<T>::contains_key(&tick, &to_address), Error::<T>::ToAddressNotExists);
 
-            let from_address_balance = BalanceForTickAddress::<T>::get(&tick, &from_address_bytes).unwrap();
-            ensure!(from_address_balance >= amount, Error::<T>::InSufficientFundError);
+            let from_address_balance =
+                BalanceForTickAddress::<T>::get(&tick, &from_address).unwrap();
+            ensure!(
+                from_address_balance >= amount,
+                Error::<T>::InSufficientFundError
+            );
 
-            BalanceForTickAddress::<T>::insert(&tick, &from_address_bytes, from_address_balance - amount);
+            BalanceForTickAddress::<T>::insert(&tick, &from_address, from_address_balance - amount);
 
             if BalanceForTickAddress::<T>::contains_key(&tick, &to_address) {
-                let _: Result<(), ()> = BalanceForTickAddress::<T>::try_mutate(&tick, &to_address, |old_balance| {
-                    *old_balance = Some(amount + (*old_balance).unwrap());
-                    Ok(())
-                });
+                let _: Result<(), ()> =
+                    BalanceForTickAddress::<T>::try_mutate(&tick, &to_address, |old_balance| {
+                        *old_balance = Some(amount + (*old_balance).unwrap());
+                        Ok(())
+                    });
             } else {
                 BalanceForTickAddress::<T>::insert(&tick, &to_address, amount);
             }
 
-            Self::deposit_event(Event::Transfer(from_signer, TransferInfo{
-                from: from_address_bytes,
-                to: to_address,
-                tick: tick,
-                amount: amount,
-            }));
+            Self::deposit_event(Event::Transfer(from_address, to_address, tick, amount));
             Ok(().into())
         }
 
         #[pallet::weight(T::DbWeight::get().writes(2))]
         #[frame_support::transactional]
-        pub(super) fn burn(origin: OriginFor<T>, tick: Vec<u8>, amount: u128) -> DispatchResultWithPostInfo {
+        pub(super) fn burn(
+            origin: OriginFor<T>,
+            tick: Vec<u8>,
+            amount: u128,
+        ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
-            let address_bytes = signer.encode();
-            let balance = BalanceForTickAddress::<T>::get(&tick, &address_bytes).ok_or(Error::<T>::FromAddressNotExists)?;
+            let balance = BalanceForTickAddress::<T>::get(&tick, &signer)
+                .ok_or(Error::<T>::FromAddressNotExists)?;
             ensure!(balance >= amount, Error::<T>::InSufficientFundError);
-            BalanceForTickAddress::<T>::insert(&tick, &address_bytes, balance - amount);
+            BalanceForTickAddress::<T>::insert(&tick, &signer, balance - amount);
             Self::deposit_event(Event::Burn(signer, tick, amount));
             Ok(().into())
         }
