@@ -4,9 +4,11 @@
 //! Module to process claims from ethereum like addresses(e.g. bsc).
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use std::convert::TryInto;
+
 use frame_support::traits::{Currency, Get};
 use frame_system::ensure_signed;
-use sp_runtime::ModuleId;
+use sp_runtime::{ModuleId, traits::Saturating};
 use sp_std::prelude::*;
 use sp_std::str;
 
@@ -57,6 +59,7 @@ pub mod pallet {
         OverLimitError,
         FromAddressNotExists,
         ToAddressNotExists,
+        TryIntoIntError,
     }
 
     #[pallet::event]
@@ -66,8 +69,8 @@ pub mod pallet {
         MintFeeUpdated(BalanceOf<T>),
         ProtocolMintFeeUpdated(BalanceOf<T>),
         ProtocolOwnerFeeUpdated(T::AccountId, BalanceOf<T>),
-        // signer, tick, max, limit
-        Deploy(T::AccountId, Vec<u8>, u128, u128),
+        // signer, tick, max, limit, mint_fee, mint_fee_to
+        Deploy(T::AccountId, Vec<u8>, u128, u128, BalanceOf<T>, T::AccountId),
         // signer, tick, amount
         Mint(T::AccountId, Vec<u8>, u128),
         // signer, tick, amount
@@ -146,6 +149,7 @@ pub mod pallet {
             ensure!(u128::MAX >= max, Error::<T>::InvalidTickMax);
             ensure!(max > limit, Error::<T>::InvalidTickLimit);
             ensure!(limit > 0, Error::<T>::InvalidTickLimit);
+            ensure!((max % limit) == 0, Error::<T>::InvalidTickLimit);
             TickInfo::<T>::insert(
                 tick.clone(),
                 (
@@ -154,10 +158,10 @@ pub mod pallet {
                     max,
                     limit,
                     mint_fee,
-                    mint_fee_to,
+                    mint_fee_to.clone(),
                 ),
             );
-            Self::deposit_event(Event::Deploy(signer, tick.clone(), max, limit));
+            Self::deposit_event(Event::Deploy(signer, tick.clone(), max, limit, mint_fee, mint_fee_to));
             Ok(().into())
         }
 
@@ -169,29 +173,20 @@ pub mod pallet {
             amount: u128,
         ) -> DispatchResultWithPostInfo {
             let signer_address = ensure_signed(origin)?;
+            let (_, _, max, limit, mint_fee, mint_fee_to) = TickInfo::<T>::try_get(&tick)
+                .map_err(|_| Error::<T>::TickNotExists)?;
+            let minted = Self::tick_minted_amount(&tick);
+            ensure!(u128::MAX > amount, Error::<T>::InvalidAmount);
+            ensure!(amount > 0, Error::<T>::InvalidAmount);
+            let tick_amt = amount.saturating_mul(limit);
+            ensure!(minted.saturating_add(tick_amt) <= max, Error::<T>::InsufficientSupplyError);
 
-            ensure!(
-                TickInfo::<T>::contains_key(&tick),
-                Error::<T>::TickNotExists
-            );
-
-            let tick_info = Self::tick_info(&tick);
-
-            let tick_supply = tick_info.2;
-            let tick_limit = tick_info.3;
-
-            let tick_minted = Self::tick_minted_amount(&tick);
-
-            ensure!(amount <= tick_limit, Error::<T>::OverLimitError);
-            ensure!(tick_minted.saturating_add(amount) <= tick_supply, Error::<T>::InsufficientSupplyError);
-
-            let mint_fee = tick_info.4;
+            let amount_currency = amount.try_into().map_err(|_| Error::<T>::TryIntoIntError)?;
             if mint_fee.gt(&crate::pallet::BalanceOf::<T>::zero()) {
-                let mint_fee_to = tick_info.5;
                 T::Currency::transfer(
                     &signer_address,
                     &mint_fee_to,
-                    mint_fee,
+                    mint_fee.saturating_mul(amount_currency),
                     ExistenceRequirement::KeepAlive,
                 )?;
             }
@@ -201,28 +196,23 @@ pub mod pallet {
                     T::Currency::transfer(
                         &signer_address,
                         &owner,
-                        fee,
+                        fee.saturating_mul(amount_currency),
                         ExistenceRequirement::KeepAlive,
                     )?;
                 }
             }
 
-            if BalanceForTickAddress::<T>::contains_key(&tick, &signer_address) {
-                let address_balance =
-                    BalanceForTickAddress::<T>::get(&tick, &signer_address).unwrap();
-                BalanceForTickAddress::<T>::insert(
+            match BalanceForTickAddress::<T>::get(&tick, &signer_address) {
+                Some(balance) => BalanceForTickAddress::<T>::insert(
                     &tick,
                     &signer_address,
-                    address_balance.saturating_add(amount),
-                );
-            } else {
-                BalanceForTickAddress::<T>::insert(&tick, &signer_address, amount);
+                    balance.saturating_add(tick_amt),
+                ),
+                None => BalanceForTickAddress::<T>::insert(&tick, &signer_address, tick_amt),
             }
 
-            TickMintedAmount::<T>::insert(tick.clone(), amount.saturating_add(tick_minted));
-
-            Self::deposit_event(Event::Mint(signer_address, tick, amount));
-
+            TickMintedAmount::<T>::insert(tick.clone(), minted.saturating_add(tick_amt));
+            Self::deposit_event(Event::Mint(signer_address, tick, tick_amt));
             Ok(().into())
         }
 
