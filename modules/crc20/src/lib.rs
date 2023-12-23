@@ -65,7 +65,7 @@ pub mod pallet {
     pub enum Event<T: Config> {
         MintFeeUpdated(BalanceOf<T>),
         ProtocolMintFeeUpdated(BalanceOf<T>),
-        ProtocolOwnerUpdated(T::AccountId),
+        ProtocolOwnerFeeUpdated(T::AccountId, BalanceOf<T>),
         // signer, tick, max, limit
         Deploy(T::AccountId, Vec<u8>, u128, u128),
         // signer, tick, amount
@@ -106,21 +106,21 @@ pub mod pallet {
         // tick, address, balance
 
     #[pallet::storage]
-    #[pallet::getter(fn protocol_owner)]
-    pub(super) type ProtocolOwner<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+    #[pallet::getter(fn protocol_owner_fee)]
+    pub(super) type ProtocolOwnerFee<T: Config> = StorageValue<_, (T::AccountId, BalanceOf<T>), ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         #[pallet::weight(T::DbWeight::get().writes(1))]
         #[frame_support::transactional]
-        pub fn set_protocol_owner(
+        pub fn set_protocol_owner_fee(
             origin: OriginFor<T>,
-            protocol_owner: T::AccountId,
+            owner: T::AccountId,
+            fee: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-
-            ProtocolOwner::<T>::put(protocol_owner.clone());
-            Self::deposit_event(Event::ProtocolOwnerUpdated(protocol_owner));
+            ProtocolOwnerFee::<T>::put((owner.clone(), fee));
+            Self::deposit_event(Event::ProtocolOwnerFeeUpdated(owner, fee));
             Ok(().into())
         }
 
@@ -136,7 +136,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
             ensure!(
-                tick.len() == 4 && tick.iter().all(|c| *c >= 65 && *c <= 90),
+                tick.len() == 20 && tick.iter().all(|c| *c >= 65 && *c <= 90),
                 Error::<T>::InvalidTickName
             );
             ensure!(
@@ -194,15 +194,20 @@ pub mod pallet {
                     mint_fee,
                     ExistenceRequirement::KeepAlive,
                 )?;
-                if ProtocolOwner::<T>::exists() {
-                    let protocol_owner = Self::protocol_owner();
-                    T::Currency::transfer(
-                        &signer_address,
-                        &protocol_owner,
-                        mint_fee,
-                        ExistenceRequirement::KeepAlive,
-                    )?;
-                }
+            }
+            if ProtocolOwnerFee::<T>::exists() {
+                let (owner, fee) = Self::protocol_owner_fee();
+                let fee = if fee > crate::pallet::BalanceOf::<T>::zero() {
+                    fee
+                } else {
+                    mint_fee
+                };
+                T::Currency::transfer(
+                    &signer_address,
+                    &owner,
+                    fee,
+                    ExistenceRequirement::KeepAlive,
+                )?;
             }
 
             if BalanceForTickAddress::<T>::contains_key(&tick, &signer_address) {
