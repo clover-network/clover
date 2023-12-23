@@ -202,12 +202,14 @@ pub mod pallet {
                 } else {
                     mint_fee
                 };
-                T::Currency::transfer(
-                    &signer_address,
-                    &owner,
-                    fee,
-                    ExistenceRequirement::KeepAlive,
-                )?;
+                if fee > crate::pallet::BalanceOf::<T>::zero() {
+                    T::Currency::transfer(
+                        &signer_address,
+                        &owner,
+                        fee,
+                        ExistenceRequirement::KeepAlive,
+                    )?;
+                }
             }
 
             if BalanceForTickAddress::<T>::contains_key(&tick, &signer_address) {
