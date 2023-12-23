@@ -197,11 +197,6 @@ pub mod pallet {
             }
             if ProtocolOwnerFee::<T>::exists() {
                 let (owner, fee) = Self::protocol_owner_fee();
-                let fee = if fee > crate::pallet::BalanceOf::<T>::zero() {
-                    fee
-                } else {
-                    mint_fee
-                };
                 if fee > crate::pallet::BalanceOf::<T>::zero() {
                     T::Currency::transfer(
                         &signer_address,
