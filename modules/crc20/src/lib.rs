@@ -4,7 +4,7 @@
 //! Module to process claims from ethereum like addresses(e.g. bsc).
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use std::convert::TryInto;
+use core::convert::TryInto;
 
 use frame_support::traits::{Currency, Get};
 use frame_system::ensure_signed;
