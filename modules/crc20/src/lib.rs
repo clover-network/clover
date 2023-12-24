@@ -8,7 +8,7 @@ use core::convert::TryInto;
 
 use frame_support::traits::{Currency, Get};
 use frame_system::ensure_signed;
-use sp_runtime::{ModuleId, traits::Saturating};
+use sp_runtime::{traits::Saturating, ModuleId};
 use sp_std::prelude::*;
 use sp_std::str;
 
@@ -60,6 +60,8 @@ pub mod pallet {
         FromAddressNotExists,
         ToAddressNotExists,
         TryIntoIntError,
+        ProtocolFeeMissing,
+        ZeroProtocolFee,
     }
 
     #[pallet::event]
@@ -69,8 +71,14 @@ pub mod pallet {
         MintFeeUpdated(BalanceOf<T>),
         ProtocolMintFeeUpdated(BalanceOf<T>),
         ProtocolOwnerFeeUpdated(T::AccountId, BalanceOf<T>),
-        // signer, tick, max, limit, mint_fee, mint_fee_to
-        Deploy(T::AccountId, Vec<u8>, u128, u128, BalanceOf<T>, T::AccountId),
+        Deploy(
+            T::AccountId, // signer
+            Vec<u8>,      // tick
+            u128,         // max
+            u128,         // limit
+            BalanceOf<T>, // mint_fee
+            T::AccountId, // mint_fee_to
+        ),
         // signer, tick, amount
         Mint(T::AccountId, Vec<u8>, u128),
         // signer, tick, amount
@@ -84,14 +92,14 @@ pub mod pallet {
     pub(super) type TickInfo<T: Config> = StorageMap<
         _,
         Blake2_128Concat,
-        Vec<u8>,    // tick
+        Vec<u8>, // tick
         (
-            T::AccountId,   // signer
-            Vec<u8>,        // tick
-            u128,           // max
-            u128,           // limit
-            BalanceOf<T>,   // mint_fee
-            T::AccountId,   // mint_fee_to
+            T::AccountId, // signer
+            Vec<u8>,      // tick
+            u128,         // max
+            u128,         // limit
+            BalanceOf<T>, // mint_fee
+            T::AccountId, // mint_fee_to
         ),
         ValueQuery,
     >;
@@ -100,17 +108,18 @@ pub mod pallet {
     #[pallet::getter(fn tick_minted_amount)]
     pub(super) type TickMintedAmount<T: Config> =
         StorageMap<_, Blake2_128Concat, Vec<u8>, u128, ValueQuery>;
-        // tick, amount
+    // tick, amount
 
     #[pallet::storage]
     #[pallet::getter(fn tick_address_to_balance)]
     pub(super) type BalanceForTickAddress<T: Config> =
         StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, T::AccountId, u128>;
-        // tick, address, balance
+    // tick, address, balance
 
     #[pallet::storage]
     #[pallet::getter(fn protocol_owner_fee)]
-    pub(super) type ProtocolOwnerFee<T: Config> = StorageValue<_, (T::AccountId, BalanceOf<T>), ValueQuery>;
+    pub(super) type ProtocolOwnerFee<T: Config> =
+        StorageValue<_, (T::AccountId, BalanceOf<T>), ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -161,7 +170,14 @@ pub mod pallet {
                     mint_fee_to.clone(),
                 ),
             );
-            Self::deposit_event(Event::Deploy(signer, tick.clone(), max, limit, mint_fee, mint_fee_to));
+            Self::deposit_event(Event::Deploy(
+                signer,
+                tick.clone(),
+                max,
+                limit,
+                mint_fee,
+                mint_fee_to,
+            ));
             Ok(().into())
         }
 
@@ -173,13 +189,27 @@ pub mod pallet {
             amount: u128,
         ) -> DispatchResultWithPostInfo {
             let signer_address = ensure_signed(origin)?;
-            let (_, _, max, limit, mint_fee, mint_fee_to) = TickInfo::<T>::try_get(&tick)
-                .map_err(|_| Error::<T>::TickNotExists)?;
+            let (_, _, max, limit, mint_fee, mint_fee_to) =
+                TickInfo::<T>::try_get(&tick).map_err(|_| Error::<T>::TickNotExists)?;
             let minted = Self::tick_minted_amount(&tick);
             ensure!(u128::MAX > amount, Error::<T>::InvalidAmount);
             ensure!(amount > 0, Error::<T>::InvalidAmount);
             let tick_amt = amount.saturating_mul(limit);
-            ensure!(minted.saturating_add(tick_amt) <= max, Error::<T>::InsufficientSupplyError);
+            ensure!(
+                minted.saturating_add(tick_amt) <= max,
+                Error::<T>::InsufficientSupplyError
+            );
+
+            ensure!(
+                ProtocolOwnerFee::<T>::exists(),
+                Error::<T>::InsufficientSupplyError
+            );
+
+            let (_, protocol_fee) = Self::protocol_owner_fee();
+            ensure!(
+                protocol_fee.gt(&BalanceOf::<T>::zero()),
+                Error::<T>::ZeroProtocolFee
+            );
 
             let amount_currency = amount.try_into().map_err(|_| Error::<T>::TryIntoIntError)?;
             if mint_fee.gt(&crate::pallet::BalanceOf::<T>::zero()) {
@@ -239,7 +269,11 @@ pub mod pallet {
                 Error::<T>::InSufficientFundError
             );
 
-            BalanceForTickAddress::<T>::insert(&tick, &from_address, from_address_balance.saturating_sub(amount));
+            BalanceForTickAddress::<T>::insert(
+                &tick,
+                &from_address,
+                from_address_balance.saturating_sub(amount),
+            );
 
             if BalanceForTickAddress::<T>::contains_key(&tick, &to_address) {
                 let _: Result<(), ()> =
