@@ -118,7 +118,7 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn protocol_owner_fee)]
-    pub(super) type ProtocolOwnerFee<T: Config> = StorageValue<_, Option<(T::AccountId, BalanceOf<T>)>, ValueQuery>;
+    pub(super) type ProtocolOwnerFee<T: Config> = StorageValue<_, (T::AccountId, BalanceOf<T>), ValueQuery>;
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
@@ -130,7 +130,7 @@ pub mod pallet {
             fee: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            ProtocolOwnerFee::<T>::put(Some((owner.clone(), fee)));
+            ProtocolOwnerFee::<T>::put((owner.clone(), fee));
             Self::deposit_event(Event::ProtocolOwnerFeeUpdated(owner, fee));
             Ok(().into())
         }
@@ -219,7 +219,7 @@ pub mod pallet {
                     ExistenceRequirement::KeepAlive,
                 )?;
             }
-            if let Some((owner, fee)) = ProtocolOwnerFee::<T>::get() {
+            if let Ok((owner, fee)) = ProtocolOwnerFee::<T>::try_get() {
                 if fee > crate::pallet::BalanceOf::<T>::zero() {
                     T::Currency::transfer(
                         &signer_address,
