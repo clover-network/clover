@@ -23,8 +23,6 @@
 ### Built With
 * [Substrate](https://substrate.dev)
 
-MSRV rust version: `nightly-2022-01-19`
-
 <!-- ROADMAP -->
 ## Roadmap
 
