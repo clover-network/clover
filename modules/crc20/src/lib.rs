@@ -148,7 +148,7 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let signer = ensure_signed(origin)?;
             ensure!(
-                tick.len() <= 20 && tick.len() > 0 && tick.iter().all(|c| *c >= 65 && *c <= 90),
+                tick.len() <= 7 && tick.len() > 0 && tick.iter().all(|c| *c >= 65 && *c <= 90),
                 Error::<T>::InvalidTickName
             );
             ensure!(
