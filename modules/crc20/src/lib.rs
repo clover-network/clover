@@ -199,16 +199,16 @@ pub mod pallet {
                 Error::<T>::InsufficientSupplyError
             );
 
-            //ensure!(
-            //    ProtocolOwnerFee::<T>::exists(),
-            //    Error::<T>::ProtocolFeeMissing
-            //);
+            ensure!(
+                ProtocolOwnerFee::<T>::exists(),
+                Error::<T>::ProtocolFeeMissing
+            );
 
-            //let (_, protocol_fee) = Self::protocol_owner_fee();
-            //ensure!(
-            //    protocol_fee.gt(&BalanceOf::<T>::zero()),
-            //    Error::<T>::ZeroProtocolFee
-            //);
+            let (_, protocol_fee) = Self::protocol_owner_fee();
+            ensure!(
+                protocol_fee.gt(&BalanceOf::<T>::zero()),
+                Error::<T>::ZeroProtocolFee
+            );
 
             let amount_currency = amount.try_into().map_err(|_| Error::<T>::TryIntoIntError)?;
             if mint_fee.gt(&crate::pallet::BalanceOf::<T>::zero()) {
