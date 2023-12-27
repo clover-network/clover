@@ -894,6 +894,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "clover-crc20"
+version = "0.9.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec 2.0.1",
+ "rustc-hex",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "type-utils",
+]
+
+[[package]]
 name = "clover-primitives"
 version = "0.9.0"
 dependencies = [
@@ -944,6 +963,7 @@ name = "clover-runtime"
 version = "0.9.0"
 dependencies = [
  "clover-claims",
+ "clover-crc20",
  "clover-primitives",
  "clover-rpc-runtime-api",
  "clover-traits",

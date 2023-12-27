@@ -20,8 +20,8 @@ services:
     container_name: clover-build
     image: cloverio/ci-linux-production:nightly-0629
     working_dir: /var/www/clover
-    ports:
-      - "9944:9944"
+    # ports:
+    #   - "9944:9944"
     environment:
       - CARGO_HOME=/var/www/clover/.cargo
     volumes:

@@ -29,7 +29,7 @@ pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as pallet_session_historical;
 pub use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
-use sp_core::u32_trait::{_1, _2, _3, _4, _5};
+use sp_core::u32_trait::{_1, _2, _3, _4, _5, _7};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -107,7 +107,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
   spec_name: create_runtime_str!("clover"),
   impl_name: create_runtime_str!("clover"),
   authoring_version: 1,
-  spec_version: 23,
+  spec_version: 24,
   impl_version: 1,
   apis: RUNTIME_API_VERSIONS,
   transaction_version: 1,
@@ -608,23 +608,23 @@ impl pallet_democracy::Config for Runtime {
   /// A super-majority can have the next scheduled referendum be a straight
   /// majority-carries vote.
   type ExternalMajorityOrigin =
-    pallet_collective::EnsureProportionAtLeast<_4, _5, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionAtLeast<_4, _7, AccountId, CouncilCollective>;
   /// A unanimous council can have the next scheduled referendum be a straight
   /// default-carries (NTB) vote.
   type ExternalDefaultOrigin =
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionAtLeast<_4, _7, AccountId, CouncilCollective>;
   /// Full of the technical committee can have an
   /// ExternalMajority/ExternalDefault vote be tabled immediately and with a
   /// shorter voting/enactment period.
   type FastTrackOrigin =
-    pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
+    pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, TechnicalCollective>;
   type InstantOrigin = pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCollective>;
   type InstantAllowed = InstantAllowed;
   type FastTrackVotingPeriod = FastTrackVotingPeriod;
   /// To cancel a proposal which has been passed, all of the council must
   /// agree to it.
   type CancellationOrigin =
-    pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
+    pallet_collective::EnsureProportionAtLeast<_4, _7, AccountId, CouncilCollective>;
   type CancelProposalOrigin = EnsureOneOf<
     AccountId,
     EnsureRoot<AccountId>,
@@ -1001,10 +1001,18 @@ impl pallet_contracts::Config for Runtime {
 parameter_types! {
     pub Prefix: &'static [u8] = b"Pay CLVs to the Clover account:";
     pub const ClaimsModuleId: ModuleId = ModuleId(*b"clvclaim");
+    pub const CRC20ModuleId: ModuleId = ModuleId(*b"clvcrc20");
 }
 
 impl clover_claims::Config for Runtime {
   type ModuleId = ClaimsModuleId;
+  type Event = Event;
+  type Currency = Balances;
+  type Prefix = Prefix;
+}
+
+impl clover_crc20::Config for Runtime {
+  type ModuleId = CRC20ModuleId;
   type Event = Event;
   type Currency = Balances;
   type Prefix = Prefix;
@@ -1076,6 +1084,7 @@ construct_runtime!(
     EvmAccounts: evm_accounts::{Module, Call, Storage, Event<T>},
 
     CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+    CloverCRC20: clover_crc20::{Module, Call, Storage, Event<T>},
   }
 );
 
