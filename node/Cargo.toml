@@ -21,13 +21,16 @@ clover-runtime = { workspace = true }
 clover-rpc = { workspace = true }
 futures = { workspace = true }
 
+log = { workspace = true }
 jsonrpc-core = { workspace = true }
 jsonrpc-pubsub = { workspace = true }
+jsonrpsee = { workspace = true, features = ["server", "macros"] }
 structopt = { workspace = true, optional = true }
 serde_json = { workspace = true }
+serde = { features = ["derive"], workspace = true, default-features = true }
+clap = { features = ["derive"], optional = true, workspace = true }
 
 pallet-contracts = { workspace = true }
-#pallet-contracts-rpc = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
 sc-authority-discovery = { workspace = true }
 sc-basic-authorship = { workspace = true }
@@ -44,8 +47,10 @@ sp-timestamp = { workspace = true }
 sc-consensus-grandpa-rpc = { workspace = true }
 sc-consensus-grandpa  = { workspace = true }
 sc-executor = { workspace = true }
+sc-mixnet = { workspace = true }
 sc-keystore = { workspace = true }
 sc-network = { workspace = true }
+sc-network-sync = { workspace = true }
 sc-rpc = { workspace = true }
 sc-rpc-api = { workspace = true }
 sc-sync-state-rpc = { workspace = true }
@@ -68,18 +73,39 @@ hex-literal = { workspace = true }
 sc-telemetry = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-ethereum = { workspace = true }
+fc-api = { workspace = true }
 fc-rpc = { workspace = true, features = ["rpc-binary-search-estimate"] }
 fc-consensus = { workspace = true }
+fc-storage = { workspace = true }
 fp-consensus = { workspace = true }
 fc-db = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-mapping-sync = { workspace = true }
+fp-rpc = { workspace = true }
 primitive-types = { workspace = true, features = ["rlp", "byteorder"] }
+polkadot-sdk = { features = ["node"], workspace = true, default-features = true }
+staging-node-inspect = { optional = true, workspace = true, default-features = true }
 
 [build-dependencies]
-substrate-build-script-utils = { workspace = true }
+clap = { optional = true, workspace = true }
+staging-node-inspect = { optional = true, workspace = true, default-features = true }
+polkadot-sdk = { features = ["frame-benchmarking-cli", "sc-cli", "sc-storage-monitor", "substrate-build-script-utils"], optional = true, workspace = true, default-features = true }
 
 [features]
-default = [ "cli" ]
-
-cli = [ "sc-cli", "structopt" ]
+default = [ "cli", "sql", "rocksdb" ]
+sql = [
+	"fc-db/sql",
+	"fc-mapping-sync/sql",
+]
+rocksdb = [
+	"sc-cli/rocksdb",
+	"sc-service/rocksdb",
+	"fc-db/rocksdb",
+	"fc-mapping-sync/rocksdb",
+	"fc-rpc/rocksdb",
+]
+cli = [
+	"clap",
+    "staging-node-inspect",
+	"polkadot-sdk",
+]

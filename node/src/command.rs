@@ -57,10 +57,6 @@ impl SubstrateCli for Cli {
       )?),
     })
   }
-
-  fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-    &clover_runtime::VERSION
-  }
 }
 
 /// Parse and run command line arguments
@@ -126,14 +122,23 @@ pub fn run() -> sc_cli::Result<()> {
         Ok((cmd.run(client, backend), task_manager))
       })
     }
+    Some(Subcommand::FrontierDb(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			runner.sync_run(|mut config| {
+				let (client, _, _, _, frontier_backend) =
+					service::new_chain_ops(&mut config, &cli.eth)?;
+				let frontier_backend = match frontier_backend {
+					fc_db::Backend::KeyValue(kv) => kv,
+					_ => panic!("Only fc_db::Backend::KeyValue supported"),
+				};
+				cmd.run(client, frontier_backend)
+			})
+		}
     None => {
-      let runner = cli.create_runner(&cli.run.base)?;
-      runner.run_node_until_exit(|config| async {
-        match config.role {
-        Role::Light => service::new_light(config),
-        _ => service::new_full(config, &cli),
-        }
-      }).map_err(sc_cli::Error::Service)
+			let runner = cli.create_runner(&cli.run)?;
+			runner.run_node_until_exit(|config| async move {
+				service::new_full(config, &cli).map_err(sc_cli::Error::Service)
+			})
     }
   }
 }

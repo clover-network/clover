@@ -1,10 +1,13 @@
+use polkadot_sdk::sc_cli as sc_cli;
+
 use sc_cli::{KeySubcommand, SignCmd, VanityCmd, VerifyCmd};
-use structopt::StructOpt;
+use fc_cli::FrontierDbCmd;
 
 /// Possible subcommands of the main binary.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
   /// Key management cli utilities
+	#[command(subcommand)]
   Key(KeySubcommand),
 
   /// Verify a signature for a message, provided on STDIN, with a given
@@ -37,25 +40,30 @@ pub enum Subcommand {
 
   /// Revert the chain to a previous state.
   Revert(sc_cli::RevertCmd),
+
+	/// Db meta columns information.
+	FrontierDb(FrontierDbCmd),
 }
 
 #[allow(missing_docs)]
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Parser)]
 pub struct RunCmd {
 	#[allow(missing_docs)]
-	#[structopt(flatten)]
+	#[clap(flatten)]
 	pub base: sc_cli::RunCmd,
-
+   
 	/// Maximum number of logs in a query.
-	#[structopt(long, default_value = "10000")]
+	#[arg(long, default_value = "10000")]
 	pub max_past_logs: u32,
 
-    #[structopt(long = "manual-seal")]
-    pub manual_seal: bool,
+  #[arg(long)]
+  pub manual_seal: bool,
 
+  #[command(flatten)]
+	pub eth: crate::eth::EthConfiguration,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Parser)]
 pub struct Cli {
   #[structopt(subcommand)]
   pub subcommand: Option<Subcommand>,

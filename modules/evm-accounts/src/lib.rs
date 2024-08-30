@@ -18,6 +18,7 @@ use sp_std::marker::PhantomData;
 use sp_std::vec::Vec;
 use clover_traits::account::MergeAccount;
 use type_utils::with_transaction_result;
+use sp_core::ByteArray;
 
 mod default_weight;
  
@@ -37,10 +38,10 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::{OptionQuery, ValueQuery, *}, Twox64Concat};  
 	use frame_system::pallet_prelude::{OriginFor, *};
 	use sp_runtime::traits::Zero;
-use sp_std::convert::TryInto;
+	use sp_std::convert::TryInto;
 
 	#[pallet::config]
-
+ 
 	pub trait Config: frame_system::Config {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	
