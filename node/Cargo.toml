@@ -68,6 +68,7 @@ sp-inherents = { workspace = true }
 sp-keystore = { workspace = true }
 sp-runtime = { workspace = true }
 sp-transaction-pool = { workspace = true }
+sp-transaction-storage-proof = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
 hex-literal = { workspace = true }
 sc-telemetry = { workspace = true }
@@ -78,10 +79,13 @@ fc-rpc = { workspace = true, features = ["rpc-binary-search-estimate"] }
 fc-consensus = { workspace = true }
 fc-storage = { workspace = true }
 fp-consensus = { workspace = true }
+fc-cli = { workspace = true }
 fc-db = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fp-rpc = { workspace = true }
+fp-evm = { workspace = true }
+fp-storage = { workspace = true }
 primitive-types = { workspace = true, features = ["rlp", "byteorder"] }
 polkadot-sdk = { features = ["node"], workspace = true, default-features = true }
 staging-node-inspect = { optional = true, workspace = true, default-features = true }

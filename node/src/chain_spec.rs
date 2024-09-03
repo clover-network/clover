@@ -15,7 +15,7 @@ use hex_literal::hex;
 use sc_telemetry::TelemetryEndpoints;
 use sp_core::crypto::UncheckedInto;
 use std::collections::BTreeMap;
-use pallet_evm::GenesisAccount;
+use fp_evm::GenesisAccount;
 use primitive_types::H160;
 use std::str::FromStr;
 use serde::{Serialize, Deserialize};

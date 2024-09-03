@@ -70,4 +70,18 @@ pub struct Cli {
 
   #[structopt(flatten)]
   pub run: RunCmd,
+
+  #[allow(missing_docs)]
+	#[clap(flatten)]
+	pub mixnet_params: sc_cli::MixnetParams,
+
+  	/// Disable automatic hardware benchmarks.
+	///
+	/// By default these benchmarks are automatically ran at startup and measure
+	/// the CPU speed, the memory bandwidth and the disk speed.
+	///
+	/// The results are then printed out in the logs, and also sent as part of
+	/// telemetry, if telemetry is enabled.
+	#[arg(long)]
+	pub no_hardware_benchmarks: bool,
 }

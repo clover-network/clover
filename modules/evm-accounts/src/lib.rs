@@ -32,7 +32,7 @@ pub type EvmAddress = sp_core::H160;
 
 pub use pallet::*;
 
-#[frame_support::pallet]
+#[frame_support::pallet] 
 pub mod pallet {
 	use super::*;
 	use frame_support::{pallet_prelude::{OptionQuery, ValueQuery, *}, Twox64Concat};  

@@ -7,12 +7,12 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_election_provider_support::NoElection;
-use frame_support::traits::fungible::{HoldConsideration};
+use frame_support::traits::fungible::HoldConsideration;
 use frame_support::traits::fungibles::{Mutate, Create};
 
 use frame_support::traits::tokens::pay::PayAssetFromAccount;
 use frame_support::traits::tokens::{PayFromAccount, UnityAssetBalanceConversion};
-use frame_support::traits::{EitherOfDiverse, EqualPrivilegeOnly, LinearStoragePrice, Nothing, WithdrawReasons, Hooks, OnFinalize};
+use frame_support::traits::{EitherOfDiverse, EqualPrivilegeOnly, LinearStoragePrice, Nothing, WithdrawReasons, Hooks};
 use frame_support::weights::ConstantMultiplier;
 use frame_support::{derive_impl, PalletId};
 use pallet_identity::legacy::IdentityInfo;
@@ -125,6 +125,13 @@ impl_opaque_keys! {
   }
 }
 
+/// Native version.
+#[cfg(any(feature = "std", test))]
+pub fn native_version() -> NativeVersion {
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
+}
+
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("clover"),
     impl_name: create_runtime_str!("clover"),
@@ -144,15 +151,6 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
-
-/// The version information used to identify this runtime when compiled natively.
-#[cfg(feature = "std")]
-pub fn native_version() -> NativeVersion {
-    NativeVersion {
-        runtime_version: VERSION,
-        can_author_with: Default::default(),
-    }
-}
 
 /// We allow for 2000ms of compute with a 6 second average block time.
 pub const WEIGHT_MILLISECS_PER_BLOCK: u64 = 2000;
