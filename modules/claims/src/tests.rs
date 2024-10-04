@@ -3,9 +3,10 @@
 
 use super::*;
 use crate::{mock::*, Error};
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchError, traits::OnRuntimeUpgrade};
+use frame_support::{assert_noop, assert_ok, traits::OnRuntimeUpgrade};
 use hex_literal::hex;
 use pallet_balances::Error as BalancesError;
+use sp_runtime::{DispatchError};
 pub use type_utils::option_utils::OptionExt;
 
 #[test]
@@ -13,20 +14,20 @@ fn mint_and_claim_should_works() {
   new_test_ext().execute_with(|| {
     // set bridge account to root
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       1
     ));
 
     // Set claim limit = 100
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       100
     ));
 
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::Ethereum,
       200
     ));
@@ -40,7 +41,7 @@ fn mint_and_claim_should_works() {
     let tx_hash = get_legal_tx_hash();
     let eth_addr = get_legal_eth_addr();
     assert_ok!(CloverClaims::mint_claim_elastic(
-      Origin::signed(1),
+      RuntimeOrigin::signed(1),
       BridgeNetworks::BSC,
       tx_hash.clone(),
       eth_addr.clone(),
@@ -64,7 +65,7 @@ fn mint_and_claim_should_works() {
     let sig = get_legal_eth_sig();
     assert_eq!(Balances::free_balance(1), 0);
     assert_ok!(CloverClaims::claim_elastic(
-      Origin::none(),
+      RuntimeOrigin::none(),
       BridgeNetworks::BSC,
       1,
       tx_hash.clone(),
@@ -85,14 +86,14 @@ fn ethereum_mint_and_claim_should_works() {
   new_test_ext().execute_with(|| {
     // set bridge account to root
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::Ethereum,
       2
     ));
 
     // Set claim limit = 100
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::Ethereum,
       100
     ));
@@ -106,7 +107,7 @@ fn ethereum_mint_and_claim_should_works() {
     let tx_hash = get_legal_tx_hash();
     let eth_addr = get_legal_eth_addr();
     assert_ok!(CloverClaims::mint_claim_elastic(
-      Origin::signed(2),
+      RuntimeOrigin::signed(2),
       BridgeNetworks::Ethereum,
       tx_hash.clone(),
       eth_addr.clone(),
@@ -129,7 +130,7 @@ fn ethereum_mint_and_claim_should_works() {
     assert_eq!(Balances::free_balance(1), 0);
     assert_noop!(
       CloverClaims::claim_elastic(
-        Origin::none(),
+        RuntimeOrigin::none(),
         BridgeNetworks::BSC,
         1,
         tx_hash.clone(),
@@ -139,7 +140,7 @@ fn ethereum_mint_and_claim_should_works() {
     );
 
     assert_ok!(CloverClaims::claim_elastic(
-      Origin::none(),
+      RuntimeOrigin::none(),
       BridgeNetworks::Ethereum,
       1,
       tx_hash.clone(),
@@ -159,19 +160,19 @@ fn ethereum_mint_and_claim_should_works() {
 fn mint_fee_should_work() {
   new_test_ext().execute_with(|| {
     assert_ok!(CloverClaims::set_bridge_fee_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       1000,
       0
     ));
     // set bridge account to root
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       1
     ));
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       2000
     ));
@@ -181,7 +182,7 @@ fn mint_fee_should_work() {
     let eth_addr = get_legal_eth_addr();
     assert_noop!(
       CloverClaims::mint_claim_elastic(
-        Origin::signed(1),
+        RuntimeOrigin::signed(1),
         BridgeNetworks::BSC,
         tx_hash.clone(),
         eth_addr.clone(),
@@ -196,7 +197,7 @@ fn mint_fee_should_work() {
     );
 
     assert_ok!(CloverClaims::mint_claim_elastic(
-      Origin::signed(1),
+      RuntimeOrigin::signed(1),
       BridgeNetworks::BSC,
       tx_hash.clone(),
       eth_addr.clone(),
@@ -213,7 +214,7 @@ fn mint_fee_should_work() {
     let sig = get_legal_eth_sig();
     assert_eq!(Balances::free_balance(1), 0);
     assert_ok!(CloverClaims::claim_elastic(
-      Origin::none(),
+      RuntimeOrigin::none(),
       BridgeNetworks::BSC,
       1,
       tx_hash.clone(),
@@ -232,13 +233,13 @@ fn mint_fee_should_work() {
 fn change_bridger_should_work() {
   new_test_ext().execute_with(|| {
     assert_noop!(
-      CloverClaims::set_bridge_account_elastic(Origin::signed(1), BridgeNetworks::BSC, 1),
+      CloverClaims::set_bridge_account_elastic(RuntimeOrigin::signed(1), BridgeNetworks::BSC, 1),
       DispatchError::BadOrigin
     );
 
     // set bridger
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       1
     ));
@@ -248,7 +249,7 @@ fn change_bridger_should_work() {
     let eth_addr = get_legal_eth_addr();
     assert_noop!(
       CloverClaims::mint_claim_elastic(
-        Origin::signed(2),
+        RuntimeOrigin::signed(2),
         BridgeNetworks::BSC,
         tx_hash.clone(),
         eth_addr.clone(),
@@ -265,7 +266,7 @@ fn non_exist_tx_should_fail() {
     let tx_hash = get_legal_tx_hash();
     let sig = get_legal_eth_sig();
     assert_noop!(
-      CloverClaims::claim_elastic(Origin::none(), BridgeNetworks::BSC, 1, tx_hash, sig),
+      CloverClaims::claim_elastic(RuntimeOrigin::none(), BridgeNetworks::BSC, 1, tx_hash, sig),
       Error::<Test>::TxNotMinted
     );
   });
@@ -276,17 +277,17 @@ fn illegal_sig_claim_should_fail() {
   new_test_ext().execute_with(|| {
     // only root account can change bridge account
     assert_noop!(
-      CloverClaims::set_bridge_account_elastic(Origin::signed(2), BridgeNetworks::BSC, 1),
+      CloverClaims::set_bridge_account_elastic(RuntimeOrigin::signed(2), BridgeNetworks::BSC, 1),
       DispatchError::BadOrigin
     );
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       1
     ));
 
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       100
     ));
@@ -295,7 +296,7 @@ fn illegal_sig_claim_should_fail() {
     let tx_hash = get_legal_tx_hash();
     let eth_addr = get_legal_eth_addr();
     assert_ok!(CloverClaims::mint_claim_elastic(
-      Origin::signed(1),
+      RuntimeOrigin::signed(1),
       BridgeNetworks::BSC,
       tx_hash.clone(),
       eth_addr.clone(),
@@ -306,7 +307,7 @@ fn illegal_sig_claim_should_fail() {
     let sig1 = get_another_account_eth_sig();
     assert_noop!(
       CloverClaims::claim_elastic(
-        Origin::none(),
+        RuntimeOrigin::none(),
         BridgeNetworks::BSC,
         1,
         tx_hash.clone(),
@@ -319,7 +320,7 @@ fn illegal_sig_claim_should_fail() {
     let sig2 = get_wrong_msg_eth_sig();
     assert_noop!(
       CloverClaims::claim_elastic(
-        Origin::none(),
+        RuntimeOrigin::none(),
         BridgeNetworks::BSC,
         1,
         tx_hash.clone(),
@@ -335,14 +336,14 @@ fn mint_twice_should_fail() {
   new_test_ext().execute_with(|| {
     // Set miner and superior
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       1
     ));
 
     // Set limit
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       100
     ));
@@ -351,7 +352,7 @@ fn mint_twice_should_fail() {
     let tx_hash = get_legal_tx_hash();
     let eth_addr = get_legal_eth_addr();
     assert_ok!(CloverClaims::mint_claim_elastic(
-      Origin::signed(1),
+      RuntimeOrigin::signed(1),
       BridgeNetworks::BSC,
       tx_hash.clone(),
       eth_addr.clone(),
@@ -361,7 +362,7 @@ fn mint_twice_should_fail() {
     // 3. Mint the same eth again
     assert_noop!(
       CloverClaims::mint_claim_elastic(
-        Origin::signed(1),
+        RuntimeOrigin::signed(1),
         BridgeNetworks::BSC,
         tx_hash.clone(),
         eth_addr.clone(),
@@ -376,14 +377,14 @@ fn mint_twice_should_fail() {
 fn claim_twice_should_fail() {
   new_test_ext().execute_with(|| {
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       1
     ));
 
     // Set limit
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       100
     ));
@@ -392,7 +393,7 @@ fn claim_twice_should_fail() {
     let tx_hash = get_legal_tx_hash();
     let eth_addr = get_legal_eth_addr();
     assert_ok!(CloverClaims::mint_claim_elastic(
-      Origin::signed(1),
+      RuntimeOrigin::signed(1),
       BridgeNetworks::BSC,
       tx_hash.clone(),
       eth_addr.clone(),
@@ -404,7 +405,7 @@ fn claim_twice_should_fail() {
     let sig = get_legal_eth_sig();
     assert_eq!(Balances::free_balance(1), 0);
     assert_ok!(CloverClaims::claim_elastic(
-      Origin::none(),
+      RuntimeOrigin::none(),
       BridgeNetworks::BSC,
       1,
       tx_hash.clone(),
@@ -415,7 +416,7 @@ fn claim_twice_should_fail() {
     // failed on the second try
     assert_noop!(
       CloverClaims::claim_elastic(
-        Origin::none(),
+        RuntimeOrigin::none(),
         BridgeNetworks::BSC,
         1,
         tx_hash.clone(),
@@ -431,7 +432,7 @@ fn claim_twice_should_fail() {
 fn claim_limit_should_work() {
   new_test_ext().execute_with(|| {
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       2
     ));
@@ -441,7 +442,7 @@ fn claim_limit_should_work() {
     let eth_addr = get_legal_eth_addr();
     assert_noop!(
       CloverClaims::mint_claim_elastic(
-        Origin::signed(2),
+        RuntimeOrigin::signed(2),
         BridgeNetworks::BSC,
         tx_hash.clone(),
         eth_addr.clone(),
@@ -452,7 +453,7 @@ fn claim_limit_should_work() {
 
     // Set limit
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       10
     ));
@@ -460,7 +461,7 @@ fn claim_limit_should_work() {
 
     // Claim amount with limitation should be ok
     assert_ok!(CloverClaims::mint_claim_elastic(
-      Origin::signed(2),
+      RuntimeOrigin::signed(2),
       BridgeNetworks::BSC,
       tx_hash.clone(),
       eth_addr.clone(),
@@ -477,7 +478,7 @@ fn burn_should_work() {
 
     // should burn balance from account 4
     assert_ok!(CloverClaims::burn_elastic(
-      Origin::signed(4),
+      RuntimeOrigin::signed(4),
       BridgeNetworks::BSC,
       eth_addr,
       40
@@ -485,7 +486,7 @@ fn burn_should_work() {
     assert_eq!(Balances::free_balance(4), 60);
 
     assert_ok!(CloverClaims::burn_elastic(
-      Origin::signed(4),
+      RuntimeOrigin::signed(4),
       BridgeNetworks::BSC,
       eth_addr,
       40
@@ -494,8 +495,8 @@ fn burn_should_work() {
 
     // should failed if burn all the balances from an account
     assert_noop!(
-      CloverClaims::burn_elastic(Origin::signed(5), BridgeNetworks::BSC, eth_addr, 100),
-      BalancesError::<Test, _>::KeepAlive
+      CloverClaims::burn_elastic(RuntimeOrigin::signed(5), BridgeNetworks::BSC, eth_addr, 100),
+      BalancesError::<Test, _>::Expendability
     );
     assert_eq!(Balances::free_balance(5), 100);
   });
@@ -505,19 +506,19 @@ fn burn_should_work() {
 fn burn_fee_should_work() {
   new_test_ext().execute_with(|| {
     assert_ok!(CloverClaims::set_bridge_fee_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       0,
       30
     ));
     // set bridge account to root
     assert_ok!(CloverClaims::set_bridge_account_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       1
     ));
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       2000
     ));
@@ -526,13 +527,13 @@ fn burn_fee_should_work() {
 
     // burn should failed if there is not enough balance to pay fee
     assert_noop!(
-      CloverClaims::burn_elastic(Origin::signed(4), BridgeNetworks::BSC, eth_addr, 20),
+      CloverClaims::burn_elastic(RuntimeOrigin::signed(4), BridgeNetworks::BSC, eth_addr, 20),
       Error::<Test>::InvalidAmount
     );
     assert_eq!(Balances::free_balance(4), 100);
 
     assert_ok!(CloverClaims::burn_elastic(
-      Origin::signed(5),
+      RuntimeOrigin::signed(5),
       BridgeNetworks::BSC,
       eth_addr,
       40
@@ -548,7 +549,7 @@ fn burn_fee_should_work() {
 fn elastic_burn_fee_should_work() {
   new_test_ext().execute_with(|| {
     assert_ok!(CloverClaims::set_claim_limit_elastic(
-      Origin::root(),
+      RuntimeOrigin::root(),
       BridgeNetworks::BSC,
       10
     ));
@@ -564,8 +565,8 @@ pub fn init_mock_data(
   claims: Vec<(EthereumTxHash, EthereumAddress, BalanceOf<Test>, bool)>,
 ) {
   BridgeAccount::<Test>::put(account.clone().some());
-  MintFee::<Test>::put(fee_mint.some());
-  BurnFee::<Test>::put(fee_burn.some());
+  MintFee::<Test>::put(fee_mint);
+  BurnFee::<Test>::put(fee_burn);
   ClaimLimit::<Test>::put(limit);
   for (tx, addr, amount, claimed) in claims {
     Claims::<Test>::insert(tx, (addr, amount, claimed).some());

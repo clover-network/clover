@@ -2,8 +2,9 @@
 
 #[macro_use]
 extern crate num_derive;
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 
+use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
@@ -65,7 +66,7 @@ pub type BlockId = generic::BlockId<Block>;
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 #[repr(u32)]
-#[derive(Encode, Decode, Eq, FromPrimitive, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord, enum_iterator::IntoEnumIterator)]
+#[derive(Encode, Decode, Eq, FromPrimitive, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord, enum_iterator::IntoEnumIterator, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, strum_macros::EnumIter, strum_macros::Display, int_enum::IntEnum))]
 pub enum CurrencyId {
 	  CLV = 0,

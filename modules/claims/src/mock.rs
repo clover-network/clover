@@ -4,31 +4,30 @@
 use super::*;
 use crate as clover_claims;
 
-use frame_support::parameter_types;
+use frame_support::{derive_impl, parameter_types, PalletId};
+use sp_runtime::BuildStorage;
 use hex_literal::hex;
-use sp_core::H256;
+use sp_core::{ConstU32, H256};
 use sp_runtime::{
-  testing::Header,
   traits::{BlakeTwo256, IdentityLookup},
-};
+}; 
 
 parameter_types! {
     pub const BlockHashCount: u32 = 250;
 }
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
   type BaseCallFilter = ();
   type BlockWeights = ();
   type BlockLength = ();
-  type Origin = Origin;
-  type Call = Call;
-  type Index = u64;
-  type BlockNumber = u64;
+  type RuntimeOrigin = RuntimeOrigin;
+  type RuntimeCall = RuntimeCall;
+  type Nonce = u64;
   type Hash = H256;
   type Hashing = BlakeTwo256;
   type AccountId = u64;
   type Lookup = IdentityLookup<u64>;
-  type Header = Header;
-  type Event = ();
+  type RuntimeEvent = ();
   type BlockHashCount = BlockHashCount;
   type DbWeight = ();
   type Version = ();
@@ -38,52 +37,53 @@ impl frame_system::Config for Test {
   type OnKilledAccount = ();
   type SystemWeightInfo = ();
   type SS58Prefix = ();
+  type OnSetCode = ();  
+  type Block = Block;
+  type MaxConsumers = ConstU32<14>;
 }
 
 parameter_types! {
     pub const ExistentialDeposit: u64 = 1;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig as pallet_balances::DefaultConfig)]
 impl pallet_balances::Config for Test {
   type Balance = u64;
   type DustRemoval = ();
-  type Event = ();
+  type RuntimeEvent = ();
   type ExistentialDeposit = ExistentialDeposit;
   type AccountStore = System;
   type WeightInfo = ();
   type MaxLocks = ();
+  type RuntimeHoldReason = ();
 }
 
 parameter_types! {
     pub Prefix: &'static [u8] = b"Pay CLVs to the TEST account:";
-    pub const ClaimsModuleId: ModuleId = ModuleId(*b"clvclaim");
+    pub const ClaimsModuleId: PalletId = PalletId(*b"clvclaim");
 }
 impl Config for Test {
   type ModuleId = ClaimsModuleId;
-  type Event = ();
+  type RuntimeEvent = ();
   type Currency = Balances;
   type Prefix = Prefix;
 }
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+
 type Block = frame_system::mocking::MockBlock<Test>;
 
 frame_support::construct_runtime!(
-  pub enum Test where
-    Block = Block,
-    NodeBlock = Block,
-    UncheckedExtrinsic = UncheckedExtrinsic
-  {
-    System: frame_system::{Module, Call, Config, Storage, Event<T>},
-    Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-    CloverClaims: clover_claims::{Module, Call, Storage, Event<T>, ValidateUnsigned},
+  pub enum Test {
+    System: frame_system,
+    Balances: pallet_balances,
+    CloverClaims: clover_claims::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
   }
 );
 
 // This function basically just builds a genesis storage key/value store according to
 // our desired mockup.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-  let mut t = frame_system::GenesisConfig::default()
-    .build_storage::<Test>()
+  let mut t = frame_system::GenesisConfig::<Test>::default()
+    .build_storage()  
     .unwrap();
 
   pallet_balances::GenesisConfig::<Test> {

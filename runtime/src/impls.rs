@@ -1,9 +1,9 @@
 
-use sp_arithmetic::{traits::{BaseArithmetic, Unsigned}};
+use sp_arithmetic::traits::{BaseArithmetic, Unsigned};
 use sp_runtime::traits::Convert;
-use sp_runtime::{ DispatchResult, FixedPointNumber, Perquintill, Perbill, };
-use frame_support::transactional;
-use frame_support::traits::{Get, OnUnbalanced, Currency, ReservableCurrency, };
+use sp_runtime::{DispatchResult, FixedPointNumber, Perquintill, Perbill};
+use frame_support::{traits::ExistenceRequirement, transactional};
+use frame_support::traits::{Get, OnUnbalanced, Currency, ReservableCurrency};
 use frame_support::weights::{
     WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 };
@@ -14,7 +14,9 @@ use clover_traits::account::MergeAccount;
 pub struct Author;
 impl OnUnbalanced<NegativeImbalance> for Author {
   fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-    Balances::resolve_creating(&Authorship::author(), amount);
+    if let Some(author) = &Authorship::author() {
+      Balances::resolve_creating(author, amount);
+    }
   }
 }
 
@@ -26,10 +28,7 @@ fn merge_account(source: &AccountId, dest: &AccountId) -> DispatchResult {
      <Balances as ReservableCurrency<_>>::unreserve(source, Balances::reserved_balance(source));
 
      // transfer all free to dest
-     match Balances::transfer(Some(source.clone()).into(), dest.clone().into(), Balances::free_balance(source)) {
-       Ok(_) => Ok(()),
-       Err(e) => Err(e.error),
-     }
+    Balances::transfer(&source, &dest, Balances::free_balance(source), ExistenceRequirement::KeepAlive)
   }
 }
 
@@ -55,13 +54,16 @@ impl<T> WeightToFeePolynomial for WeightToFee<T> where
 /// without applying the static fee multiplier
 /// the value is incorrect (1_000_000_000 in clover testnet, spec version4).
 #[allow(dead_code)]
-pub struct StaticFeeMultiplierUpdate<T, S, V, M>(sp_std::marker::PhantomData<(T, S, V, M)>);
+pub struct StaticFeeMultiplierUpdate<T, S, V, M, N>(sp_std::marker::PhantomData<(T, S, V, M, N)>);
 
-impl<T, S, V, M> MultiplierUpdate for StaticFeeMultiplierUpdate<T, S, V, M>
-  where T: frame_system::Config, S: Get<Perquintill>, V: Get<Multiplier>, M: Get<Multiplier>,
+impl<T, S, V, M, N> MultiplierUpdate for StaticFeeMultiplierUpdate<T, S, V, M, N>
+  where T: frame_system::Config, S: Get<Perquintill>, V: Get<Multiplier>, M: Get<Multiplier>, N: Get<Multiplier>,
 {
   fn min() -> Multiplier {
     M::get()
+  }
+  fn max() -> Multiplier {
+    N::get()
   }
   fn target() -> Perquintill {
     S::get()
@@ -71,8 +73,8 @@ impl<T, S, V, M> MultiplierUpdate for StaticFeeMultiplierUpdate<T, S, V, M>
   }
 }
 
-impl<T, S, V, M> Convert<Multiplier, Multiplier> for StaticFeeMultiplierUpdate<T, S, V, M>
-  where T: frame_system::Config, S: Get<Perquintill>, V: Get<Multiplier>, M: Get<Multiplier>,
+impl<T, S, V, M, N> Convert<Multiplier, Multiplier> for StaticFeeMultiplierUpdate<T, S, V, M, N>
+  where T: frame_system::Config, S: Get<Perquintill>, V: Get<Multiplier>, M: Get<Multiplier>, N: Get<Multiplier>,
 {
   fn convert(_previous: Multiplier) -> Multiplier {
     Multiplier::saturating_from_integer(1)

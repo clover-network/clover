@@ -1,8 +1,9 @@
 // Copyright (C) 2021 Clover Network
 // This file is part of Clover.
 
+use frame_support::pallet_prelude::TypeInfo;
 use sp_std::prelude::*;
-use codec::{Encode, Decode};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sp_runtime::{
   RuntimeDebug,
 };
@@ -12,7 +13,7 @@ use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 /// An Ethereum address (i.e. 20 bytes, used to represent an Ethereum account).
 ///
 /// This gets serialized to the 0x-prefixed hex representation.
-#[derive(Clone, Copy, PartialEq, Eq, Encode, Decode, Default, RuntimeDebug)]
+#[derive(Clone, Copy, PartialEq, Eq, Encode, Decode, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct EthereumAddress(pub [u8; 20]);
 
 #[cfg(feature = "std")]
@@ -41,7 +42,7 @@ impl<'de> Deserialize<'de> for EthereumAddress {
 }
 
 /// An Ethereum signature
-#[derive(Encode, Decode, Clone)]
+#[derive(Encode, Decode, Clone, MaxEncodedLen, TypeInfo)]
 pub struct EcdsaSignature(pub [u8; 65]);
 
 impl PartialEq for EcdsaSignature {
@@ -56,7 +57,7 @@ impl sp_std::fmt::Debug for EcdsaSignature {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Encode, Decode, Default, RuntimeDebug)]
+#[derive(Clone, Copy, PartialEq, Eq, Encode, Decode, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
 pub struct EthereumTxHash(pub [u8; 32]);
 
 #[cfg(feature = "std")]

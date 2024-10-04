@@ -1,6 +1,6 @@
 /// Time and blocks.
 pub mod time {
-  use primitives::{BlockNumber, Moment};
+  use clover_primitives::{BlockNumber, Moment};
 
   pub const SECS_PER_BLOCK: Moment = 6;
   pub const MILLISECS_PER_BLOCK: Moment = SECS_PER_BLOCK * 1000;

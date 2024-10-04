@@ -2,7 +2,7 @@
 use super::*;
 use std::fmt::Display;
 
-use codec::{Codec, Decode, Encode};
+use parity_scale_codec::{Codec, Decode, Encode};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -65,10 +65,10 @@ where
 {
     fn target_amount_available(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<<Block as BlockT>::Hash>) -> Result<ExchangeInfo<CurrencyId>> {
         let api = self.client.runtime_api();
-    let at = BlockId::hash(at.unwrap_or_else(||
+    let at = at.unwrap_or_else(||
       // If the block hash is not supplied assume the best block.
-      self.client.info().best_hash));
-    api.target_amount_available(&at, source, target, amount).map_err(|e| RpcError {
+      self.client.info().best_hash);
+    api.target_amount_available(at, source, target, amount).map_err(|e| RpcError {
       code: ErrorCode::ServerError(Error::RuntimeError.into()),
       message: "Unable to get value.".into(),
       data: Some(format!("{:?}", e).into()),
@@ -82,10 +82,10 @@ where
 
     fn supply_amount_needed(&self, source: CurrencyId, target: CurrencyId, amount: Balance, at: Option<<Block as BlockT>::Hash>) -> Result<ExchangeInfo<CurrencyId>> {
         let api = self.client.runtime_api();
-    let at = BlockId::hash(at.unwrap_or_else(||
+    let at = at.unwrap_or_else(||
       // If the block hash is not supplied assume the best block.
-      self.client.info().best_hash));
-    api.supply_amount_needed(&at, source, target, amount).map_err(|e| RpcError {
+      self.client.info().best_hash);
+    api.supply_amount_needed(at, source, target, amount).map_err(|e| RpcError {
       code: ErrorCode::ServerError(Error::RuntimeError.into()),
       message: "Unable to get value.".into(),
       data: Some(format!("{:?}", e).into()),
@@ -99,10 +99,10 @@ where
 
     fn get_liquidity(&self, account: Option<AccountId>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String, String, String, String)>> {
         let api = self.client.runtime_api();
-        let at = BlockId::hash(at.unwrap_or_else(||
+        let at = at.unwrap_or_else(||
             // If the block hash is not supplied assume the best block.
-            self.client.info().best_hash));
-        let info = api.get_liquidity(&at, account).map_err(|e| RpcError {
+            self.client.info().best_hash);
+        let info = api.get_liquidity(at, account).map_err(|e| RpcError {
             code: ErrorCode::ServerError(Error::RuntimeError.into()),
             message: "Unable to get value.".into(),
             data: Some(format!("{:?}", e).into()),
@@ -114,10 +114,10 @@ where
 
     fn get_exchange_rate(&self, at: Option<<Block as BlockT>::Hash>) -> Result<Rate> {
         let api = self.client.runtime_api();
-    let at = BlockId::hash(at.unwrap_or_else(||
+    let at = at.unwrap_or_else(||
       // If the block hash is not supplied assume the best block.
-      self.client.info().best_hash));
-    api.get_exchange_rate(&at).map_err(|e| RpcError {
+      self.client.info().best_hash);
+    api.get_exchange_rate(at).map_err(|e| RpcError {
       code: ErrorCode::ServerError(Error::RuntimeError.into()),
       message: "Unable to get value.".into(),
       data: Some(format!("{:?}", e).into()),
@@ -127,10 +127,10 @@ where
 
     fn to_add_liquidity(&self, source: CurrencyId, target: CurrencyId, source_amount: Balance, target_amount: Balance, at: Option<<Block as BlockT>::Hash>) -> Result<(String, String)> {
         let api = self.client.runtime_api();
-    let at = BlockId::hash(at.unwrap_or_else(||
+    let at = at.unwrap_or_else(||
       // If the block hash is not supplied assume the best block.
-      self.client.info().best_hash));
-    api.to_add_liquidity(&at, source, target, source_amount, target_amount).map_err(|e| RpcError {
+      self.client.info().best_hash);
+    api.to_add_liquidity(at, source, target, source_amount, target_amount).map_err(|e| RpcError {
       code: ErrorCode::ServerError(Error::RuntimeError.into()),
       message: "Unable to get value.".into(),
       data: Some(format!("{:?}", e).into()),
@@ -144,11 +144,12 @@ where
                               currency_right: CurrencyId,
                               at: Option<<Block as BlockT>::Hash>) -> Result<(String, String)> {
     let api = self.client.runtime_api();
-    let at = BlockId::hash(at.unwrap_or_else(||
-                                             // If the block hash is not supplied assume the best block.
-                                             self.client.info().best_hash));
+    let at = at.unwrap_or_else(||
+      // If the block hash is not supplied assume the best block.
+      self.client.info().best_hash
+    );
 
-    api.get_staking_info(&at, account, currency_left, currency_right).map_err(|e| RpcError {
+    api.get_staking_info(at, account, currency_left, currency_right).map_err(|e| RpcError {
       code: ErrorCode::ServerError(Error::RuntimeError.into()),
       message: "Unable to get value.".into(),
       data: Some(format!("{:?}", e).into()),

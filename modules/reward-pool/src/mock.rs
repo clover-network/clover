@@ -8,7 +8,7 @@ use sp_core::H256;
 use sp_runtime::{testing::Header, traits::IdentityLookup, Perbill};
 pub use pallet_balances::Call as BalancesCall;
 
-pub use primitives::{
+pub use clover_primitives::{
   AccountId, AccountIndex, Amount, Balance,
   CurrencyId,
   EraIndex, Hash, Index, Moment,
@@ -50,10 +50,10 @@ parameter_types! {
 }
 
 impl frame_system::Config for TestRuntime {
-  type Origin = Origin;
+  type RuntimeOrigin = RuntimeOrigin;
   type Index = u64;
   type BlockNumber = BlockNumber;
-  type Call = ();
+  type RuntimeCall = ();
   type Hash = H256;
   type Hashing = ::sp_runtime::traits::BlakeTwo256;
   type AccountId = AccountId;
@@ -77,7 +77,7 @@ impl frame_system::Config for TestRuntime {
   type SystemWeightInfo = ();
 }
 
-pub type System = frame_system::Module<TestRuntime>;
+pub type System = frame_system::Pallet<TestRuntime>;
 
 parameter_types! {
   pub const ExistentialDeposit: u128 = 500;

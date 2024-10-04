@@ -2,7 +2,7 @@
 name = "clover-rpc"
 authors = ['Clover Network <https://github.com/clover-network>']
 version = '0.9.0'
-edition = "2018"
+edition = '2021'
 license = 'GPL-3.0'
 homepage = 'https://clover.finance'
 repository = 'https://github.com/clover-network/clover'
@@ -12,26 +12,26 @@ description = "Runtime API definition required by System RPC extensions."
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0" }
-jsonrpc-core = "15.0.0"
-jsonrpc-core-client = "15.0.0"
-jsonrpc-derive = "15.0.0"
-sp-runtime = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
-sp-api = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
-sp-std = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0" , default-features = false }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git",  tag = "v3.0.0"  }
+parity-scale-codec = { workspace = true }
+jsonrpc-core = { workspace = true }
+jsonrpc-core-client = { workspace = true }
+jsonrpc-derive = { workspace = true }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-api = { workspace = true, features = ["std"]  }
+sp-std = { workspace = true }
+sp-blockchain = { workspace = true }
 clover-rpc-runtime-api = { path = "runtime-api" }
-serde = { version = "1.0.101", optional = true }
-clover-primitives = { path = "../primitives" }
-strum = "0.19.2"
-strum_macros = "0.19.2"
-int-enum = "0.4.0"
+serde = { workspace = true, optional = true }
+clover-primitives = { workspace = true }
+strum = { workspace = true }
+strum_macros = { workspace = true }
+int-enum = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-  "serde",
-  "clover-rpc-runtime-api/std",
-  "sp-api/std",
-  "codec/std",
+	"clover-rpc-runtime-api/std",
+	"parity-scale-codec/std",
+	"serde",
+	"sp-api/std",
 ]

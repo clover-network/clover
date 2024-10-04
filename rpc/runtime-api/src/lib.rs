@@ -2,23 +2,23 @@
 
 sp_api::decl_runtime_apis! {
 	pub trait CurrencyBalanceApi<AccountId, CurrencyId, Balance> where
-		AccountId: codec::Codec,
-        CurrencyId: codec::Codec,
-        Balance: codec::Codec {
+		AccountId: parity_scale_codec::Codec,
+        CurrencyId: parity_scale_codec::Codec,
+        Balance: parity_scale_codec::Codec {
 		// Get account balance of a currency
 		fn account_balance(account: AccountId, currency_id: Option<CurrencyId>) -> sp_std::vec::Vec<(CurrencyId, Balance)>;
 	}
 
 	pub trait CurrencyPairApi<> {
-		fn currency_pair() -> sp_std::vec::Vec<(primitives::CurrencyId, primitives::CurrencyId)>;
+		fn currency_pair() -> sp_std::vec::Vec<(clover_primitives::CurrencyId, clover_primitives::CurrencyId)>;
 	}
 
 	pub trait CurrencyExchangeApi<AccountId, CurrencyId, Balance, Rate, Share> where
-		AccountId: codec::Codec,
-		CurrencyId: codec::Codec,
-		Balance: codec::Codec,
-		Rate: codec::Codec,
-		Share: codec::Codec, {
+		AccountId: parity_scale_codec::Codec,
+		CurrencyId: parity_scale_codec::Codec,
+		Balance: parity_scale_codec::Codec,
+		Rate: parity_scale_codec::Codec,
+		Share: parity_scale_codec::Codec, {
 		fn target_amount_available(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>);
 		fn supply_amount_needed(source: CurrencyId, target: CurrencyId, amount: Balance) -> (Balance, sp_std::vec::Vec<CurrencyId>);
 
@@ -29,10 +29,10 @@ sp_api::decl_runtime_apis! {
 	}
 
   pub trait IncentivePoolApi<AccountId, CurrencyId, Balance, Share> where
-    AccountId: codec::Codec,
-    CurrencyId: codec::Codec,
-    Balance: codec::Codec,
-    Share: codec::Codec, {
+    AccountId: parity_scale_codec::Codec,
+    CurrencyId: parity_scale_codec::Codec,
+    Balance: parity_scale_codec::Codec,
+    Share: parity_scale_codec::Codec, {
     fn get_all_incentive_pools() -> sp_std::vec::Vec<(CurrencyId, CurrencyId, Share, Balance)>;
   }
 }

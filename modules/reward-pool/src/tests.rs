@@ -7,7 +7,7 @@ use mock::{
   ExtBuilder,
 };
 
-pub use primitives::{ AccountId, currency::*, };
+pub use clover_primitives::{ AccountId, currency::*, };
 
 use RewardPoolModule as RPM;
 

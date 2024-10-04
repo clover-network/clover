@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 use super::*;
-use codec::{Codec, };
+use parity_scale_codec::{Codec, };
 use std::fmt::Display;
 
 pub use clover_rpc_runtime_api::IncentivePoolApi as IncentivePoolRuntimeApi;
@@ -37,9 +37,9 @@ where
   fn get_all_incentive_pools(&self,
                              at: Option<<Block as BlockT>::Hash>) -> Result<Vec<(CurrencyId, CurrencyId, String, String)>> {
     let api = self.client.runtime_api();
-    let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+    let at = at.unwrap_or_else(|| self.client.info().best_hash);
 
-    api.get_all_incentive_pools(&at).map_err(|e| RpcError {
+    api.get_all_incentive_pools(at).map_err(|e| RpcError {
       code: ErrorCode::ServerError(Error::RuntimeError.into()),
       message: "Unable to get value.".into(),
       data: Some(format!("{:?}", e).into()),

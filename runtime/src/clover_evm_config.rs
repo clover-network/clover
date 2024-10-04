@@ -4,8 +4,8 @@ pub struct CloverEvmConfig;
 impl CloverEvmConfig {
   /// clover configuration,
   /// identical to Istanbul hard fork except higher create_contract_limit
-	pub const fn config() -> evm::Config {
-		evm::Config {
+	pub const fn config() -> pallet_evm::EvmConfig {
+		pallet_evm::EvmConfig {
 			gas_ext_code: 700,
 			gas_ext_code_hash: 700,
 			gas_balance: 700,
@@ -41,6 +41,19 @@ impl CloverEvmConfig {
 			has_self_balance: true,
 			has_ext_code_hash: true,
 			estimate: false,
+			decrease_clears_refund: false, // TODO: check
+			disallow_executable_format: false, // TODO: check
+			gas_access_list_address: 0, // TODO: check
+			gas_access_list_storage_key: 0, // TODO: check
+			gas_account_access_cold: 0, // TODO: check
+			gas_sload_cold: 0, // TODO: check
+			gas_storage_read_warm: 0, // TODO: check
+			has_base_fee: false, // TODO: check
+			has_push0: true, // TODO: check
+			increase_state_access_gas: false, // TODO: check
+			max_initcode_size: None, // TODO: check
+			max_refund_quotient: 0, // TODO: check
+			warm_coinbase_address: false, // TODO: check
 		}
 	}
 }

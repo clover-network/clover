@@ -31,14 +31,15 @@ where
         &self,
         at: Option<<Block as BlockT>::Hash>
     ) -> Result<sp_std::vec::Vec<(CurrencyId, CurrencyId)>> {
-    let api = self.client.runtime_api();
-    let at = BlockId::hash(at.unwrap_or_else(||
-      // If the block hash is not supplied assume the best block.
-      self.client.info().best_hash));
-    api.currency_pair(&at).map_err(|e| RpcError {
-      code: ErrorCode::ServerError(Error::RuntimeError.into()),
-      message: "Unable to get value.".into(),
-      data: Some(format!("{:?}", e).into()),
-    })
+      let api = self.client.runtime_api();
+      let at = at.unwrap_or_else(||
+        // If the block hash is not supplied assume the best block.
+        self.client.info().best_hash);
+
+      api.currency_pair(at).map_err(|e| RpcError {
+        code: ErrorCode::ServerError(Error::RuntimeError.into()),
+        message: "Unable to get value.".into(),
+        data: Some(format!("{:?}", e).into()),
+      })
     }
 }

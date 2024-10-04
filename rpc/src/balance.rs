@@ -1,13 +1,13 @@
 use super::*;
 
 use std::fmt::Display;
-use codec::Codec;
+use parity_scale_codec::Codec;
 
 use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 pub use clover_rpc_runtime_api::CurrencyBalanceApi as CurrencyBalanceRuntimeApi;
 
 #[rpc]
@@ -58,10 +58,10 @@ where
     at: Option<<Block as BlockT>::Hash>
   ) -> Result<sp_std::vec::Vec<(CurrencyId, String)>> {
     let api = self.client.runtime_api();
-    let at = BlockId::hash(at.unwrap_or_else(||
+    let at = at.unwrap_or_else(||
       // If the block hash is not supplied assume the best block.
-      self.client.info().best_hash));
-    let balances = api.account_balance(&at, account, currency_id).map_err(|e| RpcError {
+      self.client.info().best_hash);
+    let balances = api.account_balance(at, account, currency_id).map_err(|e| RpcError {
       code: ErrorCode::ServerError(Error::RuntimeError.into()),
       message: "Unable to get value.".into(),
       data: Some(format!("{:?}", e).into()),
