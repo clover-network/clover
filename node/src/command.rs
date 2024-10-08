@@ -162,8 +162,23 @@ pub fn run() -> sc_cli::Result<()> {
                 cmd.run(client, frontier_backend)
             })
         }
+        Some(Subcommand::ExportGenesisHead(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|config| {
+                let partials = new_partial::<Block, RuntimeApi, HostFunctions>(&config, &cli)?;
+
+                cmd.run(partials.client)
+            })
+        }
+        Some(Subcommand::ExportGenesisWasm(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            runner.sync_run(|_config| {
+                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+                cmd.run(&*spec)
+            })
+        }
         None => {
-            let runner = cli.create_runner(&cli.run.base)?;
+            let runner = cli.create_runner(&cli.run.base.base)?;
             runner.run_node_until_exit(|config| async move {
                 service::new_full(config, &cli)
                     .await

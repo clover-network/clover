@@ -1,4 +1,4 @@
-use polkadot_sdk::sc_cli;
+use polkadot_sdk::{cumulus_client_cli, sc_cli};
 
 use fc_cli::FrontierDbCmd;
 use sc_cli::{KeySubcommand, SignCmd, VanityCmd, VerifyCmd};
@@ -43,6 +43,10 @@ pub enum Subcommand {
 
     /// Db meta columns information.
     FrontierDb(FrontierDbCmd),
+
+    #[command(alias = "export-genesis-state")]
+    ExportGenesisHead(cumulus_client_cli::ExportGenesisHeadCommand),
+    ExportGenesisWasm(cumulus_client_cli::ExportGenesisWasmCommand),
 }
 
 #[allow(missing_docs)]
@@ -50,8 +54,7 @@ pub enum Subcommand {
 pub struct CloverRunCmd {
     #[allow(missing_docs)]
     #[clap(flatten)]
-    pub base: sc_cli::RunCmd,
-
+    pub base: cumulus_client_cli::RunCmd,
     #[arg(long)]
     pub manual_seal: bool,
 
@@ -60,6 +63,11 @@ pub struct CloverRunCmd {
 }
 
 #[derive(Debug, clap::Parser)]
+#[command(
+    propagate_version = true,
+    args_conflicts_with_subcommands = true,
+    subcommand_negates_reqs = true
+)]
 pub struct Cli {
     #[command(subcommand)]
     pub subcommand: Option<Subcommand>,
@@ -80,4 +88,6 @@ pub struct Cli {
     /// telemetry, if telemetry is enabled.
     #[arg(long)]
     pub no_hardware_benchmarks: bool,
+    #[arg(raw = true)]
+    pub relay_chain_args: Vec<String>,
 }
