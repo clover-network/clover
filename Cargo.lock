@@ -2242,6 +2242,7 @@ dependencies = [
  "pallet-collective",
  "pallet-contracts",
  "pallet-democracy",
+ "pallet-election-provider-multi-phase",
  "pallet-elections-phragmen",
  "pallet-ethereum",
  "pallet-evm",

@@ -316,7 +316,7 @@ where
   let sc_service::PartialComponents {
     client, backend, mut task_manager, import_queue, keystore_container, select_chain, transaction_pool,
     other: (import_setup, (filter_pool,
-    frontier_backend,frontier_block_import, storage_override, telemetry, babe_worker_handle)),
+    frontier_backend, frontier_block_import, storage_override, telemetry, babe_worker_handle)),
   } = new_partial(&config, cli)?;
 
   let FrontierPartialComponents {
@@ -486,7 +486,12 @@ where
     let slot_duration = babe_link.config().slot_duration();
 		let target_gas_price = eth_config.target_gas_price;
 		let pending_create_inherent_data_providers = move |_, ()| async move {
-      let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+      let current = sp_timestamp::InherentDataProvider::from_system_time();
+      let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
+
+      let timestamp = sp_timestamp::InherentDataProvider::new(
+        next_slot.into()
+      ); 
 
       let slot =
       sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
@@ -676,13 +681,13 @@ where
               *timestamp,
               slot_duration 
             ); 
-            let storage_proof =
-						sp_transaction_storage_proof::registration::new_data_provider(
-							&*client_clone,
-							&parent, 
-						)?;
+            // let storage_proof =
+						// sp_transaction_storage_proof::registration::new_data_provider(
+						// 	&*client_clone,
+						// 	&parent, 
+						// )?;
             
-            Ok((slot, timestamp, storage_proof))
+            Ok((slot, timestamp))
           }
         },
         block_proposal_slot_portion: SlotProportion::new(0.5),
@@ -692,7 +697,7 @@ where
 
       let babe = sc_consensus_babe::start_babe(babe_config)?;
 
-      task_manager.spawn_essential_handle().spawn_blocking("babe-proposer", None, babe);
+      task_manager.spawn_essential_handle().spawn_blocking("babe-proposer", Some("block-authoring"), babe);
     }
   }
 

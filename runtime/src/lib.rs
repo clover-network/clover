@@ -10,6 +10,7 @@ use frame_election_provider_support::NoElection;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::traits::fungible::HoldConsideration;
 use frame_support::traits::fungibles::{Create, Mutate};
+use frame_system::limits::{BlockLength, BlockWeights};
 
 use core::convert::{TryFrom, TryInto};
 use frame_support::traits::tokens::pay::PayAssetFromAccount;
@@ -19,6 +20,7 @@ use frame_support::traits::{
 };
 use frame_support::weights::ConstantMultiplier;
 use frame_support::{derive_impl, PalletId};
+use pallet_election_provider_multi_phase::GeometricDepositBase;
 use pallet_ethereum::{
     PostLogContent, Transaction as EthereumTransaction, TransactionAction, TransactionData,
 };
@@ -26,7 +28,7 @@ use pallet_identity::legacy::IdentityInfo;
 use parity_scale_codec::Decode;
 use precompiles::CloverPrecompiles;
 use sp_core::crypto::{KeyTypeId, Public};
-use sp_core::{ConstBool, ConstU32, ConstU64, ConstU8, OpaqueMetadata, H160, H256, U256};
+use sp_core::{ConstBool, ConstU32, ConstU64, ConstU8, Get, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::curve::PiecewiseLinear;
 use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, Bounded, Convert, ConvertInto, NumberFor, OpaqueKeys,
@@ -45,7 +47,9 @@ use sp_std::prelude::*;
 use sp_api::impl_runtime_apis;
 
 use frame_election_provider_support::bounds::{ElectionBounds, ElectionBoundsBuilder};
-use frame_election_provider_support::{onchain, BalancingConfig, SequentialPhragmen, VoteWeight};
+use frame_election_provider_support::{
+    onchain, BalancingConfig, ElectionDataProvider, SequentialPhragmen, VoteWeight,
+};
 use pallet_grandpa::{
     fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -162,7 +166,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     impl_name: create_runtime_str!("clover"),
     state_version: 1,
     authoring_version: 1,
-    spec_version: 18,
+    spec_version: 24,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -186,28 +190,27 @@ pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_perthousand(25);
 
 parameter_types! {
-  pub BlockLength: limits::BlockLength =
-    limits::BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-  pub const BlockHashCount: BlockNumber = 2400;
-  /// We allow for 2 seconds of compute with a 6 second average block time.
-  pub BlockWeights: limits::BlockWeights = limits::BlockWeights::builder()
-  .base_block(BlockExecutionWeight::get())
-  .for_class(DispatchClass::all(), |weights| {
-    weights.base_extrinsic = ExtrinsicBaseWeight::get();
-  })
-  .for_class(DispatchClass::Normal, |weights| {
-    weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-  })
-  .for_class(DispatchClass::Operational, |weights| {
-    weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-    // Operational transactions have an extra reserved space, so that they
-    // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-    weights.reserved = Some(
-      MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT,
-    );
-  })
-  .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-  .build_or_panic();
+    pub const BlockHashCount: BlockNumber = 2400;
+    pub RuntimeBlockLength: BlockLength =
+        BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+        .base_block(BlockExecutionWeight::get())
+        .for_class(DispatchClass::all(), |weights| {
+            weights.base_extrinsic = ExtrinsicBaseWeight::get();
+        })
+        .for_class(DispatchClass::Normal, |weights| {
+            weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+        })
+        .for_class(DispatchClass::Operational, |weights| {
+            weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+            // Operational transactions have some extra reserved space, so that they
+            // are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+            weights.reserved = Some(
+                MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+            );
+        })
+        .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+        .build_or_panic();
   pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
   pub const Version: RuntimeVersion = VERSION;
   pub const SS58Prefix: u8 = 42;
@@ -235,8 +238,8 @@ impl frame_system::Config for Runtime {
     type RuntimeOrigin = RuntimeOrigin;
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
-    type BlockWeights = BlockWeights;
-    type BlockLength = BlockLength;
+    type BlockWeights = RuntimeBlockWeights;
+    type BlockLength = RuntimeBlockLength;
     /// The weight of database operations that the runtime can invoke.
     type DbWeight = RocksDbWeight;
     /// Version of the runtime.
@@ -586,15 +589,175 @@ parameter_types! {
   pub const MaxIterations: u32 = 10;
   // 0.05%. The higher the value, the more strict solution acceptance becomes.
   pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
-  pub OffchainSolutionWeightLimit: Weight = BlockWeights::get()
+  pub OffchainSolutionWeightLimit: Weight = RuntimeBlockWeights::get()
     .get(DispatchClass::Normal)
     .max_extrinsic
     .expect("Normal extrinsics have weight limit configured by default; qed")
     .saturating_sub(BlockExecutionWeight::get());
     pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
   pub HistoryDepth: u32 = 84;
-  pub MaxCollectivesProposalWeight: Weight = Perbill::from_percent(50) * BlockWeights::get().max_block;
+  pub MaxCollectivesProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
   pub const MaxControllersInDeprecationBatch: u32 = 5900;
+  pub OffchainRepeat: BlockNumber = 5;
+
+}
+
+parameter_types! {
+    // phase durations. 1/4 of the last session for each.
+    pub const SignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
+    pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
+
+    // signed config
+    pub const SignedRewardBase: Balance = 1 * DOLLARS;
+    pub const SignedFixedDeposit: Balance = 1 * DOLLARS;
+    pub const SignedDepositIncreaseFactor: Percent = Percent::from_percent(10);
+    pub const SignedDepositByte: Balance = 1 * CENTS;
+
+    // miner configs
+    pub const MultiPhaseUnsignedPriority: TransactionPriority = StakingUnsignedPriority::get() - 1u64;
+    pub MinerMaxWeight: Weight = RuntimeBlockWeights::get()
+        .get(DispatchClass::Normal)
+        .max_extrinsic.expect("Normal extrinsics have a weight limit configured; qed")
+        .saturating_sub(BlockExecutionWeight::get());
+    // Solution can occupy 90% of normal block size
+    pub MinerMaxLength: u32 = Perbill::from_rational(9u32, 10) *
+        *RuntimeBlockLength::get()
+        .max
+        .get(DispatchClass::Normal);
+}
+
+frame_election_provider_support::generate_solution_type!(
+    #[compact]
+    pub struct NposSolution16::<
+        VoterIndex = u32,
+        TargetIndex = u16,
+        Accuracy = sp_runtime::PerU16,
+        MaxVoters = MaxElectingVotersSolution,
+    >(16)
+);
+
+parameter_types! {
+    // Note: the EPM in this runtime runs the election on-chain. The election bounds must be
+    // carefully set so that an election round fits in one block.
+    pub ElectionBoundsMultiPhase: ElectionBounds = ElectionBoundsBuilder::default()
+        .voters_count(10_000.into()).targets_count(1_500.into()).build();
+    pub ElectionBoundsOnChain: ElectionBounds = ElectionBoundsBuilder::default()
+        .voters_count(5_000.into()).targets_count(1_250.into()).build();
+
+    pub MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
+    pub MaxElectingVotersSolution: u32 = 40_000;
+    // The maximum winners that can be elected by the Election pallet which is equivalent to the
+    // maximum active validators the staking pallet can have.
+    pub MaxActiveValidators: u32 = 1000;
+}
+
+/// Maximum number of iterations for balancing that will be executed in the embedded OCW
+/// miner of election provider multi phase.
+pub const MINER_MAX_ITERATIONS: u32 = 10;
+
+/// A source of random balance for NposSolver, which is meant to be run by the OCW election miner.
+pub struct OffchainRandomBalancing;
+impl Get<Option<BalancingConfig>> for OffchainRandomBalancing {
+    fn get() -> Option<BalancingConfig> {
+        use sp_runtime::traits::TrailingZeroInput;
+        let iterations = match MINER_MAX_ITERATIONS {
+            0 => 0,
+            max => {
+                let seed = sp_io::offchain::random_seed();
+                let random = <u32>::decode(&mut TrailingZeroInput::new(&seed))
+                    .expect("input is padded with zeroes; qed")
+                    % max.saturating_add(1);
+                random as usize
+            }
+        };
+
+        let config = BalancingConfig {
+            iterations,
+            tolerance: 0,
+        };
+        Some(config)
+    }
+}
+pub struct OnChainSeqPhragmen;
+impl onchain::Config for OnChainSeqPhragmen {
+    type System = Runtime;
+    type Solver = SequentialPhragmen<
+        AccountId,
+        pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>,
+    >;
+    type DataProvider = <Runtime as pallet_election_provider_multi_phase::Config>::DataProvider;
+    type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
+    type MaxWinners = <Runtime as pallet_election_provider_multi_phase::Config>::MaxWinners;
+    type Bounds = ElectionBoundsOnChain;
+}
+
+impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
+    type AccountId = AccountId;
+    type MaxLength = MinerMaxLength;
+    type MaxWeight = MinerMaxWeight;
+    type Solution = NposSolution16;
+    type MaxVotesPerVoter =
+	<<Self as pallet_election_provider_multi_phase::Config>::DataProvider as ElectionDataProvider>::MaxVotesPerVoter;
+    type MaxWinners = MaxActiveValidators;
+
+    // The unsigned submissions have to respect the weight of the submit_unsigned call, thus their
+    // weight estimate function is wired to this call's weight.
+    fn solution_weight(v: u32, t: u32, a: u32, d: u32) -> Weight {
+        <
+			<Self as pallet_election_provider_multi_phase::Config>::WeightInfo
+			as
+			pallet_election_provider_multi_phase::WeightInfo
+		>::submit_unsigned(v, t, a, d)
+    }
+}
+
+/// The numbers configured here could always be more than the the maximum limits of staking pallet
+/// to ensure election snapshot will not run out of memory. For now, we set them to smaller values
+/// since the staking is bounded and the weight pipeline takes hours for this single pallet.
+pub struct ElectionProviderBenchmarkConfig;
+impl pallet_election_provider_multi_phase::BenchmarkingConfig for ElectionProviderBenchmarkConfig {
+    const VOTERS: [u32; 2] = [1000, 2000];
+    const TARGETS: [u32; 2] = [500, 1000];
+    const ACTIVE_VOTERS: [u32; 2] = [500, 800];
+    const DESIRED_TARGETS: [u32; 2] = [200, 400];
+    const SNAPSHOT_MAXIMUM_VOTERS: u32 = 1000;
+    const MINER_MAXIMUM_VOTERS: u32 = 1000;
+    const MAXIMUM_TARGETS: u32 = 300;
+}
+
+impl pallet_election_provider_multi_phase::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Currency = Balances;
+    type EstimateCallFee = TransactionPayment;
+    type SignedPhase = SignedPhase;
+    type UnsignedPhase = UnsignedPhase;
+    type BetterSignedThreshold = ();
+    type OffchainRepeat = OffchainRepeat;
+    type MinerTxPriority = MultiPhaseUnsignedPriority;
+    type MinerConfig = Self;
+    type SignedMaxSubmissions = ConstU32<10>;
+    type SignedRewardBase = SignedRewardBase;
+    type SignedDepositBase =
+        GeometricDepositBase<Balance, SignedFixedDeposit, SignedDepositIncreaseFactor>;
+    type SignedDepositByte = SignedDepositByte;
+    type SignedMaxRefunds = ConstU32<3>;
+    type SignedDepositWeight = ();
+    type SignedMaxWeight = MinerMaxWeight;
+    type SlashHandler = (); // burn slashes
+    type RewardHandler = (); // nothing to do upon rewards
+    type DataProvider = Staking;
+    type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
+    type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
+    type Solver = SequentialPhragmen<
+        AccountId,
+        pallet_election_provider_multi_phase::SolutionAccuracyOf<Self>,
+        OffchainRandomBalancing,
+    >;
+    type ForceOrigin = EnsureRootOrHalfCouncil;
+    type MaxWinners = MaxActiveValidators;
+    type ElectionBounds = ElectionBoundsMultiPhase;
+    type BenchmarkingConfig = ElectionProviderBenchmarkConfig;
+    type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Self>;
 }
 
 /// Upper limit on the number of NPOS nominations.
@@ -628,10 +791,10 @@ impl pallet_staking::Config for Runtime {
     type NextNewSession = Session;
     type MaxExposurePageSize = ConstU32<256>;
     /// Replace with multi-phase election provider
-    type ElectionProvider = NoElection<(AccountId, BlockNumber, Staking, ConstU32<10>)>;
+    type ElectionProvider = ElectionProviderMultiPhase;
     /// We are way past genesis, no need to run election.
     /// TODO: check how it works in the local testnet
-    type GenesisElectionProvider = NoElection<(AccountId, BlockNumber, Staking, ConstU32<10>)>;
+    type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
     type VoterList = VoterList;
     type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
     type NominationsQuota = pallet_staking::FixedNominationsQuota<MAX_QUOTA_NOMINATIONS>;
@@ -1397,11 +1560,11 @@ construct_runtime!(
   pub struct Runtime {
     System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
     RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip::{Pallet, Storage},
-    Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 
-    Authorship: pallet_authorship::{Pallet, Storage},
-    Babe: pallet_babe::{Pallet, Call, Storage, Config<T>, ValidateUnsigned},
-    Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config<T>, Event},
+    Authorship: pallet_authorship,
+    Babe: pallet_babe,
+    Grandpa: pallet_grandpa,
+    Timestamp: pallet_timestamp,
 
     Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>},
     Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
@@ -1416,6 +1579,7 @@ construct_runtime!(
     Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
     TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
     ElectionsPhragmen: pallet_elections_phragmen::{Pallet, Call, Storage, Event<T>, Config<T>},
+    ElectionProviderMultiPhase: pallet_election_provider_multi_phase::{Pallet, Call, Storage, Event<T>},
     TechnicalMembership: pallet_membership::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
     Treasury: pallet_treasury::{Pallet, Call, Storage, Event<T>, Config<T>},
 
@@ -1568,13 +1732,14 @@ impl_runtime_apis! {
 
   impl sp_consensus_babe::BabeApi<Block> for Runtime {
     fn configuration() -> sp_consensus_babe::BabeConfiguration {
+    let epoch_config = Babe::epoch_config().unwrap_or(BABE_GENESIS_EPOCH_CONFIG);
       sp_consensus_babe::BabeConfiguration {
         slot_duration: Babe::slot_duration(),
         epoch_length: EpochDuration::get(),
-        c: PRIMARY_PROBABILITY,
+        c: epoch_config.c,
         authorities: Babe::authorities().to_vec(),
         randomness: Babe::randomness(),
-        allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryPlainSlots,
+        allowed_slots: epoch_config.allowed_slots,
       }
     }
 
