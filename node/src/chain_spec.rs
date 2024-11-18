@@ -4,8 +4,8 @@ use clover_runtime::{
     SessionKeys, Signature, StakerStatus, StakingConfig, SudoConfig, SystemConfig, DOLLARS,
     WASM_BINARY,
 };
+use fp_evm::GenesisAccount;
 use hex_literal::hex;
-use pallet_evm::GenesisAccount;
 use primitive_types::H160;
 use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
@@ -150,6 +150,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
         None,
         // Protocol ID
         Some("cloverlocal"),
+        None,
         // Properties
         Some(
             json!({
@@ -209,6 +210,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
         None,
         // Protocol ID
         Some("cloverlocal"),
+        None,
         // Properties
         Some(
             json!({
@@ -305,6 +307,7 @@ pub fn local_rose_testnet_config() -> Result<ChainSpec, String> {
     TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
     // Protocol ID
     Some("rose"),
+    None,
     // Properties
     Some(json!({
       "tokenDecimals": 18,
@@ -396,6 +399,7 @@ pub fn iris_testnet_config() -> Result<ChainSpec, String> {
     TelemetryEndpoints::new(vec![(TELEMETRY_URL.into(), 0)]).ok(),
     // Protocol ID
     Some("iris"),
+    None,
     // Properties
     Some(json!({
       "tokenDecimals": 18,
@@ -429,12 +433,12 @@ fn testnet_genesis(
     const AUTHOR_BALANCE: Balance = 200 * DOLLARS;
 
     GenesisConfig {
-        frame_system: Some(SystemConfig {
+        system: Some(SystemConfig {
             // Add Wasm runtime to storage.
             code: wasm_binary.to_vec(),
-            changes_trie_config: Default::default(),
+            ..Default::default()
         }),
-        pallet_balances: Some(BalancesConfig {
+        balances: Some(BalancesConfig {
             // Configure endowed accounts with initial balance of 1 << 60.
             balances: endowed_accounts
                 .iter()
@@ -447,12 +451,15 @@ fn testnet_genesis(
                 )
                 .collect(),
         }),
-        pallet_evm: Some(EVMConfig {
+        evm: Some(EVMConfig {
             accounts: endowed_eth_accounts,
+            ..Default::default()
         }),
-        pallet_ethereum: Some(EthereumConfig {}),
-        pallet_indices: Some(IndicesConfig { indices: vec![] }),
-        pallet_session: Some(SessionConfig {
+        ethereum: Some(EthereumConfig {
+            ..Default::default()
+        }),
+        indices: Some(IndicesConfig { indices: vec![] }),
+        session: Some(SessionConfig {
             keys: initial_authorities
                 .iter()
                 .map(|x| {
@@ -464,7 +471,7 @@ fn testnet_genesis(
                 })
                 .collect::<Vec<_>>(),
         }),
-        pallet_staking: Some(StakingConfig {
+        staking: Some(StakingConfig {
             validator_count: initial_authorities.len() as u32,
             minimum_validator_count: initial_authorities.len() as u32,
             stakers: initial_authorities
@@ -475,24 +482,23 @@ fn testnet_genesis(
             slash_reward_fraction: Perbill::from_percent(10),
             ..Default::default()
         }),
-        pallet_babe: Some(BabeConfig {
+        babe: Some(BabeConfig {
             authorities: vec![],
+            ..Default::default()
         }),
-        pallet_grandpa: Some(GrandpaConfig {
+        grandpa: Some(GrandpaConfig {
             authorities: vec![],
+            ..Default::default()
         }),
-        pallet_im_online: Some(Default::default()),
-        pallet_authority_discovery: Some(AuthorityDiscoveryConfig { keys: vec![] }),
-        pallet_sudo: Some(SudoConfig {
+        im_online: Some(Default::default()),
+        authority_discovery: Some(AuthorityDiscoveryConfig {
+            keys: vec![],
+            ..Default::default()
+        }),
+        sudo: Some(SudoConfig {
             // Assign network admin rights.
-            key: root_key,
+            key: Some(root_key),
         }),
-        pallet_collective_Instance1: Some(Default::default()),
-        pallet_collective_Instance2: Some(Default::default()),
-        pallet_democracy: Some(Default::default()),
-        pallet_treasury: Some(Default::default()),
-        pallet_elections_phragmen: Some(Default::default()),
-        pallet_membership_Instance1: Some(Default::default()),
-        pallet_vesting: Some(Default::default()),
+        ..Default::default()
     }
 }

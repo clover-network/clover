@@ -16,18 +16,21 @@ targets = ['x86_64-unknown-linux-gnu']
 name = 'clover'
 
 [dependencies]
+clap = { workspace = true }
 clover-primitives = { workspace = true }
 clover-runtime = { workspace = true }
 clover-rpc = { workspace = true }
 futures = { workspace = true }
-
+log = { workspace = true }
 jsonrpsee = { workspace = true }
 structopt = { workspace = true, optional = true }
 serde_json = { workspace = true }
+parity-scale-codec = { workspace = true }
 
 pallet-contracts = { workspace = true }
 #pallet-contracts-rpc = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
+pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 sc-authority-discovery = { workspace = true }
 sc-basic-authorship = { workspace = true }
 sc-cli = { optional = true, workspace = true }
@@ -45,6 +48,8 @@ sc-consensus-grandpa  = { workspace = true }
 sc-executor = { workspace = true }
 sc-keystore = { workspace = true }
 sc-network = { workspace = true }
+sc-network-sync = { workspace = true }
+sc-offchain = { workspace = true }
 sc-rpc = { workspace = true }
 sc-rpc-api = { workspace = true }
 sc-transaction-pool-api = { workspace = true }
@@ -60,21 +65,30 @@ sp-consensus-babe = { workspace = true }
 sp-core = { workspace = true, features = ["std"] }
 sp-consensus-grandpa = { workspace = true }
 sp-inherents = { workspace = true }
+sp-io = { workspace = true }
 sp-keystore = { workspace = true }
 sp-runtime = { workspace = true }
 sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
+sp-session = { workspace = true }
+sp-offchain = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
+#
 hex-literal = { workspace = true }
 sc-telemetry = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-ethereum = { workspace = true }
 fc-rpc = { workspace = true, features = ["rpc-binary-search-estimate"] }
+fp-rpc = { workspace = true }
+fc-api = { workspace = true }
+
 fc-consensus = { workspace = true }
 fp-consensus = { workspace = true }
+fp-evm = { workspace = true }
 fc-db = { workspace = true }
 fc-rpc-core = { workspace = true }
-fc-mapping-sync = { workspace = true }
+fc-storage = { workspace = true }
+fc-mapping-sync = { workspace = true, features = ["sql"] }
 primitive-types = { workspace = true, features = ["rlp", "byteorder"] }
 
 [build-dependencies]
