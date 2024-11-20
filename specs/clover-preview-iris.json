@@ -5,14 +5,11 @@
     "Custom": "iris"
   },
   "bootNodes": [
-    "/dns/seed1.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWFtshqoFL1hAwseGc4WuFeREKicjFR15JiVEaJiHnDvn2",
+    "/dns/seed1.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWHrejpvW1zW42GdCpT5KvoeSWbnQUj7sVmuFSgh2cyKXN",
     "/dns/seed2.iris-cc2.clover.finance/tcp/30333/p2p/12D3KooWBcU1EShS2azLwQhKVKyeXU2cc3CWyhuN8wJwEKaRVNe8"
   ],
   "telemetryEndpoints": [
-    [
-      "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F",
-      0
-    ]
+    ["/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F", 0]
   ],
   "protocolId": "iris",
   "properties": {
