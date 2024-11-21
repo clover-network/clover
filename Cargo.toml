@@ -3,6 +3,7 @@ panic = 'unwind'
 
 [workspace.package]
 description = "Clover Network"
+default-run = "clover"
 
 [workspace]
 members = [
