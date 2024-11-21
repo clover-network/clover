@@ -3,33 +3,27 @@ use sp_core::H160;
 use sp_std::marker::PhantomData;
 
 use pallet_evm::{
-	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
+    IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
-
 
 /// Precompiles for the Clover network.
 pub struct CloverPrecompiles<T>(PhantomData<T>);
 
 impl<R> CloverPrecompiles<R>
 where
-	R: pallet_evm::Config,
+    R: pallet_evm::Config,
 {
-	pub fn new() -> Self {
-		Self(Default::default())
-	}
-	pub fn used_addresses() -> [H160; 4] {
-		[
-			hash(1),
-			hash(2),
-			hash(3),
-            hash(4),
-		]
-	}
+    pub fn new() -> Self {
+        Self(Default::default())
+    }
+    pub fn used_addresses() -> [H160; 4] {
+        [hash(1), hash(2), hash(3), hash(4)]
+    }
 }
 
 impl<R> PrecompileSet for CloverPrecompiles<R>
 where
-	R: pallet_evm::Config,
+    R: pallet_evm::Config,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         let (code_addr, context_addr) = (handle.code_address(), handle.context().address);
@@ -39,8 +33,10 @@ where
             && code_addr > hash(9)
             && code_addr != context_addr
         {
-            return Some(Err(fp_evm::PrecompileFailure::Error{
-                exit_status: fp_evm::ExitError::Other(sp_std::borrow::Cow::Borrowed("cannot be called with DELEGATECALL or CALLCODE")),
+            return Some(Err(fp_evm::PrecompileFailure::Error {
+                exit_status: fp_evm::ExitError::Other(sp_std::borrow::Cow::Borrowed(
+                    "cannot be called with DELEGATECALL or CALLCODE",
+                )),
             }));
         };
 

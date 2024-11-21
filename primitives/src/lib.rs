@@ -8,12 +8,8 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-use sp_runtime::{
-  FixedU128,
-  generic,
-  traits::{BlakeTwo256, IdentifyAccount, Verify},
-  MultiSignature, RuntimeDebug
-};
+use sp_runtime::traits::{BlakeTwo256, IdentifyAccount, Verify};
+use sp_runtime::{generic, FixedU128, MultiSignature, RuntimeDebug};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -66,13 +62,35 @@ pub type BlockId = generic::BlockId<Block>;
 pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 #[repr(u32)]
-#[derive(Encode, Decode, Eq, FromPrimitive, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord, enum_iterator::IntoEnumIterator, TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, strum_macros::EnumIter, strum_macros::Display, int_enum::IntEnum))]
+#[derive(
+    Encode,
+    Decode,
+    Eq,
+    FromPrimitive,
+    PartialEq,
+    Copy,
+    Clone,
+    RuntimeDebug,
+    PartialOrd,
+    Ord,
+    enum_iterator::IntoEnumIterator,
+    TypeInfo,
+)]
+#[cfg_attr(
+    feature = "std",
+    derive(
+        Serialize,
+        Deserialize,
+        strum_macros::EnumIter,
+        strum_macros::Display,
+        int_enum::IntEnum
+    )
+)]
 pub enum CurrencyId {
-	  CLV = 0,
-	  CUSDT = 1,
-	  DOT = 2,
-	  CETH = 3,
+    CLV = 0,
+    CUSDT = 1,
+    DOT = 2,
+    CETH = 3,
 }
 
 /// dex related types
@@ -83,9 +101,9 @@ pub type Price = FixedU128;
 pub type Share = u128;
 
 pub mod currency {
-  use super::*;
-  pub const DOLLARS: Balance = 1_000_000_000_000_000_000;
-  pub const CENTS: Balance = DOLLARS / 100; // 10_000_000_000_000_000
-  pub const MILLICENTS: Balance = CENTS / 1000; // 10_000_000_000_000
-  pub const MICROCENTS: Balance = MILLICENTS / 1000; // 10_000_000_000
+    use super::*;
+    pub const DOLLARS: Balance = 1_000_000_000_000_000_000;
+    pub const CENTS: Balance = DOLLARS / 100; // 10_000_000_000_000_000
+    pub const MILLICENTS: Balance = CENTS / 1000; // 10_000_000_000_000
+    pub const MICROCENTS: Balance = MILLICENTS / 1000; // 10_000_000_000
 }
