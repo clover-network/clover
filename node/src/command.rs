@@ -21,7 +21,6 @@ use crate::cli::{Cli, Subcommand};
 use crate::service::{new_partial, FullClient};
 use crate::{chain_spec, service};
 use clover_primitives::Block;
-// use clover_runtime::{ExistentialDeposit, RuntimeApi};
 use frame_benchmarking_cli::*;
 use sc_cli::{Result, SubstrateCli};
 use sc_consensus_grandpa as grandpa;
@@ -112,7 +111,7 @@ pub fn run() -> Result<()> {
                     }
                     BenchmarkCmd::Block(cmd) => {
                         // ensure that we keep the task manager alive
-                        let partial = new_partial(&config, &cli.eth)?;
+                        let partial = new_partial(&config)?;
                         cmd.run(partial.client)
                     }
                     #[cfg(not(feature = "runtime-benchmarks"))]
@@ -186,7 +185,7 @@ pub fn run() -> Result<()> {
                     task_manager,
                     import_queue,
                     ..
-                } = new_partial(&config, &cli.eth)?;
+                } = new_partial(&config)?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -197,7 +196,7 @@ pub fn run() -> Result<()> {
                     client,
                     task_manager,
                     ..
-                } = new_partial(&config, &cli.eth)?;
+                } = new_partial(&config)?;
                 Ok((cmd.run(client, config.database), task_manager))
             })
         }
@@ -208,7 +207,7 @@ pub fn run() -> Result<()> {
                     client,
                     task_manager,
                     ..
-                } = new_partial(&config, &cli.eth)?;
+                } = new_partial(&config)?;
                 Ok((cmd.run(client, config.chain_spec), task_manager))
             })
         }
@@ -220,7 +219,7 @@ pub fn run() -> Result<()> {
                     task_manager,
                     import_queue,
                     ..
-                } = new_partial(&config, &cli.eth)?;
+                } = new_partial(&config)?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -236,7 +235,7 @@ pub fn run() -> Result<()> {
                     task_manager,
                     backend,
                     ..
-                } = new_partial(&config, &cli.eth)?;
+                } = new_partial(&config)?;
                 let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
                     sc_consensus_babe::revert(client.clone(), backend, blocks)?;
                     grandpa::revert(client, blocks)?;

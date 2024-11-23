@@ -1,19 +1,15 @@
-use std::collections::BTreeMap;
-use std::str::FromStr;
-
 use clover_primitives::currency::*;
 pub use clover_primitives::{AccountId, Balance, Signature};
 pub use clover_runtime::RuntimeGenesisConfig;
 use clover_runtime::{
     wasm_binary_unwrap, BabeConfig, BalancesConfig, Block, CouncilConfig, DemocracyConfig,
-    EVMConfig, EthereumConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys,
-    StakerStatus, StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+    ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus, StakingConfig,
+    SudoConfig, SystemConfig, TechnicalCommitteeConfig,
 };
-use fp_evm::GenesisAccount;
 use hex_literal::hex;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sc_chain_spec::ChainSpecExtension;
-use sc_service::{ChainType, Properties};
+use sc_service::ChainType;
 use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -21,7 +17,7 @@ use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::UncheckedInto;
-use sp_core::{sr25519, Pair, Public, H160, U256};
+use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_runtime::Perbill;
 type AccountPublic = <Signature as Verify>::Signer;
@@ -168,7 +164,6 @@ fn staging_testnet_config_genesis() -> RuntimeGenesisConfig {
         vec![],
         root_key,
         Some(endowed_accounts),
-        dev_endowed_evm_accounts(),
     )
 }
 
@@ -228,46 +223,6 @@ pub fn authority_keys_from_seed(
     )
 }
 
-/// Get hard coded endowed account for EVM.
-fn endowed_evm_account() -> BTreeMap<H160, GenesisAccount> {
-    let endowed_account = vec![
-        // clover fauct
-        H160::from_str("9157f0316f375e4ccf67f8d21ae0881d0abcbb21").unwrap(),
-    ];
-    get_endowed_evm_accounts(endowed_account)
-}
-
-/// Get hard coded endowed accounts for EVM.
-fn dev_endowed_evm_accounts() -> BTreeMap<H160, GenesisAccount> {
-    let endowed_account = vec![
-        H160::from_str("6be02d1d3665660d22ff9624b7be0551ee1ac91b").unwrap(),
-        H160::from_str("e6206C7f064c7d77C6d8e3eD8601c9AA435419cE").unwrap(),
-        // the dev account key
-        // seed: bottom drive obey lake curtain smoke basket hold race lonely fit walk
-        // private key: 0x03183f27e9d78698a05c24eb6732630eb17725fcf2b53ee3a6a635d6ff139680
-        H160::from_str("aed40f2261ba43b4dffe484265ce82d8ffe2b4db").unwrap(),
-    ];
-
-    get_endowed_evm_accounts(endowed_account)
-}
-
-/// Helper function to convert endowed accounts to EVM genesis accounts.
-fn get_endowed_evm_accounts(endowed_accounts: Vec<H160>) -> BTreeMap<H160, GenesisAccount> {
-    let mut evm_accounts = BTreeMap::new();
-    for account in endowed_accounts {
-        evm_accounts.insert(
-            account,
-            GenesisAccount {
-                nonce: U256::from(0),
-                balance: U256::from(1_000 * DOLLARS),
-                storage: Default::default(),
-                code: vec![],
-            },
-        );
-    }
-    evm_accounts
-}
-
 /// Development testnet genesis
 fn development_config_genesis() -> RuntimeGenesisConfig {
     testnet_genesis(
@@ -275,7 +230,6 @@ fn development_config_genesis() -> RuntimeGenesisConfig {
         vec![],
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         None,
-        dev_endowed_evm_accounts(),
     )
 }
 
@@ -327,7 +281,6 @@ fn local_testnet_genesis() -> RuntimeGenesisConfig {
             get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
             get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
         ]),
-        endowed_evm_account(),
     )
 }
 
@@ -414,7 +367,6 @@ fn local_rose_testnet_genesis() -> RuntimeGenesisConfig {
             // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
             hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
         ]),
-        endowed_evm_account(),
     )
 }
 
@@ -518,7 +470,6 @@ fn iris_testnet_genesis() -> RuntimeGenesisConfig {
             // 5CPQQYs3wf32fr5PhmmfFQEeVzD1Zy9Hdo8LFzQYuhP8XHW6
             hex!["0e42eb6f65a8ef5e3f3c3cdb5b2c3be646e791abd76e2224d5847cde786b2e01"].into(),
         ]),
-        endowed_evm_account(),
     )
 }
 
@@ -567,7 +518,6 @@ pub fn testnet_genesis(
     initial_nominators: Vec<AccountId>,
     root_key: AccountId,
     endowed_accounts: Option<Vec<AccountId>>,
-    endowed_eth_accounts: BTreeMap<H160, GenesisAccount>,
 ) -> RuntimeGenesisConfig {
     let mut endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
         vec![
@@ -638,11 +588,6 @@ pub fn testnet_genesis(
                 .map(|x| (x, ENDOWMENT))
                 .collect(),
         },
-        evm: EVMConfig {
-            accounts: endowed_eth_accounts,
-            ..Default::default()
-        },
-        ethereum: EthereumConfig::default(),
         im_online: ImOnlineConfig { keys: vec![] },
         indices: IndicesConfig { indices: vec![] },
         session: SessionConfig {
@@ -704,7 +649,6 @@ pub(crate) mod tests {
             vec![],
             get_account_id_from_seed::<sr25519::Public>("Alice"),
             None,
-            dev_endowed_evm_accounts(),
         )
     }
 

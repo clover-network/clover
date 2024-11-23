@@ -16,8 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::eth::EthConfiguration;
-
 /// An overarching CLI command definition.
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
@@ -43,10 +41,6 @@ pub struct Cli {
     #[allow(missing_docs)]
     #[clap(flatten)]
     pub storage_monitor: sc_storage_monitor::StorageMonitorParams,
-
-    /// Configuration for the Ethereum compatibility layer.
-    #[command(flatten)]
-    pub eth: EthConfiguration,
 }
 
 /// Possible subcommands of the main binary.

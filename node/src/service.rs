@@ -21,20 +21,14 @@
 //! Service implementation. Specialized wrapper over substrate service.
 
 use crate::cli::Cli;
-use crate::eth::{
-    db_config_dir, new_frontier_partial, spawn_frontier_tasks, BackendType, EthConfiguration,
-    EthDeps, FrontierBackend, FrontierPartialComponents,
-};
 use clover_primitives::Block;
-use clover_runtime::{RuntimeApi, TransactionConverter};
-use fc_rpc::OverrideHandle;
-use fc_storage::overrides_handle;
+use clover_runtime::RuntimeApi;
 use frame_benchmarking_cli::*;
 use futures::prelude::*;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_babe::{self, BabeWorkerHandle, SlotProportion};
 use sc_consensus_grandpa as grandpa;
-use sc_executor::{NativeElseWasmExecutor, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
+use sc_executor::{WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 use sc_network::event::Event;
 use sc_network::{NetworkEventStream, NetworkService};
 use sc_network_sync::warp::WarpSyncParams;
@@ -47,7 +41,6 @@ use sc_statement_store::Store as StatementStore;
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_runtime::traits::Block as BlockT;
-use std::path::Path;
 use std::sync::Arc;
 
 /// Only enable the benchmarking host functions when we actually want to benchmark.
@@ -70,22 +63,6 @@ type FullGrandpaBlockImport =
 /// The transaction pool type definition.
 pub type TransactionPool = sc_transaction_pool::FullPool<Block, FullClient>;
 
-/// Declare an instance of the native executor named `ExecutorDispatch`. Include the wasm binary as
-/// the equivalent wasm code.
-pub struct ExecutorDispatch;
-
-impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
-    type ExtendHostFunctions = (sp_statement_store::runtime_api::HostFunctions,);
-
-    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-        clover_runtime::api::dispatch(method, data)
-    }
-
-    fn native_version() -> sc_executor::NativeVersion {
-        clover_runtime::native_version()
-    }
-}
-
 /// The minimum period of blocks on which justifications will be
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
@@ -93,7 +70,6 @@ const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 /// Creates a new partial node.
 pub fn new_partial(
     config: &Configuration,
-    eth_config: &EthConfiguration,
 ) -> Result<
     sc_service::PartialComponents<
         FullClient,
@@ -110,8 +86,6 @@ pub fn new_partial(
             ),
             Option<Telemetry>,
             Arc<StatementStore>,
-            FrontierBackend,
-            Arc<OverrideHandle<Block>>,
         ),
     >,
     ServiceError,
@@ -222,37 +196,6 @@ pub fn new_partial(
     )
     .map_err(|e| ServiceError::Other(format!("Statement store error: {:?}", e)))?;
 
-    let overrides = overrides_handle(client.clone());
-
-    let frontier_backend = match eth_config.frontier_backend_type {
-        BackendType::KeyValue => FrontierBackend::KeyValue(fc_db::kv::Backend::open(
-            Arc::clone(&client),
-            &config.database,
-            &db_config_dir(config),
-        )?),
-        BackendType::Sql => {
-            let db_path = db_config_dir(config).join("sql");
-            std::fs::create_dir_all(&db_path).expect("failed creating sql db directory");
-            let backend = futures::executor::block_on(fc_db::sql::Backend::new(
-                fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-                    path: Path::new("sqlite:///")
-                        .join(db_path)
-                        .join("frontier.db3")
-                        .to_str()
-                        .unwrap(),
-                    create_if_missing: true,
-                    thread_count: eth_config.frontier_sql_backend_thread_count,
-                    cache_size: eth_config.frontier_sql_backend_cache_size,
-                }),
-                eth_config.frontier_sql_backend_pool_size,
-                std::num::NonZeroU32::new(eth_config.frontier_sql_backend_num_ops_timeout),
-                overrides.clone(),
-            ))
-            .unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));
-            FrontierBackend::Sql(backend)
-        }
-    };
-
     Ok(sc_service::PartialComponents {
         client,
         backend,
@@ -261,13 +204,7 @@ pub fn new_partial(
         select_chain,
         import_queue,
         transaction_pool,
-        other: (
-            import_setup,
-            telemetry,
-            statement_store,
-            frontier_backend,
-            overrides,
-        ),
+        other: (import_setup, telemetry, statement_store),
     })
 }
 
@@ -290,7 +227,6 @@ pub struct NewFullBase {
 /// Creates a full service from the configuration.
 pub async fn new_full_base(
     config: Configuration,
-    eth_config: EthConfiguration,
     disable_hardware_benchmarks: bool,
     with_startup_data: impl FnOnce(
         &sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
@@ -312,8 +248,8 @@ pub async fn new_full_base(
         keystore_container,
         select_chain,
         transaction_pool,
-        other: (import_setup, mut telemetry, statement_store, frontier_backend, overrides),
-    } = new_partial(&config, &eth_config)?;
+        other: (import_setup, mut telemetry, statement_store),
+    } = new_partial(&config)?;
 
     let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
     let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
@@ -368,30 +304,13 @@ pub async fn new_full_base(
     let prometheus_registry = config.prometheus_registry().cloned();
     let enable_offchain_worker = config.offchain_worker.enabled;
 
-    // Sinks for pubsub notifications.
-    // Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
-    // The MappingSyncWorker sends through the channel on block import and the subscription emits a notification to the subscriber on receiving a message through this channel.
-    // This way we avoid race conditions when using native substrate block import notification stream.
-    let pubsub_notification_sinks: fc_mapping_sync::EthereumBlockNotificationSinks<
-        fc_mapping_sync::EthereumBlockNotification<Block>,
-    > = Default::default();
-    let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
-
-    let FrontierPartialComponents {
-        filter_pool,
-        fee_history_cache,
-        fee_history_cache_limit,
-    } = new_frontier_partial(&eth_config)?;
-
     let (block_import, grandpa_link, babe_link, babe_worker_handle) = import_setup;
 
     let (rpc_builder, shared_voter_state) = {
-        let babe_link = babe_link.clone();
         let justification_stream = grandpa_link.justification_stream();
         let shared_authority_set = grandpa_link.shared_authority_set().clone();
         let shared_voter_state = grandpa::SharedVoterState::empty();
         let shared_voter_state2 = shared_voter_state.clone();
-        let is_authority = role.is_authority();
 
         let finality_proof_provider = grandpa::FinalityProofProvider::new_for_service(
             backend.clone(),
@@ -403,69 +322,12 @@ pub async fn new_full_base(
         let select_chain = select_chain.clone();
         let keystore = keystore_container.keystore();
         let chain_spec = config.chain_spec.cloned_box();
-        let network = network.clone();
-        let sync_service = sync_service.clone();
 
         let rpc_backend = backend.clone();
         let rpc_statement_store = statement_store.clone();
 
-        // frontier stuff
-        let max_past_logs = eth_config.max_past_logs;
-        let execute_gas_limit_multiplier = eth_config.execute_gas_limit_multiplier;
-        let filter_pool = filter_pool.clone();
-        let frontier_backend = frontier_backend.clone();
-        let pubsub_notification_sinks = pubsub_notification_sinks.clone();
-        let overrides = overrides.clone();
-        let fee_history_cache = fee_history_cache.clone();
-        let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
-            task_manager.spawn_handle(),
-            overrides.clone(),
-            eth_config.eth_log_block_cache,
-            eth_config.eth_statuses_cache,
-            config.prometheus_registry().cloned(),
-        ));
-
-        let slot_duration = babe_link.config().slot_duration();
-        let pending_create_inherent_data_providers = move |_, ()| async move {
-            let current = sp_timestamp::InherentDataProvider::from_system_time();
-            let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
-            let timestamp = sp_timestamp::InherentDataProvider::new(next_slot.into());
-            let slot = sp_consensus_babe::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-				*timestamp,
-				slot_duration,
-			);
-            // let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
-            Ok((slot, timestamp))
-        };
-
         let rpc_extensions_builder =
             move |deny_unsafe, subscription_executor: SubscriptionTaskExecutor| {
-                let eth_deps = EthDeps {
-                    client: client.clone(),
-                    pool: pool.clone(),
-                    graph: pool.pool().clone(),
-                    converter: Some(TransactionConverter),
-                    is_authority,
-                    enable_dev_signer: eth_config.enable_dev_signer,
-                    network: network.clone(),
-                    sync: sync_service.clone(),
-                    frontier_backend: match frontier_backend.clone() {
-                        fc_db::Backend::KeyValue(b) => Arc::new(b),
-                        fc_db::Backend::Sql(b) => Arc::new(b),
-                    },
-                    overrides: overrides.clone(),
-                    block_data_cache: block_data_cache.clone(),
-                    filter_pool: filter_pool.clone(),
-                    max_past_logs,
-                    fee_history_cache: fee_history_cache.clone(),
-                    fee_history_cache_limit,
-                    execute_gas_limit_multiplier,
-                    forced_parent_hashes: None,
-                    pending_create_inherent_data_providers,
-                    keystore: keystore.clone(),
-                    epoch_changes: babe_link.epoch_changes().clone(),
-                    babe_authorities: babe_link.config().authorities.clone(),
-                };
                 let deps = crate::rpc::FullDeps {
                     client: client.clone(),
                     pool: pool.clone(),
@@ -485,16 +347,9 @@ pub async fn new_full_base(
                     },
                     statement_store: rpc_statement_store.clone(),
                     backend: rpc_backend.clone(),
-                    command_sink: None,
-                    eth: eth_deps,
                 };
 
-                crate::rpc::create_full(
-                    deps,
-                    subscription_executor.clone(),
-                    pubsub_notification_sinks.clone(),
-                )
-                .map_err(Into::into)
+                crate::rpc::create_full(deps).map_err(Into::into)
             };
 
         (rpc_extensions_builder, shared_voter_state2)
@@ -514,20 +369,6 @@ pub async fn new_full_base(
         sync_service: sync_service.clone(),
         telemetry: telemetry.as_mut(),
     })?;
-
-    spawn_frontier_tasks(
-        &task_manager,
-        client.clone(),
-        backend.clone(),
-        frontier_backend,
-        filter_pool,
-        overrides,
-        fee_history_cache,
-        fee_history_cache_limit,
-        sync_service.clone(),
-        pubsub_notification_sinks,
-    )
-    .await;
 
     if let Some(hwbench) = hwbench {
         sc_sysinfo::print_hwbench(&hwbench);
@@ -742,7 +583,7 @@ pub async fn new_full_base(
 /// Builds a new service for a full client.
 pub async fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceError> {
     let database_source = config.database.clone();
-    let task_manager = new_full_base(config, cli.eth, cli.no_hardware_benchmarks, |_, _| ())
+    let task_manager = new_full_base(config, cli.no_hardware_benchmarks, |_, _| ())
         .await
         .map(|NewFullBase { task_manager, .. }| task_manager)?;
 

@@ -16,12 +16,6 @@ log = { workspace = true }
 
 clover-traits = { workspace = true }
 clover-rpc-runtime-api = { workspace = true }
-evm = { workspace = true }
-pallet-evm = { workspace = true }
-pallet-evm-precompile-simple = { workspace = true }
-pallet-ethereum = { workspace = true }
-fp-rpc = { workspace = true }
-fp-evm = { workspace = true }
 evm-accounts = { workspace = true }
 clover-claims = { workspace = true }
 clover-primitives = { workspace = true }
@@ -93,9 +87,6 @@ std = [
 	'clover-primitives/std',
 	'clover-rpc-runtime-api/std',
 	"evm-accounts/std",
-	'evm/std',
-	"fp-rpc/std",
-	"fp-evm/std",
 	"frame-benchmarking/std",
 	"frame-election-provider-support/std",
 	'frame-executive/std',
@@ -113,9 +104,6 @@ std = [
 	"pallet-contracts/std",
 	"pallet-democracy/std",
 	"pallet-elections-phragmen/std",
-	"pallet-ethereum/std",
-	"pallet-evm-precompile-simple/std",
-	"pallet-evm/std",
 	'pallet-grandpa/std',
 	'pallet-identity/std',
 	'pallet-im-online/std',
