@@ -1156,25 +1156,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clover-babe-consensus-provider"
-version = "0.1.0"
-dependencies = [
- "fc-rpc",
- "sc-client-api",
- "sc-consensus-babe",
- "sc-service",
- "scale-info",
- "schnorrkel 0.9.1",
- "sp-api",
- "sp-application-crypto",
- "sp-consensus-babe",
- "sp-core",
- "sp-inherents",
- "sp-keystore",
- "sp-runtime",
-]
-
-[[package]]
 name = "clover-claims"
 version = "0.9.0"
 dependencies = [
@@ -2441,143 +2422,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "486f806e73c5707928240ddc295403b1b93c96a02038563881c4a2fd84b81ac4"
 
 [[package]]
-name = "fc-api"
-version = "1.0.0-dev"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "async-trait",
- "fp-storage",
- "parity-scale-codec",
- "sp-core",
- "sp-runtime",
-]
-
-[[package]]
-name = "fc-db"
-version = "2.0.0-dev"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "async-trait",
- "fc-api",
- "fp-storage",
- "log",
- "parity-db",
- "parity-scale-codec",
- "parking_lot 0.12.3",
- "sc-client-db",
- "sp-blockchain",
- "sp-core",
- "sp-database",
- "sp-runtime",
-]
-
-[[package]]
-name = "fc-mapping-sync"
-version = "2.0.0-dev"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "fc-db",
- "fc-storage",
- "fp-consensus",
- "fp-rpc",
- "futures 0.3.31",
- "futures-timer",
- "log",
- "parking_lot 0.12.3",
- "sc-client-api",
- "sc-utils",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-runtime",
-]
-
-[[package]]
-name = "fc-rpc"
-version = "2.0.0-dev"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "ethereum",
- "ethereum-types",
- "evm",
- "fc-api",
- "fc-mapping-sync",
- "fc-rpc-core",
- "fc-storage",
- "fp-evm",
- "fp-rpc",
- "fp-storage",
- "futures 0.3.31",
- "hex",
- "jsonrpsee",
- "libsecp256k1 0.7.1",
- "log",
- "pallet-evm",
- "parity-scale-codec",
- "prometheus",
- "rand 0.8.5",
- "rlp",
- "sc-client-api",
- "sc-consensus-aura",
- "sc-network",
- "sc-network-common",
- "sc-network-sync",
- "sc-rpc",
- "sc-service",
- "sc-transaction-pool",
- "sc-transaction-pool-api",
- "sc-utils",
- "schnellru",
- "serde",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-consensus-aura",
- "sp-core",
- "sp-inherents",
- "sp-io",
- "sp-runtime",
- "sp-state-machine",
- "sp-storage",
- "sp-timestamp",
- "substrate-prometheus-endpoint",
- "thiserror",
- "tokio",
-]
-
-[[package]]
-name = "fc-rpc-core"
-version = "1.1.0-dev"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "ethereum",
- "ethereum-types",
- "jsonrpsee",
- "rustc-hex",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "fc-storage"
-version = "1.0.0-dev"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "ethereum",
- "ethereum-types",
- "fp-rpc",
- "fp-storage",
- "parity-scale-codec",
- "sc-client-api",
- "sp-api",
- "sp-blockchain",
- "sp-io",
- "sp-runtime",
- "sp-storage",
-]
-
-[[package]]
 name = "fdlimit"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2744,18 +2588,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fp-consensus"
-version = "2.0.0-dev"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "ethereum",
- "parity-scale-codec",
- "sp-core",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
 source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
@@ -2769,32 +2601,6 @@ dependencies = [
  "sp-core",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "fp-rpc"
-version = "3.0.0-dev"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "ethereum",
- "ethereum-types",
- "fp-evm",
- "parity-scale-codec",
- "scale-info",
- "sp-api",
- "sp-core",
- "sp-runtime",
- "sp-state-machine",
- "sp-std",
-]
-
-[[package]]
-name = "fp-storage"
-version = "2.0.0"
-source = "git+https://github.com/polkadot-evm/frontier.git?branch=polkadot-v1.2.0#16404e1ce1371964259e569d8bbe85dae734b88b"
-dependencies = [
- "parity-scale-codec",
- "serde",
 ]
 
 [[package]]
