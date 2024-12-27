@@ -16,3 +16,5 @@ ev/
 docker/clover
 node_modules
 runtime.log
+
+old-chain
