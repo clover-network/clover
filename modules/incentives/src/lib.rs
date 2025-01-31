@@ -136,7 +136,7 @@ impl <T: Trait> Module<T> {
 
 impl <T: Trait> RewardHandler<T::AccountId, T::BlockNumber, Balance, Share, PoolId> for Module<T>
 where T::BlockNumber: SaturatedConversion, {
-  fn caculate_reward(pool_id: &PoolId,
+  fn calculate_reward(pool_id: &PoolId,
                      total_share: &Share,
                      last_update_block: T::BlockNumber,
                      now: T::BlockNumber) -> Balance {
@@ -185,9 +185,9 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share, Balance> for Module
     }
   }
 
-  fn get_accumlated_rewards(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
+  fn get_accumulated_rewards(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> Share {
     if let Ok(id) = Self::get_dex_id(left, right) {
-      T::RewardPool::get_accumlated_rewards(who, &id)
+      T::RewardPool::get_accumulated_rewards(who, &id)
     } else {
       Zero::zero()
     }
@@ -196,10 +196,10 @@ impl<T: Trait> IncentiveOps<T::AccountId, CurrencyId, Share, Balance> for Module
   fn get_account_info(who: &T::AccountId, left: &CurrencyId, right: &CurrencyId) -> IncentivePoolAccountInfo<Share, Balance> {
     if let Ok(pool_id) = Self::get_dex_id(left, right) {
       let shares = T::RewardPool::get_account_shares(who, &pool_id);
-      let accumlated_rewards = T::RewardPool::get_accumlated_rewards(who, &pool_id);
-      IncentivePoolAccountInfo { shares, accumlated_rewards, }
+      let accumulated_rewards = T::RewardPool::get_accumulated_rewards(who, &pool_id);
+      IncentivePoolAccountInfo { shares, accumulated_rewards, }
     } else {
-      IncentivePoolAccountInfo { shares: Zero::zero(), accumlated_rewards: Zero::zero(), }
+      IncentivePoolAccountInfo { shares: Zero::zero(), accumulated_rewards: Zero::zero(), }
     }
   }
 
