@@ -136,7 +136,7 @@ impl <T: Trait> Module<T> {
 
 impl <T: Trait> RewardHandler<T::AccountId, T::BlockNumber, Balance, Share, PoolId> for Module<T>
 where T::BlockNumber: SaturatedConversion, {
-  fn caculate_reward(pool_id: &PoolId,
+  fn calculate_reward(pool_id: &PoolId,
                      total_share: &Share,
                      last_update_block: T::BlockNumber,
                      now: T::BlockNumber) -> Balance {
