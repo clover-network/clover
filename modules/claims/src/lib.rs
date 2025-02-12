@@ -409,7 +409,7 @@ pub mod pallet {
     ) -> Result<BalanceOf<T>, DispatchError> {
       let bridge_account = Self::elastic_bridge_accounts(network);
 
-      // mint must be orginated from bridge account
+      // mint must be originated from bridge account
       ensure!(
         Some(&from) == bridge_account.as_ref(),
         Error::<T>::NoPermission

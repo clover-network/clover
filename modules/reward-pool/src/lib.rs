@@ -299,7 +299,7 @@ impl<T: Trait> Module<T> {
 
 impl<T: Trait> RewardPoolOps<T::AccountId, T::PoolId, Share, Balance> for Module<T> {
   /// add shares to the reward pool
-  /// note: should call this function insdie a storage transaction
+  /// note: should call this function inside a storage transaction
   /// steps:
   /// 1. update the rewards
   /// 2. caculate the share price in the pool
